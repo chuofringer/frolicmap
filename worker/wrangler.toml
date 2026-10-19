@@ -1,0 +1,68 @@
+name = "frolicmap-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Two routes serve the same handler. The apex `frolicmap.app/api/*` keeps the
+# SPA same-origin (corporate web filters often block young subdomains);
+# `api.frolicmap.app/*` is the pinned host for the Cloudflare Access-gated
+# admin API.
+[[routes]]
+pattern = "api.frolicmap.app/*"
+zone_name = "frolicmap.app"
+
+[[routes]]
+pattern = "frolicmap.app/api/*"
+zone_name = "frolicmap.app"
+
+[vars]
+FRONTEND_URL = "https://frolicmap.app"
+# DEV_ADMIN_BYPASS is intentionally unset in prod. Set to "yes" only via
+# `wrangler dev` overrides or a .dev.vars file to unlock the x-dev-admin header.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "frolicmap-prod"
+# Run `wrangler d1 create frolicmap-prod` before the first remote deploy and
+# paste the real id here.
+database_id = "<set after wrangler d1 create>"
+migrations_dir = "migrations"
+
+# Two rate limiters. The list endpoint is a bulk-export surface (one call
+# yields the full ListItem catalog), so it burns aggressively (10/min/IP). The
+# detail endpoint is per-click, per-pin, so it gets a looser budget
+# (60/min/IP). ID enumeration pays the detail budget only; bulk-catalog pulls
+# pay the list budget only.
+#
+# Uses the Workers Rate Limiting binding, so these do NOT consume Cloudflare
+# dashboard rate-limit rules.
+[[unsafe.bindings]]
+name = "ITEMS_RATE_LIMITER"
+type = "ratelimit"
+# Account-scoped namespace id; keep it project-unique.
+namespace_id = "2026101901"
+simple = { limit = 10, period = 60 }
+
+[[unsafe.bindings]]
+name = "ITEMS_DETAIL_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "2026101902"
+simple = { limit = 60, period = 60 }
+
+# A Durable Object backs the SECOND, globally-consistent rate-limit layer that
+# sits behind the per-isolate `ITEMS_*_RATE_LIMITER` bindings above. See
+# `src/do/RateLimiterDO.ts` (algorithm) and `src/utils/globalRateLimit.ts`
+# (call sites, one DO instance per (scope, subject)). `new_sqlite_classes` is
+# the SQLite-backed storage flavor (free-tier eligible).
+[[durable_objects.bindings]]
+name = "RATE_LIMITER_DO"
+class_name = "RateLimiterDO"
+
+[[migrations]]
+tag = "v1-rate-limiter-do"
+new_sqlite_classes = ["RateLimiterDO"]
+
+[triggers]
+crons = [
+  "0 3 1 */3 *",    # OSM quarterly (1st of Jan/Apr/Jul/Oct 03:00 UTC) — static places rarely move
+]

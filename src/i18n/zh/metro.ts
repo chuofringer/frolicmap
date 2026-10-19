@@ -1,0 +1,32 @@
+import type { Translation } from '../en'
+
+export const metro: Translation['metro'] = {
+  currentCityAriaLabel: '当前城市：{{label}}。选择其他城市。',
+  chooseYourCity: '选择你的城市',
+  closePickerAriaLabel: '关闭城市选择器',
+  locating: '定位中…',
+  useMyLocation: '使用我的位置',
+  geoNotAvailable: '此浏览器不支持定位功能。',
+  geoNoMatch: '我们暂时无法将你的位置匹配到已覆盖的城市。可以在下方选择一个城市，或浏览全部城市。',
+  geoPermissionDenied: '定位权限被拒绝。请在下方手动选择城市。',
+  geoGenericError: '无法获取你的位置。请在下方手动选择城市。',
+  current: '当前',
+  browseAllCities: '浏览全部城市 →',
+  names: {
+    bay: '旧金山湾区',
+    'new-york': '纽约',
+    'los-angeles': '洛杉矶',
+    chicago: '芝加哥',
+    dallas: '达拉斯–沃思堡',
+    houston: '休斯顿',
+    washington: '华盛顿特区',
+    atlanta: '亚特兰大',
+    philadelphia: '费城',
+    boston: '波士顿',
+    miami: '迈阿密',
+    phoenix: '凤凰城',
+    seattle: '西雅图',
+    orlando: '奥兰多',
+    austin: '奥斯汀',
+  },
+}

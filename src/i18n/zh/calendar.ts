@@ -1,0 +1,27 @@
+import type { Translation } from '../en'
+
+export const calendar: Translation['calendar'] = {
+  calendar: '日历',
+  eventsCalendar: '活动日历',
+  activityCount_one: '{{count}} 个活动',
+  activityCount_other: '{{count}} 个活动',
+  today: '今天',
+  tomorrow: '明天',
+  allDay: '全天',
+  nextTwoMonths: '未来两个月',
+  ongoing: '进行中',
+  showFewer: '收起',
+  moreOngoing: '还有 {{count}} 个进行中',
+  empty: '未来几周内没有符合筛选条件的定期活动。',
+  emptyMonth: '本月没有符合筛选条件的活动。',
+  emptyDay: '这一天没有符合筛选条件的活动。',
+  cappedEntries: '仅显示前 {{count}} 个活动 — 缩小筛选范围可查看更多',
+  tapADay: '点击某一天查看当天活动',
+  backToCalendar: '返回日历',
+  previousMonth: '上个月',
+  nextMonth: '下个月',
+  dragDownToMap: '下滑返回地图',
+  gateAriaLabel: '登录查看活动日历',
+  gateTitle: '使用 Google 登录查看活动日历',
+  gateBody: '你附近的所有亲子活动，按日历排列 — 点击任意一天即可查看当天安排。登录免费且只需轻点一下 — 只是为了把人工精选清单留给真实的家长，而不是机器人和爬虫。',
+} as const
