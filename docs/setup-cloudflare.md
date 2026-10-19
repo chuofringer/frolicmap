@@ -200,6 +200,13 @@ curl -s https://frolicmap.app/cities/seattle | grep -o '<title>[^<]*</title>'
 curl -s https://frolicmap.app/cities/seattle | grep -c 'openstreetmap.org/copyright'
 ```
 
+Then, in a browser, open https://frolicmap.app and switch through all five
+basemaps (Light, Dark, Street, Liberty, Satellite): each must render. The
+OpenFreeMap style URLs and the USGS imagery tiles could not be fetched from the
+build sandbox that assembled this repository, so this is the first live check
+of them. Also open `/cities` and confirm the city-card thumbnails (USGS Topo
+tiles) load.
+
 If `/api/session` answers 503, the secret from step 4 is not set. If the tile
 request returns 200 with an empty body, no approved rows fall inside that tile.
 
