@@ -1,0 +1,31 @@
+{
+  "elements": [
+    {
+      "type": "node",
+      "id": 101,
+      "lat": 47.61,
+      "lon": -122.33,
+      "tags": { "name": "Cal Anderson Splash Park", "leisure": "water_park" }
+    },
+    {
+      "type": "node",
+      "id": 102,
+      "lat": 47.62,
+      "lon": -122.34,
+      "tags": { "playground": "splash_pad" }
+    },
+    {
+      "type": "way",
+      "id": 103,
+      "center": { "lat": 47.63, "lon": -122.35 },
+      "tags": { "name": "Rainier Playground", "leisure": "playground", "playground:water": "yes" }
+    },
+    {
+      "type": "node",
+      "id": 104,
+      "lat": 40.7,
+      "lon": -74.0,
+      "tags": { "name": "NYC Splash (outside Seattle bbox)", "playground": "splash_pad" }
+    }
+  ]
+}

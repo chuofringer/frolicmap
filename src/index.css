@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+
+/* Dark mode toggled by .dark on the root element */
+@variant dark (.dark &);
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Horizontally-scrollable chip rows (consolidated search/filter bar) hide their
+   scrollbar — the row scrolls on touch/trackpad without a visible track. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* funradar popup — compact, rounded, no forced min-height */
+.funradar-popup .maplibregl-popup-content {
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05);
+}
+.dark .funradar-popup .maplibregl-popup-content {
+  background: #1e293b;
+  color: #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.funradar-popup .maplibregl-popup-close-button {
+  display: none;
+}
+.funradar-popup .maplibregl-popup-tip {
+  border-top-color: #ffffff;
+}
+.dark .funradar-popup .maplibregl-popup-tip {
+  border-top-color: #1e293b !important;
+}

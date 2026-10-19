@@ -1,0 +1,5 @@
+{
+  "_comment": "Latest weekly 50-row sample accuracy per source_type (issue #679). Updated by the curator after each sample, together with docs/routines/runs/quality.md. accuracy = correct / (correct + wrong), unverifiable excluded. Gate: >=approve passes bulk approve, <approve is held, sources with no entry are allowed but flagged. See shared/qualityGate.ts.",
+  "thresholds": { "approve": 95, "hold": 90 },
+  "sources": {}
+}

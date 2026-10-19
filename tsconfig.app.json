@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path aliases */
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["shared/*"]
+    }
+  },
+  "include": ["src", "shared"],
+  // `shared/__tests__` reads `public/` off disk via node:fs, so it needs node
+  // types the browser app project deliberately doesn't carry. It's typechecked
+  // by tsconfig.node.json instead.
+  //
+  // `src/sw.ts` runs in a `ServiceWorkerGlobalScope`, not a `Window` — its
+  // `self` conflicts with this project's DOM lib. It's typechecked by
+  // tsconfig.sw.json instead.
+  "exclude": ["shared/__tests__", "src/sw.ts"]
+}
