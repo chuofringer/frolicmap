@@ -28,8 +28,4 @@ export const categories = {
   waterplay: 'Water Play',
   hiking: 'Hiking',
   campground: 'Campground',
-  event: 'Event',
-  upick: 'U-Pick Farm',
-  birthday_party: 'Birthday Party',
-  restaurant: 'Restaurant',
 } as const

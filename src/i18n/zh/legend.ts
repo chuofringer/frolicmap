@@ -5,5 +5,4 @@ export const legend: Translation['legend'] = {
   legend: '图例',
   categories: '分类',
   tapToFilter: '点击筛选',
-  soon: '即将',
 }

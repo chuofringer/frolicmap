@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api
 
-Sitemap: https://funradar.app/sitemap.xml
+Sitemap: https://frolicmap.app/sitemap.xml

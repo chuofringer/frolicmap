@@ -10,11 +10,10 @@ import { loadLocale, i18next } from './i18n'
 import { isAdminPath, localeBasename, localeFromPath, redirectToStoredLocale } from './i18n/locale'
 import { clearChunkReloadFlag, setupServiceWorker } from './pwa/registerServiceWorker'
 
-// Lazy page components live in ./pages/lazyPages and the /signup redirect in
-// ./pages/SignupRedirect: react-refresh/only-export-components wants component
-// definitions in files that export them, and this entry file exports nothing.
-import { AdminApp, TermsPage, PrivacyPage, CitiesPage, UnsubscribePage } from './pages/lazyPages'
-import { SignupRedirect } from './pages/SignupRedirect'
+// Lazy page components live in ./pages/lazyPages: react-refresh/only-export-components
+// wants component definitions in files that export them, and this entry file
+// exports nothing.
+import { AdminApp, TermsPage, PrivacyPage, CitiesPage } from './pages/lazyPages'
 
 const applyTheme = (basemap: Parameters<typeof getBasemapTheme>[0]) => {
   document.documentElement.classList.toggle('dark', getBasemapTheme(basemap) === 'dark')
@@ -71,10 +70,6 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/admin/*" element={<Suspense fallback={<div className="p-6">{i18next.t('common.loading')}</div>}><AdminApp /></Suspense>} />
           <Route path="/terms" element={<Suspense fallback={<div className="p-6">{i18next.t('common.loading')}</div>}><TermsPage /></Suspense>} />
           <Route path="/privacy" element={<Suspense fallback={<div className="p-6">{i18next.t('common.loading')}</div>}><PrivacyPage /></Suspense>} />
-          <Route path="/signup" element={<SignupRedirect />} />
-          {/* Linked from every newsletter digest footer as
-              /unsubscribe?email={{EMAIL}} — standalone page, no map. */}
-          <Route path="/unsubscribe" element={<Suspense fallback={<div className="p-6">{i18next.t('common.loading')}</div>}><UnsubscribePage /></Suspense>} />
           {/* Only ever reached where no static /cities file exists — i.e. the
               locale prefixes, which have no generated pages. On English the
               prerendered file wins at the edge. */}

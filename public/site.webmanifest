@@ -1,11 +1,11 @@
 {
-  "name": "funradar.app",
-  "short_name": "funradar",
-  "description": "Your radar for nearby fun — map of kids activities across the SF Bay Area.",
+  "name": "frolicmap",
+  "short_name": "frolicmap",
+  "description": "A free map of kid-friendly places for families: playgrounds, parks, libraries, museums, beaches, hiking and more.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fafafa",
-  "theme_color": "#f59e0b",
+  "theme_color": "#2f8f6a",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }

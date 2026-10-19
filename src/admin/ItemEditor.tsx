@@ -3,9 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { adminApi } from '@/api/admin'
 import type { Item } from '@shared/types'
-import { timezoneForRegion } from '@shared/metros'
 import { isAllowedPhotoUrl, ALLOWED_PHOTO_HOSTS } from '@shared/photoHost'
-import { parseEventTime, zoneAbbreviation } from '@/utils/venueTime'
 
 export function ItemEditor() {
   const { id } = useParams<{ id: string }>()
@@ -80,30 +78,6 @@ export function ItemEditor() {
         onAttributionChange={(v) => setPatch((p) => ({ ...p, photo_attribution: v }))}
         onClear={() => setPatch((p) => ({ ...p, photo_url: null, photo_attribution: null }))}
       />
-
-      {/* Event timing — critical for deciding approval on `type='event'` rows. */}
-      <div className="grid grid-cols-2 gap-3 my-3">
-        <Field
-          label="Start (ISO)"
-          value={item.start_time ?? ''}
-          onChange={(v) => setPatch((p) => ({ ...p, start_time: v || null }))}
-        />
-        <Field
-          label="End (ISO)"
-          value={item.end_time ?? ''}
-          onChange={(v) => setPatch((p) => ({ ...p, end_time: v || null }))}
-        />
-      </div>
-      {(item.start_time || item.end_time) && (
-        <div className={`mb-3 text-xs ${eventPastClass(item.start_time, item.end_time)}`}>
-          {formatEventWhen(item.start_time, item.end_time, item.region)}
-        </div>
-      )}
-      {item.rrule && (
-        <div className="mb-3 text-xs text-gray-700">
-          <span className="font-medium">Recurrence:</span> <code>{item.rrule}</code>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-3 my-3">
         <Field label="Age min" value={String(item.age_min ?? '')} onChange={(v) => setPatch((p) => ({ ...p, age_min: v ? Number(v) : null }))} />
@@ -257,33 +231,4 @@ function Field({ label, value, onChange, textarea }: { label: string; value: str
       {textarea ? <textarea rows={3} {...props} /> : <input {...props} />}
     </label>
   )
-}
-
-// Preview line under the raw ISO fields, rendered on the row's VENUE clock
-// (region → zone) with the zone spelled out — the curator edits venue-local
-// wall times, so the preview must echo them back unshifted.
-function formatEventWhen(start: string | null | undefined, end: string | null | undefined, region?: string): string {
-  const tz = region ? timezoneForRegion(region) : undefined
-  const fmt = (iso: string) => {
-    const p = parseEventTime(iso, tz)
-    if (!p) return iso
-    if (p.dateOnly) return p.wall.toLocaleDateString(undefined, { dateStyle: 'medium' })
-    const base = p.wall.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-    const abbrev = p.instant && tz ? zoneAbbreviation(p.instant, tz) : null
-    return abbrev ? `${base} ${abbrev}` : base
-  }
-  if (start && end) return `${fmt(start)} → ${fmt(end)}`
-  if (start) return fmt(start)
-  if (end) return `ends ${fmt(end)}`
-  return ''
-}
-
-function eventPastClass(start: string | null | undefined, end: string | null | undefined): string {
-  const check = end ?? start
-  if (!check) return 'text-gray-500'
-  const ts = Date.parse(check)
-  if (!Number.isFinite(ts)) return 'text-gray-500'
-  if (ts < Date.now()) return 'text-red-600 font-medium'
-  if (ts < Date.now() + 7 * 24 * 60 * 60 * 1000) return 'text-amber-700'
-  return 'text-gray-700'
 }

@@ -20,13 +20,6 @@ describe('combined Aquarium/Zoo chip (#323)', () => {
     expect(CHIP_ORDER).toContain('aquarium')
   })
 
-  it('parked categories (#199/#200) stay in the vocabulary but out of the chip/legend order', () => {
-    expect(CATEGORY_ORDER).toContain('birthday_party')
-    expect(CATEGORY_ORDER).toContain('restaurant')
-    expect(CHIP_ORDER).not.toContain('birthday_party')
-    expect(CHIP_ORDER).not.toContain('restaurant')
-  })
-
   it('the group resolves the same from either member', () => {
     expect(chipCategories('aquarium')).toEqual(['aquarium', 'zoo'])
     expect(chipCategories('zoo')).toEqual(['aquarium', 'zoo'])
@@ -52,10 +45,9 @@ describe('combined Aquarium/Zoo chip (#323)', () => {
     const base: Omit<Item, 'id' | 'name' | 'category'> = {
       type: 'place', description: null, lat: 37.7, lng: -122.4, address: null,
       age_min: null, age_max: null, cost: null, price_usd: null, indoor: null,
-      opening_hours: null, start_time: null, end_time: null, rrule: null, exdates: null,
+      opening_hours: null,
       photo_url: null, photo_attribution: null, has_playground: null, name_zh: null, website: null, source_url: 's', source_type: 'osm', confidence: 'high',
       status: 'approved', last_verified: '2026-01-01', created_at: '2026-01-01', updated_at: '2026-01-01',
-      crops: null, crops_state: null, in_season_now: null,
       region: 'bay', city: null, attributes: null, slug: null,
     }
     const items: Item[] = [

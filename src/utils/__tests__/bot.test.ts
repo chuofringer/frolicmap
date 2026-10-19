@@ -1,43 +1,33 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import {
-  WAITLIST_DISMISSED_KEY,
-  WAITLIST_SUBMITTED_KEY,
-  waitlistDismissed,
-  dismissWaitlist,
-  waitlistSubmitted,
-  markWaitlistSubmitted,
-} from '../bot'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { WELCOME_KEY, welcomeSeen, dismissWelcome, isLikelyBot } from '../bot'
 
-describe('waitlist storage helpers', () => {
+describe('welcome storage helpers', () => {
   beforeEach(() => {
-    localStorage.removeItem(WAITLIST_DISMISSED_KEY)
-    localStorage.removeItem(WAITLIST_SUBMITTED_KEY)
+    localStorage.removeItem(WELCOME_KEY)
   })
 
-  it('waitlistDismissed is false when key absent', () => {
-    expect(waitlistDismissed()).toBe(false)
+  it('welcomeSeen is false when key absent', () => {
+    expect(welcomeSeen()).toBe(false)
   })
 
-  it('dismissWaitlist sets a future timestamp ~30 days out', () => {
-    const now = 1_700_000_000_000
-    dismissWaitlist(now)
-    const stored = Number(localStorage.getItem(WAITLIST_DISMISSED_KEY))
-    expect(stored).toBe(now + 30 * 24 * 60 * 60 * 1000)
-    expect(waitlistDismissed(now + 1)).toBe(true)
-    expect(waitlistDismissed(stored - 1)).toBe(true)
-    expect(waitlistDismissed(stored)).toBe(false)
-    expect(waitlistDismissed(stored + 1)).toBe(false)
+  it('dismissWelcome round-trips under the frolicmap key', () => {
+    dismissWelcome()
+    expect(welcomeSeen()).toBe(true)
+    expect(localStorage.getItem(WELCOME_KEY)).toBe('1')
+    expect(WELCOME_KEY.startsWith('frolicmap')).toBe(true)
+  })
+})
+
+describe('isLikelyBot', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('flags crawler user agents', () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (compatible; Googlebot/2.1)')
+    expect(isLikelyBot()).toBe(true)
   })
 
-  it('waitlistDismissed returns false for non-numeric stored value', () => {
-    localStorage.setItem(WAITLIST_DISMISSED_KEY, 'garbage')
-    expect(waitlistDismissed()).toBe(false)
-  })
-
-  it('waitlistSubmitted round-trips', () => {
-    expect(waitlistSubmitted()).toBe(false)
-    markWaitlistSubmitted()
-    expect(waitlistSubmitted()).toBe(true)
-    expect(localStorage.getItem(WAITLIST_SUBMITTED_KEY)).toBe('1')
+  it('does not flag a normal browser', () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)')
+    expect(isLikelyBot()).toBe(false)
   })
 })

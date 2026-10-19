@@ -57,19 +57,9 @@ describe('useUrlView', () => {
     expect(result.current.get('view')).toBeNull()
   })
 
-  it('applies ?view=calendar from the URL to the store', () => {
+  it('treats an unknown ?view= value (e.g. the retired calendar view) as the map', () => {
     harness('/?view=calendar')
-    expect(useMapStore.getState().viewMode).toBe('calendar')
-  })
-
-  it('round-trips the calendar view through the URL', () => {
-    const { result } = harness('/')
-    act(() => useMapStore.getState().setViewMode('calendar'))
-    expect(result.current.get('view')).toBe('calendar')
-    act(() => useMapStore.getState().setViewMode('list'))
-    expect(result.current.get('view')).toBe('list')
-    act(() => useMapStore.getState().setViewMode('map'))
-    expect(result.current.get('view')).toBeNull()
+    expect(useMapStore.getState().viewMode).toBe('map')
   })
 
   // Regression test for #559: React StrictMode double-invokes effects on
@@ -81,12 +71,6 @@ describe('useUrlView', () => {
     const { result } = harness('/?view=list', { strict: true })
     expect(useMapStore.getState().viewMode).toBe('list')
     expect(result.current.get('view')).toBe('list')
-  })
-
-  it('survives a StrictMode double-mount without stripping ?view=calendar (#559)', () => {
-    const { result } = harness('/?view=calendar', { strict: true })
-    expect(useMapStore.getState().viewMode).toBe('calendar')
-    expect(result.current.get('view')).toBe('calendar')
   })
 
   it('still syncs view changes to the URL after a StrictMode double-mount', () => {

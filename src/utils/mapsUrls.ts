@@ -33,20 +33,13 @@ export interface MapsUrls {
  *    near" param) to the `?q=` form; when the address is null the `q` stays
  *    name-only (places) or coords (events) but `sll` anchors it to the place.
  *
- * Query construction differs by type:
- *  - **Places** (`type === 'place'`, incl. U-Pick farms): `"<name>, <address>"`
- *    when the address is loaded, else the coordinate-anchored name-only form.
- *  - **Events** (`type === 'event'`): address only, falling back to
- *    `"<lat>,<lng>"` when address is null (already location-exact). We never put
- *    the event name in the query — event rows are named by program description
- *    ("Family Storytime …"), which Maps geocodes to the wrong location.
- *
- * `address` arrives from the lazy detail fetch; until then the place query
- * falls back to the anchored name-only form and self-upgrades when detail
- * resolves.
+ * The query is `"<name>, <address>"` when the address is loaded, else the
+ * coordinate-anchored name-only form. `address` arrives from the lazy detail
+ * fetch; until then the query uses the anchored name-only form and
+ * self-upgrades when detail resolves.
  */
 export function buildMapsUrls(
-  item: Pick<ListItem, 'type' | 'name' | 'lat' | 'lng'>,
+  item: Pick<ListItem, 'name' | 'lat' | 'lng'>,
   address: string | null,
 ): MapsUrls {
   // Apple "search near" anchor — biases the `?q=` search to this exact place,
@@ -55,9 +48,9 @@ export function buildMapsUrls(
   const sll = `&sll=${item.lat},${item.lng}`
 
   // Treat any falsy address as absent: prod D1 has rows with an empty-string
-  // address (not null), and ItemPopup's `?? null` lets `''` through. A blank
-  // address must take the anchored fallback, not produce `"Name, "` / `""`.
-  if (item.type === 'place' && !address) {
+  // address (not null), and the detail payload's `?? null` lets `''` through. A
+  // blank address must take the anchored fallback, not produce `"Name, "`.
+  if (!address) {
     // No address: anchor Google's search to the coordinate viewport so it lands
     // on this exact area rather than near the user.
     const name = encodeURIComponent(item.name)
@@ -67,12 +60,8 @@ export function buildMapsUrls(
     }
   }
 
-  // Events fall back to raw coords (already location-exact); places with an
-  // address use the globally-unambiguous name + address form.
-  const query =
-    item.type === 'event'
-      ? address || `${item.lat},${item.lng}`
-      : `${item.name}, ${address}`
+  // With an address, use the globally-unambiguous name + address form.
+  const query = `${item.name}, ${address}`
   const encoded = encodeURIComponent(query)
   return {
     google: `https://www.google.com/maps/search/?api=1&query=${encoded}`,

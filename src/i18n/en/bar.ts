@@ -25,7 +25,6 @@ export const bar = {
   filters: 'Filters',
   allFilters: 'All filters',
   freeOnlyActive: 'Free only ✓',
-  soon: 'soon',
   map: 'Map',
   list: 'List',
 } as const

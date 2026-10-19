@@ -7,10 +7,10 @@ export function MapControls() {
   const { t } = useTranslation()
   const mapRef = useMapStore((s) => s.mapInstance)
   // Shift the zoom/3D controls clear of an open detail panel on md+ (matches
-  // IconBar / LegendButton). On mobile the top offset is 168px so these controls
-  // clear IconBar's standalone top-right column — the Buy Me a Coffee button
-  // plus the language toggle stacked below the ⋯ (bottom of the column =
-  // 160px, post-2026-08-09 envelope removal); desktop keeps the tighter 68px.
+  // IconBar / LegendButton). On mobile the top offset is 116px so these controls
+  // clear IconBar's standalone top-right column — the language toggle
+  // stacked below the ⋯ (bottom of the column = 108px); desktop keeps the
+  // tighter 68px.
   const detailOpen = useMapStore((s) => s.selectedId !== null)
   const [bearing, setBearing] = useState(0)
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
@@ -34,7 +34,7 @@ export function MapControls() {
   const isRotated = Math.abs(bearing) > 0.5
 
   return (
-    <div className={`absolute top-[168px] md:top-[68px] right-3 z-20 flex flex-col gap-2 transition-transform duration-200 ${detailOpen ? 'md:-translate-x-[392px]' : ''}`}>
+    <div className={`absolute top-[116px] md:top-[68px] right-3 z-20 flex flex-col gap-2 transition-transform duration-200 ${detailOpen ? 'md:-translate-x-[392px]' : ''}`}>
       {isRotated && (
         <button onClick={resetNorth} aria-label={t('map.resetBearingAriaLabel')} title={t('map.resetNorthTitle')} className={btn}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ transform: `rotate(${-bearing}deg)`, transition: 'transform 0.1s ease-out' }}>

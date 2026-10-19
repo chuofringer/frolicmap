@@ -6,11 +6,6 @@ import { useMapStore } from '@/stores/useMapStore'
 
 const holder = vi.hoisted(() => ({ data: null as DetailData | null }))
 vi.mock('../useDetailData', () => ({ useDetailData: () => holder.data }))
-// The real card needs QueryClientProvider + Router (its own test covers it);
-// here we only assert the sheet's gated layout.
-vi.mock('../EventUnlockCard', () => ({
-  EventUnlockCard: () => <div data-testid="event-unlock-card" />,
-}))
 
 import { BottomSheet } from '../BottomSheet'
 
@@ -136,21 +131,13 @@ describe('BottomSheet a11y contract', () => {
     expect(translateY(actionRow)).toBe(-translateY(sheet))
   })
 
-  it('gated event: shows the unlock card, blurs the title, hides the action row + report line', () => {
-    // Events sign-in gate (2026-07-26): directions/share/source would leak
-    // the value the unlock card withholds; the title blurs (aria-hidden too).
-    holder.data = makeDetailData({
-      gated: true,
-      listItem: { ...makeDetailData().listItem, type: 'event', name: 'Toddler Storytime' },
-    })
+  it('has no sign-in or affiliate surfaces; directions, share and report are always available', () => {
     render(<BottomSheet />)
-    expect(screen.getByTestId('event-unlock-card')).toBeInTheDocument()
-    expect(screen.getByRole('dialog', { name: 'Event — sign in to unlock' })).toBeInTheDocument()
-    const title = screen.getByText('Toddler Storytime')
-    expect(title.parentElement!.className).toContain('blur')
-    expect(screen.queryByRole('link', { name: 'Google Maps' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Report an issue' })).toBeNull()
+    expect(screen.queryByText(/sign in/i)).toBeNull()
+    expect(screen.queryByText(/affiliate/i)).toBeNull()
+    expect(screen.getByRole('link', { name: 'Google Maps' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Report an issue' })).toBeInTheDocument()
   })
 
   it('shows a try-again button for transient detail failures and retries on click', () => {

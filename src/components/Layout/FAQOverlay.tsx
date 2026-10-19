@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useMetro } from '@/hooks/useMetro'
 import { metroShortName } from '@/config/metroNames'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { deleteAccount } from '@/api/auth'
 
 export function FAQOverlay({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
@@ -18,8 +16,8 @@ export function FAQOverlay({ onClose }: { onClose: () => void }) {
 
   // `a0` is the only answer that names a place: it takes `metro.shortLabel`
   // in an article-free slot ("currently showing SF Bay Area" / "…Seattle").
-  // Every other answer is written to hold in all 15 published metros, so this
-  // list stays a flat map with no per-metro branching (#420).
+  // Every other answer is written to hold in every published metro, so this
+  // list stays a flat map with no per-metro branching.
   const FAQ_ITEMS: { q: string; a: string }[] = [
     { q: t('faq.items.q0'), a: t('faq.items.a0', { metro: metroShortName(metro) }) },
     { q: t('faq.items.q1'), a: t('faq.items.a1') },
@@ -32,8 +30,6 @@ export function FAQOverlay({ onClose }: { onClose: () => void }) {
     { q: t('faq.items.q8'), a: t('faq.items.a8') },
     { q: t('faq.items.q9'), a: t('faq.items.a9') },
     { q: t('faq.items.q10'), a: t('faq.items.a10') },
-    { q: t('faq.items.q11'), a: t('faq.items.a11') },
-    { q: t('faq.items.q12'), a: t('faq.items.a12') },
   ]
 
   return (
@@ -63,7 +59,6 @@ export function FAQOverlay({ onClose }: { onClose: () => void }) {
             </div>
           ))}
           <ContactSection />
-          <AccountSection />
           <div className="flex items-center justify-center gap-3 text-xs text-gray-400 dark:text-gray-500 pt-2">
             <Link to="/terms" className="hover:underline">{t('faq.termsLink')}</Link>
             <span aria-hidden="true">{t('faq.dotSeparator')}</span>
@@ -101,91 +96,6 @@ function ContactSection() {
           {copied ? t('faq.emailCopied') : t('faq.contactEmail')}
         </button>
       </p>
-    </div>
-  )
-}
-
-/**
- * Account controls for signed-in visitors (#535). Renders nothing for guests.
- *
- * The FAQ is where this lives because it is the only signed-in surface a
- * parent can reliably find again — SignInToast is transient, and the gates
- * never render once you're in. Sign-out is purely client-side (drop the
- * credential); deletion goes to `POST /api/auth/delete-account` and then
- * signs out, which unmounts this block.
- *
- * The confirm is a two-step inline swap rather than a browser `confirm()`:
- * a native dialog can't be styled, reads as a phishing prompt inside an
- * overlay, and is suppressed outright in some embedded webviews — where the
- * deletion would then fire with no confirmation at all.
- */
-function AccountSection() {
-  const { t } = useTranslation()
-  const signedIn = useAuthStore((s) => s.signedIn)
-  const email = useAuthStore((s) => s.email)
-  const credential = useAuthStore((s) => s.credential)
-  const signOut = useAuthStore((s) => s.signOut)
-  const [confirming, setConfirming] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'deleting' | 'error'>('idle')
-
-  const handleDelete = useCallback(async () => {
-    if (!credential) return
-    setStatus('deleting')
-    try {
-      await deleteAccount(credential)
-      // Unmounts this block: `signedIn` flips false. useSession sees the
-      // credential change and re-mints a guest session, so gated event
-      // details re-lock in the same tick.
-      signOut()
-    } catch {
-      setStatus('error')
-    }
-  }, [credential, signOut])
-
-  if (!signedIn) return null
-
-  return (
-    <div className="border rounded-lg border-gray-200 dark:border-gray-700 px-3 py-2.5 flex flex-col gap-1">
-      <h3 className="text-sm font-medium">{t('faq.accountHeading')}</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 break-words">
-        {t('faq.signedInAs', { email: email ?? '' })}
-      </p>
-      {confirming ? (
-        <>
-          <p className="text-sm text-gray-600 dark:text-gray-300 pt-1">{t('faq.deleteConfirmPrompt')}</p>
-          <div className="flex items-center gap-3 pt-1">
-            <button
-              onClick={() => void handleDelete()}
-              disabled={status === 'deleting'}
-              className="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-60"
-            >
-              {status === 'deleting' ? t('faq.deleting') : t('faq.deleteConfirmYes')}
-            </button>
-            <button
-              onClick={() => { setConfirming(false); setStatus('idle') }}
-              disabled={status === 'deleting'}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:underline disabled:opacity-60"
-            >
-              {t('faq.deleteCancel')}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="flex items-center gap-3 pt-1">
-          <button onClick={signOut} className="text-sm hover:underline" style={{ color: '#f59e0b' }}>
-            {t('faq.signOut')}
-          </button>
-          <button
-            onClick={() => setConfirming(true)}
-            className="text-sm text-gray-500 dark:text-gray-400 hover:underline"
-          >
-            {t('faq.deleteAccount')}
-          </button>
-        </div>
-      )}
-      {status === 'error' && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">{t('faq.deleteError')}</p>
-      )}
     </div>
   )
 }

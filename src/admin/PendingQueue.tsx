@@ -3,9 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api/admin'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, CATEGORY_ORDER, categoryLabel } from '@/config/categories'
-import { getMetro, timezoneForRegion } from '@shared/metros'
+import { getMetro } from '@shared/metros'
 import type { Category, Confidence, Item } from '@shared/types'
-import { parseEventTime } from '@/utils/venueTime'
 
 const PAGE_SIZE = 100
 
@@ -43,29 +42,6 @@ export function PendingQueue() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin', 'items', 'pending'] })
   const approve = useMutation({ mutationFn: adminApi.approve, onSuccess: invalidate })
   const reject = useMutation({ mutationFn: adminApi.reject, onSuccess: invalidate })
-  // Server-side bulk approve of everything behind the current filter (all
-  // pages, one UPDATE). The confirm names the filter so a curator on "All
-  // regions" knows they're about to approve the whole national queue.
-  const approveAll = useMutation({
-    mutationFn: () => adminApi.approveAll({ region: region || undefined, sourceType: sourceType || undefined }),
-    onSuccess: async (res) => {
-      await invalidate()
-      setOffset(0)
-      const held = (res.held ?? []).map((h) => `${h.source_type} (${h.pending.toLocaleString()} rows, ${h.accuracy}% — ${h.tier})`)
-      const unsampled = (res.unsampled ?? []).map((u) => `${u.source_type} (${u.pending.toLocaleString()})`)
-      window.alert(
-        `Approved ${res.approved.toLocaleString()} item${res.approved === 1 ? '' : 's'}.` +
-          (held.length ? `\n\nHELD pending (quality gate, sample accuracy below 95%): ${held.join(', ')}` : '') +
-          (unsampled.length ? `\n\nApproved WITHOUT a quality sample: ${unsampled.join(', ')}` : ''),
-      )
-    },
-  })
-  function confirmApproveAll(count: number) {
-    const scope = [region && `region ${region}`, sourceType && `source ${sourceType}`].filter(Boolean).join(', ') || 'ALL regions and sources'
-    if (!window.confirm(`Approve ALL ${count.toLocaleString()} pending items (${scope})? This covers every page, not just this one.`)) return
-    approveAll.mutate()
-  }
-
   function changeFilter(next: () => void) {
     // Any filter change invalidates the current page number — offset 200 of a
     // 3,000-row queue is meaningless once you filter down to 40.
@@ -117,7 +93,7 @@ export function PendingQueue() {
   }
   const orderedCategories = CATEGORY_ORDER.filter((c) => grouped.has(c))
 
-  const mutating = approve.isPending || reject.isPending || bulkRunning || approveAll.isPending
+  const mutating = approve.isPending || reject.isPending || bulkRunning
 
   return (
     <div>
@@ -138,14 +114,6 @@ export function PendingQueue() {
               {bulkRunning && bulkProgress
                 ? `Approving ${bulkProgress.done}/${bulkProgress.total}…`
                 : `Approve this page (${items.length})`}
-            </button>
-            <button
-              className="px-4 py-2 bg-emerald-900 text-white rounded-lg text-sm font-medium hover:bg-black disabled:opacity-50 transition-colors"
-              onClick={() => confirmApproveAll(total)}
-              disabled={mutating}
-              title="Approve every pending item behind the current filter, across all pages"
-            >
-              {approveAll.isPending ? 'Approving all…' : `Approve all (${total.toLocaleString()})`}
             </button>
           </span>
         )}
@@ -267,7 +235,6 @@ export function PendingQueue() {
                       >
                         {it.confidence}
                       </span>
-                      <span className={whenClass(it)}>{formatWhen(it)}</span>
                     </div>
                   </div>
                   <div className="shrink-0 flex items-center gap-2">
@@ -290,44 +257,4 @@ export function PendingQueue() {
       })}
     </div>
   )
-}
-
-// Compact "when" rendering for the pending queue row. Prioritizes:
-//   - recurring (rrule present) → "Recurring"
-//   - one-off w/ end_time → "Apr 25" or "Apr 25 – May 2" if multi-day
-//   - one-off w/ only start_time → "Apr 25"
-//   - undated → "—"
-// Stale rows (end < today) get flagged in red so the curator spots them.
-// Dates render on the ROW's venue clock (via its region), so a curator in
-// the Bay reviewing New York rows sees New York calendar days — and a
-// bare-date value ('2026-04-01', UTC midnight under plain `new Date()`) no
-// longer renders as the previous day.
-function formatWhen(it: Item): string {
-  if (it.rrule) return 'Recurring'
-  const s = it.start_time
-  const e = it.end_time
-  if (!s && !e) return '—'
-  const tz = timezoneForRegion(it.region)
-  const fmt = (iso: string) => {
-    const p = parseEventTime(iso, tz)
-    if (!p) return iso.slice(0, 10)
-    return p.wall.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: p.wall.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined })
-  }
-  if (s && e) {
-    const sd = fmt(s), ed = fmt(e)
-    return sd === ed ? sd : `${sd} – ${ed}`
-  }
-  return fmt(s ?? e!)
-}
-
-function whenClass(it: Item): string {
-  const base = 'tabular-nums '
-  if (it.rrule) return base + 'text-gray-600'
-  const checkIso = it.end_time ?? it.start_time
-  if (!checkIso) return base + 'text-gray-400'
-  const ts = Date.parse(checkIso)
-  if (!Number.isFinite(ts)) return base + 'text-gray-400'
-  if (ts < Date.now()) return base + 'text-red-600 font-medium' // past
-  if (ts < Date.now() + 7 * 24 * 60 * 60 * 1000) return base + 'text-amber-700' // within 7 days — upcoming
-  return base + 'text-gray-700'
 }

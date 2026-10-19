@@ -11,7 +11,7 @@ const SHOW_DELAY_MS = 2000
 
 // Surfaced when session-mint fails. Most common real-world cause is a
 // corporate firewall (Zscaler, Netskope, etc.) blocking the CORS preflight
-// to api.funradar.app — from the user's POV the basemap paints but no pins
+// to api.frolicmap.app — from the user's POV the basemap paints but no pins
 // ever appear and nothing explains why. This banner turns that silent
 // failure into an actionable message.
 export function NetworkErrorBanner() {
@@ -87,13 +87,13 @@ export function NetworkErrorBanner() {
           <p>
             {t('map.networkErrorReachPrefix')}{' '}
             <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5">
-              api.funradar.app
+              api.frolicmap.app
             </span>
             {t('map.networkErrorReachSuffix')}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('map.networkErrorAllowlistPrefix')} <span className="font-mono">funradar.app</span> {t('map.networkErrorAllowlistAnd')}{' '}
-            <span className="font-mono">api.funradar.app</span>{t('map.networkErrorAllowlistSuffix')}
+            {t('map.networkErrorAllowlistPrefix')} <span className="font-mono">frolicmap.app</span> {t('map.networkErrorAllowlistAnd')}{' '}
+            <span className="font-mono">api.frolicmap.app</span>{t('map.networkErrorAllowlistSuffix')}
           </p>
         </div>
       )}

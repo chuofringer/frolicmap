@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f59e0b" />
+    <meta name="theme-color" content="#2f8f6a" />
 
-    <title>Things to Do With Kids in the SF Bay Area | funradar.app</title>
-    <meta name="description" content="Find things to do with kids near you in the SF Bay Area. 4,000+ free and paid family activities — playgrounds, parks, libraries, museums, beaches, and weekend events. One clean map, no signup." />
-    <meta name="keywords" content="things to do with kids bay area, kids activities san francisco, family activities bay area, playgrounds near me, weekend family events, free kids activities, kid friendly places bay area" />
+    <title>Things to Do With Kids Near You | frolicmap</title>
+    <meta name="description" content="A free map of kid-friendly places: playgrounds, parks, libraries, museums, aquariums and zoos, beaches, water play, hiking trails and campgrounds. One clean map, no account needed." />
+    <meta name="keywords" content="things to do with kids, kids activities near me, family activities, playgrounds near me, kid friendly places, free kids activities, splash pads, family hiking, family camping" />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
@@ -16,36 +16,31 @@
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="funradar.app" />
-    <meta property="og:url" content="https://funradar.app/" />
-    <meta property="og:title" content="Things to Do With Kids in the SF Bay Area — funradar.app" />
-    <meta property="og:description" content="4,000+ kid-friendly places and weekend family events across the SF Bay Area on one clean map. Playgrounds, parks, libraries, museums, beaches. Free, no signup." />
-    <meta property="og:image" content="https://funradar.app/og-image.png" />
+    <meta property="og:site_name" content="frolicmap" />
+    <meta property="og:url" content="https://frolicmap.app/" />
+    <meta property="og:title" content="Things to Do With Kids Near You — frolicmap" />
+    <meta property="og:description" content="A free map of kid-friendly places: playgrounds, parks, libraries, museums, aquariums and zoos, beaches, water play, hiking and campgrounds. No account needed." />
+    <meta property="og:image" content="https://frolicmap.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Map of the SF Bay Area showing 4,000+ kid-friendly places — playgrounds, parks, libraries, museums, aquariums/zoos, beaches, birthday party venues, kid-friendly restaurants — color-coded with a category legend." />
+    <meta property="og:image:alt" content="frolicmap, a map of kid-friendly places for families." />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://funradar.app/" />
-    <meta name="twitter:title" content="Things to Do With Kids in the SF Bay Area — funradar.app" />
-    <meta name="twitter:description" content="4,000+ family-friendly places and weekend events across the Bay Area. One clean map, no signup." />
-    <meta name="twitter:image" content="https://funradar.app/og-image.png" />
+    <meta name="twitter:url" content="https://frolicmap.app/" />
+    <meta name="twitter:title" content="Things to Do With Kids Near You — frolicmap" />
+    <meta name="twitter:description" content="A free map of playgrounds, parks, libraries, museums, beaches, hiking trails and campgrounds for families. No account needed." />
+    <meta name="twitter:image" content="https://frolicmap.app/og-image.png" />
 
-    <link rel="canonical" href="https://funradar.app/" />
+    <link rel="canonical" href="https://frolicmap.app/" />
 
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "funradar.app",
-        "url": "https://funradar.app/",
-        "description": "Map of 4,000+ kid-friendly places and weekend family events across the SF Bay Area.",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://funradar.app/?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
+        "name": "frolicmap",
+        "url": "https://frolicmap.app/",
+        "description": "A free map of kid-friendly places for families: playgrounds, parks, libraries, museums, aquariums and zoos, beaches, water play, hiking trails and campgrounds."
       }
     </script>
   </head>
@@ -53,10 +48,11 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- Cloudflare Web Analytics: free privacy-first pageview + goals.
-         Beacon is a no-op if ad-blocked; src/utils/analytics.trackGoal()
-         silently no-ops if window._cfBeam isn't loaded. Goals are
-         configured in the CF dashboard at Web Analytics → Goals. -->
+    <!-- Cloudflare Web Analytics: optional, privacy-first pageview counting
+         (no cookies, no cross-site tracking). The tag is removed at build time
+         when VITE_CF_BEAM_TOKEN is unset (see vite.config.ts). It is a no-op if
+         ad-blocked; src/utils/analytics.trackGoal() silently no-ops if
+         window._cfBeam isn't loaded. -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "%VITE_CF_BEAM_TOKEN%"}'></script>
   </body>
 </html>

@@ -3,11 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useMapStore } from '@/stores/useMapStore'
 import { useDetailData } from './useDetailData'
 import { ReportModal } from './ReportModal'
-import { UpickSeasonStrip } from './UpickSeasonStrip'
-import { SiblingDatesStrip } from './SiblingDatesStrip'
-import { EventUnlockCard } from './EventUnlockCard'
-import { ItemPopupSignupCTA } from './ItemPopupSignupCTA'
-import { trackGoal, trackOutboundClick } from '@/utils/analytics'
+import { trackGoal } from '@/utils/analytics'
 import { displayTitle } from '@/utils/displayTitle'
 
 type Snap = 'peek' | 'half' | 'full'
@@ -149,12 +145,12 @@ export function BottomSheet() {
   const translate = dragging && dragTranslate != null ? dragTranslate : translateFor(snap)
 
   const share = () => {
-    trackGoal('share', d.id)
+    trackGoal('share')
     navigator.clipboard?.writeText(d.shareUrl)
       .then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600) })
       .catch(() => { /* older Safari — silent no-op */ })
   }
-  const outbound = (url: string) => { trackGoal('outbound_click'); trackOutboundClick(d.id, url) }
+  const outbound = () => trackGoal('outbound_click')
 
   return (
     <>
@@ -162,7 +158,7 @@ export function BottomSheet() {
         ref={sheetRef}
         role="dialog"
         aria-modal="false"
-        aria-label={d.gated ? 'Event — sign in to unlock' : title}
+        aria-label={title}
         tabIndex={-1}
         style={{ height: sheetH, transform: `translateY(${translate}px)`, transition: dragging ? 'none' : 'transform 200ms ease-out' }}
         className="fixed left-0 right-0 bottom-0 z-40 flex flex-col overflow-hidden rounded-t-[22px] bg-white dark:bg-gray-900 shadow-[0_-10px_40px_rgba(0,0,0,0.25)] text-gray-900 dark:text-gray-100 focus:outline-none"
@@ -206,11 +202,7 @@ export function BottomSheet() {
               <div className="text-[11px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wide mb-0.5">
                 <span aria-hidden>{d.emoji}</span> {d.categoryName}{d.distanceLabel ? ` · ${d.distanceLabel}` : ''}
               </div>
-              {/* Gated events blur the identifying teaser (title/address —
-                  the eyebrow's "EVENT · 0.3 mi" stays readable); specifics
-                  are what sign-in unlocks. Presentational only — curated
-                  fields are withheld server-side. */}
-              <div className={d.gated ? 'blur-[6px] select-none pointer-events-none' : ''} aria-hidden={d.gated || undefined}>
+              <div>
                 <h2 className="text-[18px] font-bold leading-[1.25]">{title}</h2>
                 {/* English name under a Chinese title (#692) — same reasoning
                     as the desktop panel: this is where the row gets acted on. */}
@@ -247,7 +239,7 @@ export function BottomSheet() {
             </div>
           )}
 
-          <div className={`px-[18px] py-2.5 flex flex-wrap gap-1.5 ${d.gated ? 'blur-[6px] select-none pointer-events-none' : ''}`} aria-hidden={d.gated || undefined}>
+          <div className="px-[18px] py-2.5 flex flex-wrap gap-1.5">
             {d.isFree && <span className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-[11px] font-semibold px-2 py-0.5 rounded-md">{t('detail.free')}</span>}
             {d.indoor === 0 && <span className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold px-2 py-0.5 rounded-md">{t('detail.outdoor')}</span>}
             {d.indoor === 1 && <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[11px] font-semibold px-2 py-0.5 rounded-md">{t('detail.indoor')}</span>}
@@ -259,11 +251,9 @@ export function BottomSheet() {
             <p className="px-[18px] text-[13px] text-gray-700 dark:text-gray-300 leading-[1.5]">{d.description}</p>
           )}
 
-          {d.isUpick && <div className="px-[18px] pt-2.5"><UpickSeasonStrip listItem={d.listItem} detail={d.detail ?? undefined} /></div>}
-
-          {d.hoursLabel && d.hoursValue && (
-            <div className={`mx-[18px] mt-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2.5 py-2 ${d.gated ? 'blur-[6px] select-none pointer-events-none' : ''}`} aria-hidden={d.gated || undefined}>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-0.5">{t(d.hoursLabel === 'WHEN' ? 'detail.when' : 'detail.hours')}</div>
+          {d.hoursValue && (
+            <div className="mx-[18px] mt-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2.5 py-2">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-0.5">{t('detail.hours')}</div>
               <div className="text-xs text-gray-700 dark:text-gray-200">{d.hoursValue}</div>
             </div>
           )}
@@ -275,21 +265,6 @@ export function BottomSheet() {
             <div className="mx-[18px] mt-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-2">
               <div className="text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-0.5">{t('detail.hours')}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400 italic">{t('detail.hoursUnknown')}</div>
-            </div>
-          )}
-
-          {/* Events sign-in gate: WHEN box above stays as the teaser;
-              curated sections self-gate (detail fetch held back), the
-              sibling-dates strip is hidden explicitly (free list payload). */}
-          {d.gated && (
-            <div className="px-[18px] mt-2.5">
-              <EventUnlockCard itemId={d.id} onDismiss={() => setId(null)} />
-            </div>
-          )}
-
-          {!d.gated && d.siblings.length >= 2 && (
-            <div className="px-[18px] mt-2.5">
-              <SiblingDatesStrip siblings={d.siblings} currentId={d.id} onSelect={setId} />
             </div>
           )}
 
@@ -322,20 +297,17 @@ export function BottomSheet() {
           )}
 
           {/* Source attribution + Report path (parity with the desktop panel;
-              Report is always reachable even when there's no source line).
-              Hidden while the event gate is up, like the desktop footer. */}
-          {!d.gated && (
+              Report is always reachable even when there's no source line). */}
           <div className="px-[18px] mt-3 text-[11px] text-gray-400 dark:text-gray-500">
             {d.sourceUrl && d.sourceHost && (
               <>
-                {t('detail.source')} <a href={d.sourceUrl} target="_blank" rel="noreferrer" onClick={() => outbound(d.sourceUrl!)} className="text-amber-600 dark:text-amber-400">{d.sourceHost}</a>
+                {t('detail.source')} <a href={d.sourceUrl} target="_blank" rel="noreferrer" onClick={outbound} className="text-amber-600 dark:text-amber-400">{d.sourceHost}</a>
                 {d.lastVerified && <> · {t('detail.verified', { date: d.lastVerified.slice(0, 10) })}</>}
                 {' · '}
               </>
             )}
             <button type="button" onClick={() => setShowReport(true)} className="text-amber-600 dark:text-amber-400">{t('detail.reportAnIssue')}</button>
           </div>
-          )}
 
           <div className="h-2" />
         </div>
@@ -346,9 +318,7 @@ export function BottomSheet() {
             it counter-translates by the sheet's own offset — that keeps the
             maps buttons pinned to the visible bottom edge at every snap. Needs
             an opaque bg since it overlays scrolling content at lower snaps.
-            Bottom padding clears the home-indicator inset. Hidden while the
-            event gate is up — directions/share would leak the withheld value. */}
-        {!d.gated && (
+            Bottom padding clears the home-indicator inset. */}
         <div
           style={{ transform: `translateY(${-translate}px)`, transition: dragging ? 'none' : 'transform 200ms ease-out' }}
           className="flex-shrink-0 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-[18px] pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col gap-2 relative"
@@ -358,7 +328,7 @@ export function BottomSheet() {
               href={d.googleMapsUrl}
               target="_blank"
               rel="noreferrer"
-              onClick={() => outbound(d.googleMapsUrl)}
+              onClick={outbound}
               className="flex-1 text-center bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold py-3 rounded-xl shadow-[0_4px_12px_rgba(245,158,11,0.35)]"
             >
               {t('detail.googleMaps')}
@@ -367,7 +337,7 @@ export function BottomSheet() {
               href={d.appleMapsUrl}
               target="_blank"
               rel="noreferrer"
-              onClick={() => outbound(d.appleMapsUrl)}
+              onClick={outbound}
               className="flex-1 text-center bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-sm font-semibold py-3 rounded-xl"
             >
               {t('detail.appleMaps')}
@@ -375,27 +345,15 @@ export function BottomSheet() {
           </div>
           <div className="flex gap-2">
             {d.website && (
-              <a href={d.website} target="_blank" rel="noreferrer" onClick={() => outbound(d.website!)} className="flex-1 text-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-semibold py-3 rounded-xl">{t('detail.website')}</a>
+              <a href={d.website} target="_blank" rel="noreferrer" onClick={outbound} className="flex-1 text-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-semibold py-3 rounded-xl">{t('detail.website')}</a>
             )}
             <button type="button" onClick={share} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-semibold py-3 rounded-xl">{t('detail.share')}</button>
           </div>
 
-          {/* Third conversion surface (#251) — below every primary action so
-              it never competes with Directions/Website/Source for the tap. */}
-          <ItemPopupSignupCTA itemId={d.id} />
-
-          {/* FTC affiliate disclosure (#254) — only when the worker actually
-              swapped an outbound URL for an affiliate-tagged one. */}
-          {d.affiliateTagged && (
-            <div className="text-[11px] text-gray-400 dark:text-gray-500">
-              {t('detail.affiliateDisclosure')}
-            </div>
-          )}
           {copied && (
             <div role="status" className="absolute -top-7 right-[18px] bg-gray-900 dark:bg-gray-700 text-white text-xs px-2.5 py-1 rounded-md shadow-lg">{t('detail.copied')}</div>
           )}
         </div>
-        )}
       </div>
 
       {showReport && <ReportModal itemId={d.id} onClose={() => setShowReport(false)} />}

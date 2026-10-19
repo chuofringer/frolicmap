@@ -34,17 +34,9 @@ interface SessionStore {
    */
   epoch: number
   status: SessionStatus
-  /**
-   * True when the current token was minted at member tier (a valid member
-   * credential rode the mint — real sign-in, 2026-07-26). Event detail
-   * fetches gate on this: a guest-tier token would just 401 `signin-required`
-   * server-side, so firing the fetch before the member re-mint lands is a
-   * wasted request.
-   */
-  member: boolean
   /** Last error message for debugging / `details unavailable` UI copy. */
   error: string | null
-  setSession: (token: string, ttlSeconds: number, member?: boolean) => void
+  setSession: (token: string, ttlSeconds: number) => void
   setStatus: (status: SessionStatus, error?: string) => void
   clear: () => void
 }
@@ -55,9 +47,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
   expiresAt: null,
   epoch: 0,
   status: 'idle',
-  member: false,
   error: null,
-  setSession: (token, ttlSeconds, member = false) => {
+  setSession: (token, ttlSeconds) => {
     const now = Date.now()
     const exp = Math.floor(now / 1000) + ttlSeconds
     const expiresAt = now + ttlSeconds * 1000
@@ -76,14 +67,13 @@ export const useSessionStore = create<SessionStore>((set) => ({
         exp,
         expiresAt,
         status: 'ready',
-        member,
         error: null,
         epoch: isRecovery ? state.epoch + 1 : state.epoch,
       }
     })
   },
   setStatus: (status, error) => set({ status, error: error ?? null }),
-  clear: () => set({ token: null, exp: null, expiresAt: null, status: 'idle', member: false, error: null }),
+  clear: () => set({ token: null, exp: null, expiresAt: null, status: 'idle', error: null }),
 }))
 
 /** Snapshot read for API helpers (non-hook consumers). */

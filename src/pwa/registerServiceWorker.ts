@@ -22,7 +22,7 @@
  *    reload-looping.
  */
 
-const CHUNK_RELOAD_FLAG = 'funradar.pwaChunkReload'
+const CHUNK_RELOAD_FLAG = 'frolicmap.pwaChunkReload'
 
 function installChunkReloadHandler(): void {
   window.addEventListener('vite:preloadError', (event) => {
@@ -60,7 +60,7 @@ async function unregisterAndPurge(): Promise<void> {
   await Promise.all(regs.map((r) => r.unregister()))
   if ('caches' in window) {
     const keys = await caches.keys()
-    await Promise.all(keys.filter((k) => k.startsWith('funradar-')).map((k) => caches.delete(k)))
+    await Promise.all(keys.filter((k) => k.startsWith('frolicmap-')).map((k) => caches.delete(k)))
   }
 }
 

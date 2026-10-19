@@ -36,7 +36,7 @@ export function LanguageButton({ className }: { className?: string }) {
       title={title}
       aria-label={title}
       lang={next === 'zh' ? 'zh-Hans' : 'en'}
-      onClick={() => { trackGoal('lang_switch', next); switchLocale(next) }}
+      onClick={() => { trackGoal('lang_switch'); switchLocale(next) }}
       className={`w-11 h-11 flex items-center justify-center backdrop-blur-md bg-white/90 dark:bg-gray-900/90 text-gray-700 dark:text-gray-200 rounded-lg shadow-lg ring-1 ring-black/20 dark:ring-white/10 hover:bg-white dark:hover:bg-gray-900 transition-colors font-semibold ${next === 'zh' ? 'text-base' : 'text-sm tracking-tight'} ${className ?? ''}`}
     >
       {label}

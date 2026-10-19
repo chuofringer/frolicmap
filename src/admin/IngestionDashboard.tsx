@@ -3,26 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api/admin'
 import { Tile, SectionCard, StatusBadge, EmptyState, type StatusTone } from './ui'
 
-type CronSource = 'structured-feeds' | 'osm' | 'archive-expired'
+type CronSource = 'osm'
 
 const CRONS: { id: CronSource; label: string; schedule: string; note: string }[] = [
-  {
-    id: 'structured-feeds',
-    label: 'Structured feeds',
-    schedule: 'weekly Mon 04:00 UTC (= Sun 21:00 PT)',
-    note: 'BiblioCommons v2 + 6 venue ICS feeds',
-  },
   {
     id: 'osm',
     label: 'OSM (Overpass)',
     schedule: 'quarterly 03:00 UTC (Jan/Apr/Jul/Oct)',
-    note: 'Places: playgrounds, parks, museums, libraries, aquariums, beaches',
-  },
-  {
-    id: 'archive-expired',
-    label: 'Archive expired',
-    schedule: 'daily 08:00 UTC (01:00 PT)',
-    note: 'Sweeps past-dated one-off events out of the public map',
+    note: 'Places: playgrounds, parks, libraries, museums, aquariums, zoos, beaches, water play, hiking, campgrounds',
   },
 ]
 
@@ -73,9 +61,7 @@ export function IngestionDashboard() {
   const rows = logData?.log ?? []
   const qc = useQueryClient()
   const [runStates, setRunStates] = useState<Record<CronSource, RunState>>({
-    'structured-feeds': { status: 'idle' },
     osm: { status: 'idle' },
-    'archive-expired': { status: 'idle' },
   })
 
   const trigger = async (source: CronSource) => {
@@ -112,15 +98,12 @@ export function IngestionDashboard() {
         <div>
           <h2 className="text-xl font-semibold">Cron health</h2>
           <p className="text-sm text-gray-500 mt-1">
-            At-a-glance status per scheduled job — 3 Worker crons + 2 Claude Code Desktop routines
-            (aggregators, upick).{' '}
+            At-a-glance status of the quarterly OSM ingest.{' '}
             <span className="text-gray-400">green = within cadence, no errors</span> ·{' '}
             <span className="text-gray-400">amber = past expected cadence</span> ·{' '}
             <span className="text-gray-400">red = errors or past 2× cadence</span> ·{' '}
-            <span className="text-gray-400">gray = never run, or a routine currently out of season</span>.
-            Repeated-failure email alerts go to{' '}
-            <code className="text-xs bg-gray-100 px-1 rounded">ALERT_EMAIL</code> via Mailchannels
-            (Worker crons only — routines merge via a GitHub Action, not the Worker).
+            <span className="text-gray-400">gray = never run</span>.
+            Repeated failures are logged by the Worker.
           </p>
         </div>
 
@@ -133,7 +116,7 @@ export function IngestionDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {crons.map((c) => {
             const h = health(c.status)
             return (
@@ -177,10 +160,10 @@ export function IngestionDashboard() {
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold">Trigger crons manually</h2>
+          <h2 className="text-xl font-semibold">Trigger ingest manually</h2>
           <p className="text-sm text-gray-500 mt-1">
             Runs the handler immediately in production and writes an ingestion_log row. Useful to
-            verify fixes without waiting for the next scheduled UTC slot.
+            verify fixes without waiting for the next quarterly run.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -8,12 +8,10 @@ import { useFiltersStore } from '@/stores/useFiltersStore'
  * deliberately double-signalled (the shipped decision).
  */
 export function useActiveFilterCount(): number {
-  const { freeOnly, timeWindow, indoorOnly, outdoorOnly, ageMin, ageMax, inSeasonNow } = useFiltersStore()
+  const { freeOnly, indoorOnly, outdoorOnly, ageMin, ageMax } = useFiltersStore()
   return (
     (freeOnly ? 1 : 0) +
-    (timeWindow ? 1 : 0) +
     (indoorOnly || outdoorOnly ? 1 : 0) +
-    (ageMin !== 0 || ageMax !== 18 ? 1 : 0) +
-    (inSeasonNow ? 1 : 0)
+    (ageMin !== 0 || ageMax !== 18 ? 1 : 0)
   )
 }

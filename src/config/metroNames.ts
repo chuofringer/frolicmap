@@ -7,9 +7,8 @@ import { i18next } from '@/i18n'
  * `shared/metros.ts` stays English — it is generator-facing (the SEO page
  * builder and the worker read it), so translations live in the locale files
  * keyed by metro id, and this is the single lookup both the city picker and
- * the coming-soon copy go through. Two call sites resolving a city's name
- * differently is how you end up rendering
- * "San Francisco Bay Area即将上线儿童游乐场".
+ * the FAQ go through. Two call sites resolving a city's name differently is
+ * how you end up rendering a half-translated sentence.
  *
  * A metro with no translated name falls back to its English label, so adding a
  * metro to the registry never blocks on translation.

@@ -6,12 +6,11 @@ import { MemoryRouter } from 'react-router-dom'
 // Capture the options every listItems call receives so we can assert what the
 // queue actually requests on open. The other admin endpoints are stubbed.
 const listItems = vi.fn()
-const approveAll = vi.fn()
+const approve = vi.fn()
 vi.mock('@/api/admin', () => ({
   adminApi: {
     listItems: (...a: unknown[]) => listItems(...a),
-    approveAll: (...a: unknown[]) => approveAll(...a),
-    approve: vi.fn(), reject: vi.fn(),
+    approve: (...a: unknown[]) => approve(...a), reject: vi.fn(),
   },
 }))
 
@@ -39,7 +38,7 @@ const renderQueue = () => {
   )
 }
 
-beforeEach(() => { listItems.mockReset(); listItems.mockResolvedValue(RESPONSE); approveAll.mockReset() })
+beforeEach(() => { listItems.mockReset(); listItems.mockResolvedValue(RESPONSE); approve.mockReset() })
 afterEach(() => cleanup())
 
 describe('PendingQueue region filter', () => {
@@ -65,7 +64,7 @@ describe('PendingQueue region filter', () => {
   })
 })
 
-describe('PendingQueue approve-all', () => {
+describe('PendingQueue bulk approve', () => {
   const ITEM = {
     id: 'x', type: 'place', name: 'X', category: 'park', lat: 37.7, lng: -122.4,
     source_url: 'https://x', source_type: 'imls', confidence: 'medium', status: 'pending',
@@ -73,27 +72,31 @@ describe('PendingQueue approve-all', () => {
     region: 'atlanta', indoor: 0,
   }
 
-  it('shows the total behind the filter, asks for confirmation, and sends the current filter', async () => {
+  it('has no server-side approve-all button (approve-all was removed)', async () => {
     listItems.mockResolvedValue({ ...RESPONSE, items: [ITEM], total: 21220 })
-    approveAll.mockResolvedValue({ ok: true, approved: 21220 })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
     renderQueue()
-    const btn = await screen.findByRole('button', { name: /Approve all \(21,220\)/ })
+    await screen.findByRole('button', { name: /Approve this page \(1\)/ })
+    expect(screen.queryByRole('button', { name: /Approve all/ })).toBeNull()
+  })
+
+  it('approves the visible page one item at a time after confirmation', async () => {
+    listItems.mockResolvedValue({ ...RESPONSE, items: [ITEM], total: 1 })
+    approve.mockResolvedValue({ ok: true })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    renderQueue()
+    const btn = await screen.findByRole('button', { name: /Approve this page \(1\)/ })
     btn.click()
-    await waitFor(() => expect(approveAll).toHaveBeenCalledWith({ region: undefined, sourceType: undefined }))
-    expect(confirm.mock.calls[0][0]).toMatch(/ALL 21,220 pending items \(ALL regions and sources\)/)
-    await waitFor(() => expect(alert).toHaveBeenCalledWith('Approved 21,220 items.'))
-    confirm.mockRestore(); alert.mockRestore()
+    await waitFor(() => expect(approve).toHaveBeenCalledWith('x'))
+    confirm.mockRestore()
   })
 
   it('does nothing when the confirm is declined', async () => {
-    listItems.mockResolvedValue({ ...RESPONSE, items: [ITEM], total: 5 })
+    listItems.mockResolvedValue({ ...RESPONSE, items: [ITEM], total: 1 })
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     renderQueue()
-    const btn = await screen.findByRole('button', { name: /Approve all \(5\)/ })
+    const btn = await screen.findByRole('button', { name: /Approve this page \(1\)/ })
     btn.click()
-    expect(approveAll).not.toHaveBeenCalled()
+    expect(approve).not.toHaveBeenCalled()
     confirm.mockRestore()
   })
 })

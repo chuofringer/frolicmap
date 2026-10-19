@@ -1,181 +1,34 @@
 import { i18next, intlLocale } from '@/i18n'
 import { haversineMiles } from '@/utils/distance'
-import { parseRrule } from '@/utils/rrule'
-import {
-  isAllDayStart,
-  parseEventTime,
-  viewerTimezone,
-  wallEndExclusive,
-  wallNow,
-  zoneAbbreviation,
-  type ParsedEventTime,
-} from '@/utils/venueTime'
-
-// Indexed by parseRrule's day numbers (0 = Sunday). Each locale's `time.days`
-// entries own their own plural/singular convention (English pluralises,
-// Chinese doesn't).
-const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-
-function dayName(day: number): string {
-  return i18next.t(`time.days.${DAY_KEYS[day]}`)
-}
-
-// Not a module-scope constant — computed per call so a locale switch (full
-// page reload, but still) and every render pick up the live translation.
-function ordinal(nth: number): string {
-  if (nth === -1) return i18next.t('time.ordinal.last')
-  if (nth < 0) return i18next.t('time.ordinal.toLast', { ordinal: ordinal(-nth) })
-  if (nth === 1) return i18next.t('time.ordinal.first')
-  if (nth === 2) return i18next.t('time.ordinal.second')
-  if (nth === 3) return i18next.t('time.ordinal.third')
-  return i18next.t('time.ordinal.nth', { n: nth })
-}
-
-/** "2nd, 4th Sundays" / "Saturdays" from parseRrule's byday entries. */
-function bydayLabel(byday: { day: number; nth: number }[]): string | null {
-  if (!byday.length) return null
-  return byday
-    .map(({ day, nth }) =>
-      nth === 0 ? dayName(day) : i18next.t('time.bydayWithOrdinal', { ordinal: ordinal(nth), day: dayName(day) }),
-    )
-    .join(i18next.t('time.bydaySeparator'))
-}
+import { timezoneForCoords } from '@shared/metros'
 
 /**
- * Zone suffix for displayed clock times (" PDT", " EST"). Only rendered
- * when the venue's zone is known, differs from the viewer's, and the
- * stored value pins a real instant — a viewer at home sees plain venue
- * times, a viewer browsing another metro sees which clock they're reading.
+ * The current wall clock at a venue, as a `Date` whose LOCAL fields
+ * (`getHours()`, `getMinutes()`) read the venue's clock. Falls back to the
+ * viewer's clock when the coordinate is outside every metro (no known zone).
+ *
+ * "Open · until 5 PM" must compare against the VENUE's clock: a museum's 5 PM
+ * close is 5 PM on its own wall, not the viewer's.
  */
-function tzSuffix(p: ParsedEventTime | null, tz: string | null | undefined): string {
-  if (!p?.instant || !tz || tz === viewerTimezone()) return ''
-  const abbrev = zoneAbbreviation(p.instant, tz)
-  return abbrev ? ` ${abbrev}` : ''
-}
-
-/**
- * Human timing string for the event WHEN box, in the VENUE's wall clock —
- * `tz` is the item's metro zone (see `venueTimezone`). Every stored shape
- * (venue-offset ISO, true-UTC instant, naive local, bare date) renders as
- * the clock on the venue's wall; bare dates render with no clock time at
- * all. This is now the only copy — `ItemPopup.tsx` carried a duplicate under
- * a lockstep contract until #484 deleted it.
- */
-export function formatEventTiming(
-  startIso: string | null,
-  endIso: string | null,
-  rrule: string | null,
-  tz: string | null | undefined = null,
-): string {
-  const locale = intlLocale()
-  const dateOpts: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' }
-  const timeOpts: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' }
-
-  if (rrule) {
-    // parseRrule handles ordinal BYDAY ("2SA", "-1SU") — the old local
-    // `/BYDAY=([A-Z,]+)/` regex silently failed on the leading digit and
-    // demoted those rows to a generic "Recurring" (the same bug rrule.ts
-    // fixed for filtering; the display copy had kept the old pattern).
-    const p = parseRrule(rrule)
-    // BYSETPOS picks specific ordinal occurrences out of the month's BYDAY
-    // set ("FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2,4" = 2nd & 4th Sunday) — until
-    // #421 this was ignored entirely, so that rule rendered as "Monthly on
-    // Sundays" and a parent showed up on the 1st Sunday, when the venue was
-    // closed. Only honestly renderable when there is exactly one BYDAY
-    // weekday to apply the ordinals to; a BYSETPOS stacked on multiple
-    // weekdays (or on an already-ordinal BYDAY) doesn't reduce to a fixed
-    // day of week, so it falls through to the generic "Recurring" phrasing
-    // below rather than stating a day that isn't actually fixed. Non-MONTHLY
-    // freqs keep their plain weekday label: the expansion engine ignores
-    // BYSETPOS outside MONTHLY, so a vestigial one must not demote the copy.
-    const singleDayBysetpos = p.freq === 'MONTHLY' && p.bysetpos.length > 0
-      && p.byday.length === 1 && p.byday[0].nth === 0
-    // Occurrence order, not token order: positives ascending (2nd, 4th),
-    // then negatives ascending (2nd-to-last, last) — matches the order the
-    // expansion engine emits the dates in.
-    const orderedBysetpos = [...p.bysetpos].sort((a, b) =>
-      a > 0 && b > 0 ? a - b : a < 0 && b < 0 ? a - b : a < 0 ? 1 : -1)
-    const days = singleDayBysetpos
-      ? bydayLabel(orderedBysetpos.map((pos) => ({ day: p.byday[0].day, nth: pos })))
-      : p.freq === 'MONTHLY' && p.bysetpos.length > 0 ? null : bydayLabel(p.byday)
-    const start = startIso ? parseEventTime(startIso, tz) : null
-    const end = endIso ? parseEventTime(endIso, tz) : null
-    const time = start && !start.dateOnly && !isAllDayStart(start, end)
-      ? start.wall.toLocaleTimeString(locale, timeOpts) + tzSuffix(start, tz)
-      : null
-    if (p.freq === 'WEEKLY' && days) {
-      if (p.interval === 2) {
-        return time
-          ? i18next.t('time.recurrence.weeklyEveryOtherAt', { days, time })
-          : i18next.t('time.recurrence.weeklyEveryOther', { days })
-      }
-      if (p.interval > 2) {
-        return time
-          ? i18next.t('time.recurrence.weeklyEveryNAt', { n: p.interval, days, time })
-          : i18next.t('time.recurrence.weeklyEveryN', { n: p.interval, days })
-      }
-      return time
-        ? i18next.t('time.recurrence.weeklyAt', { days, time })
-        : i18next.t('time.recurrence.weekly', { days })
-    }
-    if (p.freq === 'MONTHLY' && days) {
-      return time
-        ? i18next.t('time.recurrence.monthlyAt', { days, time })
-        : i18next.t('time.recurrence.monthly', { days })
-    }
-    if (days) {
-      return time
-        ? i18next.t('time.recurrence.recurringWithDaysAt', { days, time })
-        : i18next.t('time.recurrence.recurringWithDays', { days })
-    }
-    return time
-      ? i18next.t('time.recurrence.recurringAt', { time })
-      : i18next.t('time.recurrence.recurring')
+export function venueWallNow(lat: number, lng: number, now: Date = new Date()): Date {
+  const tz = timezoneForCoords(lat, lng)
+  if (!tz) return new Date(now)
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    }).formatToParts(now)
+    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0)
+    return new Date(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+  } catch {
+    return new Date(now)
   }
-
-  if (!startIso) return ''
-  const start = parseEventTime(startIso, tz)
-  if (!start) return ''
-  const end = endIso ? parseEventTime(endIso, tz) : null
-  const sameDay = end && start.wall.toDateString() === end.wall.toDateString()
-
-  if (!end) {
-    if (start.dateOnly || isAllDayStart(start, null)) return start.wall.toLocaleDateString(locale, dateOpts)
-    return start.wall.toLocaleDateString(locale, dateOpts)
-      + ' · ' + start.wall.toLocaleTimeString(locale, timeOpts) + tzSuffix(start, tz)
-  }
-  if (sameDay) {
-    if (start.dateOnly || end.dateOnly || isAllDayStart(start, end)) return start.wall.toLocaleDateString(locale, dateOpts)
-    return `${start.wall.toLocaleDateString(locale, dateOpts)} · ${start.wall.toLocaleTimeString(locale, timeOpts)} – ${end.wall.toLocaleTimeString(locale, timeOpts)}${tzSuffix(end, tz)}`
-  }
-  const now = wallNow(tz)
-  const multiDay = `${start.wall.toLocaleDateString(locale, dateOpts)} – ${end.wall.toLocaleDateString(locale, dateOpts)}`
-  return start.wall <= now && now <= wallEndExclusive(end) ? `${i18next.t('time.ongoing')} · ${multiDay}` : multiDay
-}
-
-/**
- * Sibling "Upcoming dates" chip label, e.g. "Sat, Apr 12 · 1pm", in the
- * venue's wall clock. Bare-date rows render the date alone.
- */
-export function formatSiblingChip(
-  startIso: string,
-  tz: string | null | undefined = null,
-  endIso: string | null | undefined = null,
-): string {
-  const p = parseEventTime(startIso, tz)
-  if (!p) return ''
-  const locale = intlLocale()
-  const date = p.wall.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })
-  if (p.dateOnly || isAllDayStart(p, endIso ? parseEventTime(endIso, tz) : null)) return date
-  const rawTime = p.wall.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
-  // The ":00" / space / case surgery below turns "1:00 PM" into "1pm" — a
-  // compaction that only makes sense for English clock conventions. Chinese
-  // (and every other non-English locale) gets the plain Intl output with no
-  // surgery.
-  const time = (i18next.resolvedLanguage ?? 'en') === 'en'
-    ? rawTime.replace(':00', '').replace(' ', '').toLowerCase()
-    : rawTime
-  return `${date} · ${time}`
 }
 
 /**

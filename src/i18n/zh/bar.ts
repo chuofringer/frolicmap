@@ -16,7 +16,6 @@ export const bar: Translation['bar'] = {
   filters: '筛选',
   allFilters: '全部筛选',
   freeOnlyActive: '仅免费 ✓',
-  soon: '即将',
   map: '地图',
   list: '列表',
 }

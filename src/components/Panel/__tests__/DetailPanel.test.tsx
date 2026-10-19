@@ -6,11 +6,6 @@ import { useMapStore } from '@/stores/useMapStore'
 
 const holder = vi.hoisted(() => ({ data: null as DetailData | null }))
 vi.mock('../useDetailData', () => ({ useDetailData: () => holder.data }))
-// The real card needs QueryClientProvider + Router (its own test covers it);
-// here we only assert the panel's gated layout.
-vi.mock('../EventUnlockCard', () => ({
-  EventUnlockCard: () => <div data-testid="event-unlock-card" />,
-}))
 
 import { DetailPanel } from '../DetailPanel'
 
@@ -98,21 +93,6 @@ describe('DetailPanel', () => {
     expect(screen.queryByRole('link', { name: 'Website' })).toBeNull()
   })
 
-  it('shows the affiliate disclosure only when the item carries a tagged link (#254)', () => {
-    render(<DetailPanel />)
-    // Default fixture: no affiliate rewrite → no disclosure.
-    expect(
-      screen.queryByText(/Some links are affiliate links/)
-    ).toBeNull()
-    cleanup()
-
-    holder.data = makeDetailData({ affiliateTagged: true })
-    render(<DetailPanel />)
-    expect(
-      screen.getByText('Some links are affiliate links — funradar may earn a small commission, at no extra cost to you.')
-    ).toBeInTheDocument()
-  })
-
   it('closes on the × button and on Escape', () => {
     render(<DetailPanel />)
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
@@ -134,17 +114,6 @@ describe('DetailPanel', () => {
     expect(useMapStore.getState().selectedId).toBe('pg-1')
   })
 
-  it('renders the Upcoming dates strip for 2+ siblings', () => {
-    holder.data = makeDetailData({
-      siblings: [
-        { ...makeDetailData().listItem, id: 'pg-1', start_time: '2026-04-11T13:00:00Z' },
-        { ...makeDetailData().listItem, id: 'pg-2', start_time: '2026-04-18T13:00:00Z' },
-      ],
-    })
-    render(<DetailPanel />)
-    expect(screen.getByText('Upcoming dates')).toBeInTheDocument()
-  })
-
   it('renders a Back to list row when a stacked cluster is remembered', () => {
     useMapStore.setState({
       lastStackedFeatures: { lng: 0, lat: 0, features: [
@@ -162,39 +131,15 @@ describe('DetailPanel', () => {
     expect(screen.queryByText('Good to know')).toBeNull()
   })
 
-  it('gated event: shows the unlock card, blurs title/WHEN, hides actions/source/siblings', () => {
-    // Events sign-in gate (2026-07-26): the footer's actions and the
-    // sibling-dates strip would leak the value the card withholds, and the
-    // identifying teaser (title, WHEN) renders blurred + aria-hidden.
-    holder.data = makeDetailData({
-      gated: true,
-      listItem: { ...makeDetailData().listItem, type: 'event', name: 'Toddler Storytime' },
-      hoursLabel: 'WHEN',
-      hoursValue: 'Sat, Aug 1 · 10:00 AM',
-      siblings: [
-        { ...makeDetailData().listItem, id: 'ev-1', start_time: '2026-08-01T10:00:00-07:00' },
-        { ...makeDetailData().listItem, id: 'ev-2', start_time: '2026-08-08T10:00:00-07:00' },
-      ],
-    })
+  it('has no sign-in, newsletter or affiliate surfaces', () => {
     render(<DetailPanel />)
-    expect(screen.getByTestId('event-unlock-card')).toBeInTheDocument()
-    // The dialog label doesn't leak the name to assistive tech either.
-    expect(screen.getByRole('dialog', { name: 'Event — sign in to unlock' })).toBeInTheDocument()
-    // Title + WHEN render but blurred, unselectable, and aria-hidden.
-    const title = screen.getByText('Toddler Storytime')
-    expect(title.parentElement!.className).toContain('blur')
-    expect(title.parentElement!.className).toContain('select-none')
-    expect(screen.getByText('Sat, Aug 1 · 10:00 AM').parentElement!.className).toContain('blur')
-    // Withheld: footer actions, source line, sibling dates.
-    expect(screen.queryByRole('link', { name: 'Google Maps' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Report an issue' })).toBeNull()
-    expect(screen.queryByText('Upcoming dates')).toBeNull()
-  })
-
-  it('ungated render never mounts the unlock card', () => {
-    render(<DetailPanel />)
-    expect(screen.queryByTestId('event-unlock-card')).toBeNull()
+    expect(screen.queryByText(/sign in/i)).toBeNull()
+    expect(screen.queryByText(/affiliate/i)).toBeNull()
+    expect(screen.queryByText(/newsletter|weekly email/i)).toBeNull()
+    // Directions, share and report are always available.
+    expect(screen.getByRole('link', { name: 'Google Maps' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Report an issue' })).toBeInTheDocument()
   })
 
   it('shows a try-again button for transient detail failures and retries on click', () => {

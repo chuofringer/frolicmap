@@ -21,7 +21,7 @@ describe('localeFromPath', () => {
   it('returns null for unprefixed paths', () => {
     expect(localeFromPath('/')).toBeNull()
     expect(localeFromPath('/cities/bay-area')).toBeNull()
-    expect(localeFromPath('/signup')).toBeNull()
+    expect(localeFromPath('/privacy')).toBeNull()
   })
 
   it('never treats "en" as a prefix — English is the root', () => {
@@ -49,22 +49,22 @@ describe('localizedHref', () => {
   const at = (href: string) => new URL(href)
 
   it('adds the prefix and keeps query and hash', () => {
-    expect(localizedHref('zh', at('https://funradar.app/?item=pg-1#x')))
+    expect(localizedHref('zh', at('https://frolicmap.app/?item=pg-1#x')))
       .toBe('/zh/?item=pg-1#x')
   })
 
   it('strips the prefix going back to English', () => {
-    expect(localizedHref('en', at('https://funradar.app/zh/?cat=playground')))
+    expect(localizedHref('en', at('https://frolicmap.app/zh/?cat=playground')))
       .toBe('/?cat=playground')
   })
 
   it('preserves a deep path across the switch', () => {
-    expect(localizedHref('zh', at('https://funradar.app/signup'))).toBe('/zh/signup')
-    expect(localizedHref('en', at('https://funradar.app/zh/signup'))).toBe('/signup')
+    expect(localizedHref('zh', at('https://frolicmap.app/privacy'))).toBe('/zh/privacy')
+    expect(localizedHref('en', at('https://frolicmap.app/zh/privacy'))).toBe('/privacy')
   })
 
   it('is idempotent when already in the target locale', () => {
-    expect(localizedHref('zh', at('https://funradar.app/zh/?view=list')))
+    expect(localizedHref('zh', at('https://frolicmap.app/zh/?view=list')))
       .toBe('/zh/?view=list')
   })
 })
@@ -115,7 +115,7 @@ describe('detectLocale', () => {
   it('pins /admin to English regardless of stored preference', () => {
     storeLocale('zh')
     expect(detectLocale('/admin')).toBe('en')
-    expect(detectLocale('/admin/behavior')).toBe('en')
+    expect(detectLocale('/admin/reports')).toBe('en')
   })
 })
 
@@ -129,7 +129,7 @@ describe('storedLocale', () => {
   })
 
   it('ignores a junk value rather than throwing', () => {
-    localStorage.setItem('funradar.lang', 'klingon')
+    localStorage.setItem('frolicmap.lang', 'klingon')
     expect(storedLocale()).toBeNull()
   })
 })
@@ -148,7 +148,7 @@ describe('basename / URL agreement (the blank-page class of bug)', () => {
     localeBasename(localeFromPath(pathname) ?? 'en')
 
   it('never yields a basename the path does not start with', () => {
-    for (const path of ['/', '/signup', '/cities/bay-area', '/admin', '/zh/', '/zh/signup']) {
+    for (const path of ['/', '/privacy', '/cities/bay-area', '/admin', '/zh/', '/zh/privacy']) {
       const base = basenameFor(path)
       if (base) expect(path.startsWith(base)).toBe(true)
     }
@@ -203,7 +203,7 @@ describe('redirectToStoredLocale', () => {
 
   it('never redirects admin, prefixed or not', () => {
     storeLocale('zh')
-    for (const path of ['/admin', '/admin/behavior']) {
+    for (const path of ['/admin', '/admin/reports']) {
       window.history.pushState({}, '', path)
       expect(redirectToStoredLocale(replace)).toBe(false)
     }
@@ -214,9 +214,9 @@ describe('redirectToStoredLocale', () => {
 describe('isAdminPath', () => {
   it('recognises admin behind a locale prefix', () => {
     expect(isAdminPath('/admin')).toBe(true)
-    expect(isAdminPath('/admin/behavior')).toBe(true)
+    expect(isAdminPath('/admin/reports')).toBe(true)
     expect(isAdminPath('/zh/admin')).toBe(true)
-    expect(isAdminPath('/zh/admin/behavior')).toBe(true)
+    expect(isAdminPath('/zh/admin/reports')).toBe(true)
   })
 
   it('leaves the public map alone', () => {

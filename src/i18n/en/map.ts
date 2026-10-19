@@ -7,7 +7,7 @@
  */
 export const map = {
   // Brand
-  brandName: 'funradar',
+  brandName: 'frolicmap',
   brandSuffix: '.app',
   // Developer credit under the brand. The developer name itself is a proper
   // noun and stays Latin script in every locale (see zh/map.ts).
@@ -44,17 +44,6 @@ export const map = {
   networkErrorAllowlistAnd: 'and',
   networkErrorAllowlistSuffix: '.',
 
-  // (WelcomeBanner's four strings left with the component on 2026-07-31 —
-  // the first-visit surface is WelcomeGate, copy in `auth.ts`.)
-
-  // RainyDayBanner (#213). Deliberately no invented count ("24 spots
-  // nearby") — the plain fact ("it's raining") is honest; a specific number
-  // would need to come from the live filtered result, which this banner
-  // doesn't compute before the tap.
-  rainyBannerAriaLabel: 'Rainy-day indoor activity suggestion',
-  rainyBannerBlurb: "It's raining in {{metro}} right now.",
-  rainyBannerCta: 'See indoor spots',
-  rainyBannerDismissAriaLabel: 'Dismiss rainy-day banner',
   basemaps: {
     light: 'Light',
     dark: 'Dark',
@@ -64,5 +53,5 @@ export const map = {
     satellite: 'Satellite',
   },
   // Read by `loadLocale` in src/i18n/index.ts, not by a component.
-  documentTitle: 'Things to Do With Kids | funradar.app',
+  documentTitle: 'Things to Do With Kids Near You | frolicmap',
 } as const

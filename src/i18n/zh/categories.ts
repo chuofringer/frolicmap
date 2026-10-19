@@ -20,8 +20,4 @@ export const categories: Translation['categories'] = {
   waterplay: '戏水乐园',
   hiking: '徒步路线',
   campground: '露营地',
-  event: '活动',
-  upick: '采摘农场',
-  birthday_party: '生日派对',
-  restaurant: '餐厅',
 }
