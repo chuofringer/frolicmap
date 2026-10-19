@@ -33,7 +33,7 @@
  *
  * 1. Export the rows to backfill (reviewer runs this — wrangler writes nothing):
  *
- *      cd worker && npx wrangler d1 execute funradar-prod --remote --json \
+ *      cd worker && npx wrangler d1 execute frolicmap-prod --remote --json \
  *        --command "SELECT id, lat, lng FROM items WHERE region!='bay' \
  *          AND source_type='osm' AND status='approved' \
  *          AND (address IS NULL OR address='')" \
@@ -58,7 +58,7 @@
  *
  *      cd worker
  *      for f in ../data/backfill/addresses-*.sql; do
- *        npx wrangler d1 execute funradar-prod --remote --file "$f"
+ *        npx wrangler d1 execute frolicmap-prod --remote --file "$f"
  *      done
  * ─────────────────────────────────────────────────────────────────────────
  *
@@ -85,7 +85,7 @@ const OUT_DIR = path.join(REPO_ROOT, 'data', 'backfill')
 const CACHE_PATH = path.join(OUT_DIR, 'geocode-cache.jsonl')
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
-const USER_AGENT = 'funradar.app-address-backfill/1.0 (contact: lz80521@gmail.com)'
+const USER_AGENT = 'frolicmap.app-address-backfill/1.0 (contact: frolicmap.official@gmail.com)'
 const MIN_INTERVAL_MS = 1100 // >= 1.1s between requests, single-threaded.
 const RETRY_BACKOFF_MS = 10_000
 const BATCH_SIZE = 500
@@ -138,7 +138,7 @@ function fetchRemoteRows(metros) {
   }
   const res = spawnSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'funradar-prod', '--remote', '--json', '--command', sql],
+    ['wrangler', 'd1', 'execute', 'frolicmap-prod', '--remote', '--json', '--command', sql],
     { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, shell: false },
   )
   if (res.status !== 0) throw new Error(`wrangler failed: ${(res.stderr || '').slice(0, 300)}`)
@@ -281,7 +281,7 @@ async function main() {
     const header =
       `-- Address backfill batch ${idx + 1}/${batches.length} (issue #399)\n` +
       `-- ${batch.length} idempotent UPDATEs. Apply with:\n` +
-      `--   cd worker && npx wrangler d1 execute funradar-prod --remote --file ../data/backfill/${path.basename(file)}\n`
+      `--   cd worker && npx wrangler d1 execute frolicmap-prod --remote --file ../data/backfill/${path.basename(file)}\n`
     writeFileSync(file, header + batch.join('\n') + '\n')
   })
 

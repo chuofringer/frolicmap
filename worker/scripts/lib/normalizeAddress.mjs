@@ -1,10 +1,6 @@
-// Address normalization for the same-address coord-snap pass (issue #280
-// follow-up; upgraded for issue #307). Used by snap-same-address-coords.mjs
-// and lib/coordSnap.mjs (merge-aggregators.mjs / snap-coords-from-d1.mjs).
-//
-// Goal: collapse street-address variants that point at the same physical
-// location so we can detect when the same venue has rows with different
-// lat/lng (LLM coord drift across weekly extracts).
+// Address normalization (issue #307). A pure string transform that collapses
+// street-address variants pointing at the same physical location, so rows for
+// the same venue can be recognised as sharing an address.
 //
 // Examples that should normalize to the same string:
 //   "2000 Bunker Rd, Sausalito, CA 94965"
@@ -25,9 +21,8 @@
 // for this. Rejected: libpostal is a C library with a ~2GB trained-model
 // data file loaded via native Node bindings (node-postal ships a .node
 // addon). Two disqualifiers for this codebase:
-//   1. The dedup pipeline this feeds (worker/scripts/lib/dedupCluster.mjs)
-//      is invoked from merge-aggregators.mjs, which runs both locally AND
-//      in GitHub Actions (see .github/workflows) — a native addon would
+//   1. The scripts this feeds run both locally AND in GitHub Actions
+//      (see .github/workflows) — a native addon would
 //      need `apt-get install libpostal` (or a prebuilt binary matching the
 //      runner's glibc/arch) before every run, or a Docker image, adding a
 //      real ongoing maintenance cost for build-time tooling only.

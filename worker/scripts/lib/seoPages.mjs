@@ -42,7 +42,7 @@ export const CATEGORY_MIN_PLACES = 5
 /** JSON-LD must not contain a raw `</script>`; escaping `<` is enough. */
 const jsonLd = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c')
 
-const SITE = 'https://funradar.app'
+const SITE = 'https://frolicmap.app'
 
 /**
  * Meta descriptions are truncated by search engines around 155-160 chars.
@@ -63,7 +63,7 @@ export function truncateForMeta(s, max = 158) {
  */
 const OG_IMAGE = `${SITE}/og-image.png`
 const OG_IMAGE_ALT =
-  'funradar.app — a map of kid-friendly places: playgrounds, parks, libraries, museums and beaches.'
+  'frolicmap.app — a map of kid-friendly places: playgrounds, parks, libraries, museums and beaches.'
 
 function layout({ title, description, canonical, body, ld, htmlLang = 'en', enPath = null, footer = null }) {
   return `<!doctype html>
@@ -75,7 +75,7 @@ function layout({ title, description, canonical, body, ld, htmlLang = 'en', enPa
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}">
 ${enPath ? hreflangLinks(enPath) + '\n' : ''}<meta property="og:type" content="website">
-<meta property="og:site_name" content="funradar.app">
+<meta property="og:site_name" content="frolicmap.app">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}">
@@ -101,9 +101,6 @@ h2{font-size:1.25rem;margin:2rem 0 .75rem}
 .meta{color:var(--muted);font-size:.9375rem;margin:0 0 1.25rem}
 .cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
   padding:.7rem 1.1rem;border-radius:.5rem;font-weight:600}
-.cta-news{display:inline-block;background:#f59e0b;color:#fff;text-decoration:none;
-  padding:.7rem 1.1rem;border-radius:.5rem;font-weight:600}
-.cta-news:hover{background:#d97706}
 .dot{position:absolute;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
   box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
 .grid{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));padding:0;list-style:none}
@@ -133,7 +130,7 @@ ${ld ? `<script type="application/ld+json">${jsonLd(ld)}</script>` : ''}
 <body><div class="wrap">
 ${body}
 <footer>
-  ${footer ?? '<p><a href="/">funradar.app</a> — a map of kids activities.</p>'}
+  ${footer ?? '<p><a href="/">frolicmap.app</a> — a map of kids activities.</p>'}
 </footer>
 </div></body>
 </html>
@@ -157,8 +154,8 @@ export function tileXY(lat, lng, z) {
  * Thumbnail for a city card: a single CARTO basemap raster tile centred on
  * the metro.
  *
- * Chosen over photography deliberately. We hold no photo rights — `photo_url`
- * is null on all 56,842 rows — and licensing 50 city photos is a real cost
+ * Chosen over photography deliberately. We hold no photo rights for city
+ * imagery, and licensing 50 city photos is a real cost
  * and a real legal risk. A map tile is free, needs no rights clearance, is
  * visually distinct per city, and is honest about what the product is. CARTO
  * attribution is already in every footer.
@@ -387,10 +384,10 @@ export function renderCitiesIndex({ metros, countsByMetro = {}, pinsByMetro = {}
   // uses the singular legend labels; prose lowercases and pluralizes.
   const enTitle =
     'Kids Activities by City — Playground, Park, Library, Museum, Aquarium/Zoo, ' +
-    'Beach, Water Play, Hiking, Campground, Birthday Party, Restaurant, U-Pick Farm & Event'
+    'Beach, Water Play, Hiking & Campground'
   const enDescription = truncateForMeta(
     'Interactive maps of playgrounds, parks, libraries, museums, aquariums/zoos, beaches, ' +
-    'water play, hiking, campgrounds, birthday party venues, kid-friendly restaurants, U-Pick farms and events — free, no signup.',
+    'water play, hiking and campgrounds — free to use.',
   )
   const prefix = loc ? loc.prefix : ''
   const title = loc ? loc.t('indexTitle', { categories: loc.legendList }) : enTitle
@@ -418,11 +415,11 @@ ${totalLine ? `<p class="meta">${esc(loc.t('indexTotal', { count: `${roundedCoun
 <ul class="cities">
 ${cards}
 </ul>` : `
-<nav><a href="/">funradar</a> › Cities</nav>
+<nav><a href="/">frolicmap</a> › Cities</nav>
 <h1>Kids activities by city</h1>
 <p class="lede">Interactive maps of playgrounds, parks, libraries, museums, aquariums/zoos,
-beaches, water play, hiking, campgrounds, birthday party venues, kid-friendly restaurants, U-Pick farms and events — built for parents
-deciding what to do this weekend.</p>
+beaches, water play, hiking and campgrounds — built for parents
+deciding where to go this weekend.</p>
 ${totalLine ? `<p class="meta">${totalLine} across ${metros.length}
 ${metros.length === 1 ? 'metro' : 'metros'}.</p>` : ''}
 <ul class="cities">
@@ -435,7 +432,7 @@ ${cards}
       title, description, canonical: `${SITE}${prefix}${CITIES_PREFIX}`, body,
       htmlLang: loc ? loc.htmlLang : 'en',
       enPath: CITIES_PREFIX,
-      footer: loc ? `<p><a href="${prefix}/">funradar.app</a> — ${esc(loc.t('footer'))}</p>` : null,
+      footer: loc ? `<p><a href="${prefix}/">frolicmap.app</a> — ${esc(loc.t('footer'))}</p>` : null,
       ld: {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
@@ -460,7 +457,7 @@ ${cards}
  * changefreq the old map-shell tier had.
  */
 const PAGE_HINTS = {
-  // The homepage — the live Bay map, the site's highest-equity URL. The
+  // The homepage — the live map, the site's highest-equity URL. The
   // pre-national sitemap's single entry was exactly this; it must not fall
   // out of the sitemap just because the generator took over the file.
   home: { changefreq: 'daily', priority: '1.0' },

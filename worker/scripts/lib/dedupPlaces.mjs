@@ -1,16 +1,15 @@
 /**
  * Cross-source place dedup + Tier-B computation — issue #355, plan §2.2.
  *
- * Deliberately NOT a new matching engine: the name heuristic is imported from
- * `dedupCluster.mjs`, the one the aggregator pipeline already trusts. What
- * this module adds is the two things place-scale needs and event-scale didn't:
+ * Deliberately NOT a new matching engine: the name tokenizer and jaccard score
+ * are imported from `dedupCluster.mjs`. What this module adds is the two things
+ * place-scale needs:
  *
- *   1. **Spatial binning.** `clusterRows` is a greedy O(n²) scan — fine for
- *      the ≤300-row weekly extracts it was built for, hopeless against 60K
+ *   1. **Spatial binning.** A greedy all-pairs scan is hopeless against 60K
  *      national rows (that's ~1.8 billion comparisons). Grid-binning at ~150 m
  *      makes candidate generation linear.
- *   2. **Place semantics.** Events match on start_time/rrule; places have
- *      neither. Matching is coords + name + category compatibility.
+ *   2. **Place semantics.** Matching is coords + name + category
+ *      compatibility.
  */
 
 import { nameTokens, tokenJaccard } from './dedupCluster.mjs'
@@ -19,7 +18,7 @@ import { nameTokens, tokenJaccard } from './dedupCluster.mjs'
  * Place-name tokens: `dedupCluster.nameTokens`, with every numeric token
  * restored.
  *
- * That function is tuned for event titles, and it discards numbers two ways
+ * That function is a generic title tokenizer, and it discards numbers two ways
  * that are actively wrong for place names:
  *
  *   - **length < 2** drops lone digits, so "PS 1" and "PS 2" tokenize
@@ -32,7 +31,7 @@ import { nameTokens, tokenJaccard } from './dedupCluster.mjs'
  *     through exactly that chain, and the stopword list would rot every year
  *     besides.
  *
- * For an event, "2026" is noise. For a place, a number is nearly always
+ * In a free-text title, "2026" is noise. For a place, a number is nearly always
  * identity: street numbers, school numbers, route numbers, "Field 3".
  * Letters stay filtered at length ≥ 2 — a stray "a" carries no meaning.
  */
@@ -52,9 +51,8 @@ export function placeNameTokens(s) {
 }
 
 /**
- * ~150 m at mid-latitudes (plan §2.2). Deliberately tighter than
- * `dedupCluster`'s 1.5 km: that tolerance exists to absorb LLM coordinate
- * drift between weekly extracts, which structured sources don't have. A park
+ * ~150 m at mid-latitudes (plan §2.2). Deliberately tight: structured
+ * sources carry no LLM coordinate drift to absorb. A park
  * centroid and an OSM node for the same park land within a block of each
  * other; two genuinely different playgrounds 200 m apart in Manhattan must
  * stay distinct.
@@ -64,8 +62,8 @@ export const CELL_DEG = 0.00135
 /**
  * Name-similarity floor for treating two rows as the same place.
  *
- * Higher than `dedupCluster`'s 0.5 because places have no date or venue to
- * corroborate a weak name match — the name is most of the signal. 0.6 accepts
+ * Fairly high because places have no date or venue to corroborate a weak
+ * name match — the name is most of the signal. 0.6 accepts
  * "Zilker Metropolitan Park" ↔ "Zilker Park" (2/3) and rejects "Riverside
  * Park" ↔ "Riverside Playground" (1/3).
  */
@@ -87,9 +85,8 @@ export const NAME_MIN = 0.6
 export const NEAR_COORD_M = 300
 
 /**
- * Great-circle distance in metres. dedupCluster's `coordsClose` is a
- * bounding-box check tuned for ~1.5 km event drift; pass 2 needs a true metric
- * distance at the 300 m scale, where the box vs. circle difference matters.
+ * Great-circle distance in metres. Pass 2 needs a true metric distance at
+ * the 300 m scale, where the box vs. circle difference matters.
  */
 export function haversineMeters(a, b) {
   const R = 6371000
@@ -140,7 +137,6 @@ export function categoriesCompatible(a, b) {
  */
 const SOURCE_RANK = {
   manual: 100,
-  'aggregator-upick': 90,
   imls: 70,
   nps: 70,
   parkserve: 70,
@@ -149,7 +145,7 @@ const SOURCE_RANK = {
 
 export function sourceRank(sourceType) {
   if (SOURCE_RANK[sourceType] != null) return SOURCE_RANK[sourceType]
-  // Curated aggregator rows are hand-reviewed; rank them with `manual`.
+  // Legacy hand-reviewed rows from retired source types rank with `manual`.
   if (typeof sourceType === 'string' && sourceType.startsWith('aggregator-')) return 90
   return 50
 }

@@ -1,7 +1,7 @@
 // worker/test/name-waterplay.test.mjs
 // Coverage for the pure waterplay-naming logic (#435 follow-up). Uses
 // node --test (not Vitest) because nameWaterplay.mjs is a pure module with no
-// Miniflare/DB dependency — mirrors merge-upick.test.mjs / dedupCluster.test.mjs.
+// Miniflare/DB dependency — mirrors dedupCluster.test.mjs.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {

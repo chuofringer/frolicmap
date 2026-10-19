@@ -188,4 +188,4 @@ writeFileSync(args.out, buildSeedSql(final, [
 ]))
 console.log(`\nwrote ${path.relative(REPO_ROOT, args.out)}`)
 console.log('\nTo apply (review first):')
-console.log(`  cd worker && npx wrangler d1 execute funradar-prod --local  --file ${path.relative(path.join(REPO_ROOT, 'worker'), args.out)}`)
+console.log(`  cd worker && npx wrangler d1 execute frolicmap-prod --local  --file ${path.relative(path.join(REPO_ROOT, 'worker'), args.out)}`)

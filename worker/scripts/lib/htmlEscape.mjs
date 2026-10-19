@@ -1,11 +1,10 @@
 // The one HTML escaper for the Node-side generators.
 //
-// Three byte-identical private copies had accumulated (seoPages.mjs,
-// prerenderShell.mjs, digest.mjs) — all three emit HTML built from D1
-// strings, and all three need exactly this. A fourth copy is the failure
-// mode worth preventing: the copies drift, one of them loses `'` or `"`,
-// and the generator that lost it starts emitting attribute-breaking output
-// from LLM-extracted third-party text.
+// Private copies had accumulated (seoPages.mjs, prerenderShell.mjs, ...) —
+// every generator emits HTML built from D1 strings, and all need exactly
+// this. A further copy is the failure mode worth preventing: the copies
+// drift, one of them loses `'` or `"`, and the generator that lost it starts
+// emitting attribute-breaking output from third-party text.
 
 const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 

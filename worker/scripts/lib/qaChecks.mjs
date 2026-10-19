@@ -58,8 +58,7 @@ export function checkCoordsInBbox(metro, rows) {
 
 /**
  * Rows piled on a single coordinate — the classic "geocoder returned the city
- * centre" failure that produced 89 rejected rows in the 2026-04 aggregator
- * cleanup. Detected generically (any coordinate carrying an implausible pile
+ * centre" failure that produced 89 rejected rows in an early cleanup. Detected generically (any coordinate carrying an implausible pile
  * of rows) rather than from a hardcoded list, so it works in metros nobody
  * has hand-audited.
  */

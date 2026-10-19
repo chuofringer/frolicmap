@@ -15,8 +15,8 @@
  *        node worker/scripts/seed-nps.mjs
  *      → data/nps/nps.sql
  *   4. Apply it (review first — these rows land approved):
- *        cd worker && npx wrangler d1 execute funradar-prod --local  --file ../data/nps/nps.sql
- *        cd worker && npx wrangler d1 execute funradar-prod --remote --file ../data/nps/nps.sql
+ *        cd worker && npx wrangler d1 execute frolicmap-prod --local  --file ../data/nps/nps.sql
+ *        cd worker && npx wrangler d1 execute frolicmap-prod --remote --file ../data/nps/nps.sql
  *
  * Testable / key-free: `--json <path>` reads a pre-downloaded parks payload
  * (either the raw API `{ data: [...] }` envelope or a bare array) instead of
@@ -61,7 +61,7 @@ const API = 'https://developer.nps.gov/api/v1'
 // The API caps a page at 500 records; the whole park system is well under 1000,
 // so this is one or two requests.
 const PAGE = 500
-const UA = 'funradar-app/nps-import (+https://funradar.app)'
+const UA = 'frolicmap/nps-import (+https://frolicmap.app)'
 const SIGNUP = 'https://www.nps.gov/subjects/developer/get-started.htm'
 
 const VALID_STATUS = ['pending', 'approved', 'rejected', 'archived']
@@ -246,8 +246,8 @@ async function main() {
   console.log(`\nwrote ${path.relative(REPO_ROOT, args.out)}`)
   console.log('\nTo apply (review first — these rows land approved):')
   const rel = path.relative(path.join(REPO_ROOT, 'worker'), args.out)
-  console.log(`  cd worker && npx wrangler d1 execute funradar-prod --local  --file ${rel}`)
-  console.log(`  cd worker && npx wrangler d1 execute funradar-prod --remote --file ${rel}`)
+  console.log(`  cd worker && npx wrangler d1 execute frolicmap-prod --local  --file ${rel}`)
+  console.log(`  cd worker && npx wrangler d1 execute frolicmap-prod --remote --file ${rel}`)
 }
 
 await main()
