@@ -1,5 +1,6 @@
-// Pure helpers for sample-approved-events.mjs (#679). No I/O, no imports —
-// unit-tested in worker/test/qualitySample.test.ts.
+// Pure sampling and CSV/Markdown helpers for hand-checking a random sample of
+// approved rows (#679). No I/O, no imports — unit-tested in
+// worker/test/qualitySample.test.ts.
 
 /** FNV-1a 32-bit string hash -> uint32 seed. */
 export function hashSeed(str) {
@@ -63,7 +64,7 @@ export function isoWeekWindow(label) {
 }
 
 /**
- * Render a stored event time as venue-local wall clock, e.g.
+ * Render a stored ISO timestamp as venue-local wall clock, e.g.
  * "Sat 2026-10-10 10:30 PDT". Bare dates render as "<date> (all day)".
  * Naive values are already wall clock and render unsuffixed.
  */

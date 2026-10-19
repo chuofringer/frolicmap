@@ -7,12 +7,12 @@
  * This module is pure string logic.
  */
 
-export const SITE = 'https://funradar.app'
+export const SITE = 'https://frolicmap.app'
 
 /** Legend order, as DB category keys — mirrors LEGEND_CATEGORIES in prerenderShell. */
 export const LEGEND_KEYS = [
   'playground', 'park', 'library', 'museum', 'aquarium', 'beach', 'waterplay',
-  'hiking', 'campground', 'birthday_party', 'restaurant', 'upick', 'event',
+  'hiking', 'campground',
 ]
 
 /** `{{name}}` interpolation — the only i18next feature the copy uses. */

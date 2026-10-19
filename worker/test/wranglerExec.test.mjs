@@ -1,7 +1,7 @@
 // worker/test/wranglerExec.test.mjs
 // Coverage for the wrangler-exec retry + error-formatting helpers
 // (scripts/lib/wranglerExec.mjs) used by build-seo-pages.mjs's d1() (#654).
-// Pure computation, no Miniflare, no D1 — matches digest.test.mjs's style:
+// Pure computation, no Miniflare, no D1 — same style as dedupCluster.test.mjs:
 //   node --test worker/test/wranglerExec.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'

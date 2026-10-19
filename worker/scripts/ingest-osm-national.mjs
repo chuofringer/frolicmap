@@ -268,7 +268,7 @@ async function overpassRequest(query, attempt = 1) {
         'content-type': 'application/x-www-form-urlencoded',
         // Overpass asks clients to identify themselves so operators can
         // reach out instead of silently blocking.
-        'user-agent': 'funradar-app/national-bootstrap (+https://funradar.app)',
+        'user-agent': 'frolicmap/national-bootstrap (+https://frolicmap.app)',
       },
     })
   } catch (err) {
@@ -562,7 +562,7 @@ async function main() {
       const rel = path.relative(path.join(REPO_ROOT, 'worker'), file)
       const res = spawnSync(
         'npx',
-        ['wrangler', 'd1', 'execute', 'funradar-prod', '--local', '--file', rel],
+        ['wrangler', 'd1', 'execute', 'frolicmap-prod', '--local', '--file', rel],
         { cwd: path.join(REPO_ROOT, 'worker'), stdio: 'inherit', shell: false },
       )
       if (res.status !== 0) {
@@ -585,7 +585,7 @@ async function main() {
   if (written.length) {
     console.log('\nTo apply to PRODUCTION (review the SQL first — these rows land approved):')
     for (const file of written) {
-      console.log(`  npx wrangler d1 execute funradar-prod --remote --file ${path.relative(path.join(REPO_ROOT, 'worker'), file)}`)
+      console.log(`  npx wrangler d1 execute frolicmap-prod --remote --file ${path.relative(path.join(REPO_ROOT, 'worker'), file)}`)
     }
   }
 }

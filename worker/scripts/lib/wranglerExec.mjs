@@ -1,12 +1,10 @@
 // worker/scripts/lib/wranglerExec.mjs
 //
 // Shared helpers for scripts that shell out to `wrangler d1 execute`
-// against remote D1 (issue #654). The weekly aggregators merge
-// (aggregators-merge.yml) applies thousands of UPSERTs to prod D1 in the
-// same window build-seo-pages.mjs's `--remote` reads run in; on 2026-W36
-// wrangler dropped a request mid-write-burst and the third `d1()` call in
-// the SEO generator failed outright with a truncated, mostly-banner error
-// message. `withRetry()` gives a transient wrangler failure a few chances
+// against remote D1 (issue #654). Remote reads can overlap a write burst
+// (an importer or dedup apply); on one occasion wrangler dropped a request
+// mid-burst and a `d1()` call in the SEO generator failed outright with a
+// truncated, mostly-banner error message. `withRetry()` gives a transient wrangler failure a few chances
 // before giving up; `formatWranglerError()` makes sure that when it DOES
 // give up, the thrown Error carries the actual wrangler/D1 error instead of
 // the first 200 characters of a banner.

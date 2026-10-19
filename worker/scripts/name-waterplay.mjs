@@ -133,7 +133,7 @@ function selectMetros() {
 function readRows(sql) {
   const res = spawnSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'funradar-prod', args.remote ? '--remote' : '--local',
+    ['wrangler', 'd1', 'execute', 'frolicmap-prod', args.remote ? '--remote' : '--local',
       '--json', '--command', sql],
     { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, shell: false },
   )
@@ -251,7 +251,7 @@ async function main() {
   if (written.length) {
     console.log('\nTo apply (review first):')
     for (const f of written) {
-      console.log(`  npx wrangler d1 execute funradar-prod --remote --file ${path.relative(WORKER_DIR, f)}`)
+      console.log(`  npx wrangler d1 execute frolicmap-prod --remote --file ${path.relative(WORKER_DIR, f)}`)
     }
   }
 }

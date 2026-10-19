@@ -1,20 +1,26 @@
 # Ad-hoc OSM ingest
 
-Run against local D1:
+frolicmap has a single Worker cron: the quarterly OSM ingest (`0 3 1 */3 *`,
+03:00 UTC on the 1st of Jan/Apr/Jul/Oct, `runOsmIngest`). To run it by hand
+against local D1:
 
 ```bash
 cd worker
 npx wrangler dev --test-scheduled --local &
 sleep 6
-# Trigger the Sunday-03:00-UTC cron
-curl "http://127.0.0.1:8787/__scheduled?cron=0+3+*+*+0"
-# Takes 30-90s — 6 Overpass queries, one per category.
+# Trigger the quarterly cron
+curl "http://127.0.0.1:8787/__scheduled?cron=0+3+1+*%2F3+*"
+# Takes 30-90s: one Overpass query per category.
 ```
+
+For metros outside the Bay depth region, use the national bootstrap script
+instead (`node worker/scripts/ingest-osm-national.mjs --help`); it emits
+reviewable SQL files under `data/` that you apply explicitly.
 
 Verify:
 
 ```bash
-npx wrangler d1 execute funradar-prod --local --command \
+npx wrangler d1 execute frolicmap-prod --local --command \
   "SELECT category, COUNT(*) AS n FROM items WHERE status='pending' GROUP BY category;"
 ```
 

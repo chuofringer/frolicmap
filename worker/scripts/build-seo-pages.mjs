@@ -85,9 +85,7 @@ const zh = makeZhContext({
  * Folded categories (zoo → the combined "Aquariums/Zoos" entry, #323) never
  * get a line of their own; their counts merge into the host below.
  */
-const ALL_PAGE_CATEGORIES = ALL_CATEGORIES.filter(
-  (c) => c !== 'event' && !(c in CATEGORY_FOLD),
-)
+const ALL_PAGE_CATEGORIES = ALL_CATEGORIES.filter((c) => !(c in CATEGORY_FOLD))
 
 function parseArgs(argv) {
   const args = { metros: null, remote: false, dryRun: false, out: path.join(REPO_ROOT, 'dist') }
@@ -121,20 +119,19 @@ Only published metros are emitted — same gate as the API (#371).
 const args = parseArgs(process.argv.slice(2))
 
 function d1(sql) {
-  // Retry transient wrangler failures (#654): --remote reads run in the same
-  // window the weekly aggregators merge is applying thousands of UPSERTs to
-  // the same prod D1, and on 2026-W36 the third d1() call in a --remote run
-  // failed mid-write-burst (a rerun of this script succeeded with no other
-  // change). 4 attempts / 2s-4s-8s backoff; only a nonzero wrangler exit
-  // throws inside the retried closure — a JSON.parse failure on a genuine
-  // 0-exit result happens OUTSIDE it below and is never retried, since that
-  // indicates a real bug (wrangler's output shape changed) rather than a
-  // transient network/lock blip.
+  // Retry transient wrangler failures (#654): a --remote read can fail
+  // mid-run when prod D1 is busy with a write burst (an OSM import or dedup
+  // apply), and a rerun with no other change succeeds. 4 attempts /
+  // 2s-4s-8s backoff; only a nonzero wrangler exit throws inside the retried
+  // closure — a JSON.parse failure on a genuine 0-exit result happens OUTSIDE
+  // it below and is never retried, since that indicates a real bug
+  // (wrangler's output shape changed) rather than a transient network/lock
+  // blip.
   const res = withRetry(
     () => {
       const r = spawnSync(
         'npx',
-        ['wrangler', 'd1', 'execute', 'funradar-prod', args.remote ? '--remote' : '--local', '--json', '--command', sql],
+        ['wrangler', 'd1', 'execute', 'frolicmap-prod', args.remote ? '--remote' : '--local', '--json', '--command', sql],
         { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, shell: false },
       )
       if (r.status !== 0) throw new Error(formatWranglerError(r.stderr, r.status))
@@ -316,9 +313,9 @@ async function main() {
     // outside the card crop. D1 is SQLite and supports window functions.
     //
     // `ORDER BY rn` before the LIMIT is load-bearing: without it SQLite
-    // truncates in (category, id) order, so with 11 live categories × 40 rows
-    // = 440 candidates against a 280 cap, every category from `playground`
-    // onward was cut entirely — the Bay card rendered zero playground dots,
+    // truncates in (category, id) order, so with 10 live categories × 40 rows
+    // = 400 candidates against a 280 cap, every category from `playground`
+    // onward was cut entirely — a card rendered zero playground dots,
     // the most legend-central colour. Ordering by rank interleaves the
     // categories, so the cap thins each evenly instead of amputating the
     // alphabetic tail. It also makes the result deterministic across builds,

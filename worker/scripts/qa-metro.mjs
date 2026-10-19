@@ -75,7 +75,7 @@ const args = parseArgs(process.argv.slice(2))
 function d1(sql) {
   const res = spawnSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'funradar-prod', args.remote ? '--remote' : '--local', '--json', '--command', sql],
+    ['wrangler', 'd1', 'execute', 'frolicmap-prod', args.remote ? '--remote' : '--local', '--json', '--command', sql],
     { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, shell: false },
   )
   if (res.status !== 0) throw new Error(`wrangler failed: ${(res.stderr || '').slice(0, 200)}`)

@@ -150,7 +150,7 @@ async function fetchPage(metro, offset) {
     f: 'json',
   })
   const res = await fetch(`${SERVICE}?${params}`, {
-    headers: { 'user-agent': 'funradar-app/parkserve-import (+https://funradar.app)' },
+    headers: { 'user-agent': 'frolicmap/parkserve-import (+https://frolicmap.app)' },
   })
   if (!res.ok) throw new Error(`ArcGIS HTTP ${res.status}`)
   const json = await res.json()
@@ -240,7 +240,7 @@ async function main() {
   if (written.length) {
     console.log('\nTo apply (review first — these rows land approved):')
     for (const f of written) {
-      console.log(`  npx wrangler d1 execute funradar-prod --remote --file ${path.relative(path.join(REPO_ROOT, 'worker'), f)}`)
+      console.log(`  npx wrangler d1 execute frolicmap-prod --remote --file ${path.relative(path.join(REPO_ROOT, 'worker'), f)}`)
     }
   }
 }

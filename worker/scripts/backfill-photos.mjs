@@ -57,7 +57,7 @@
  *
  * 1. Export the candidate rows (reviewer runs this — wrangler writes nothing):
  *
- *      cd worker && npx wrangler d1 execute funradar-prod --remote --json \
+ *      cd worker && npx wrangler d1 execute frolicmap-prod --remote --json \
  *        --command "SELECT id, source_type, photo_url, attributes FROM items \
  *          WHERE source_type='osm' AND status='approved' AND photo_url IS NULL" \
  *        > ../data/backfill/photo-rows-raw.json
@@ -82,7 +82,7 @@
  *
  *      cd worker
  *      for f in ../data/backfill/photos-*.sql; do
- *        npx wrangler d1 execute funradar-prod --remote --file "$f"
+ *        npx wrangler d1 execute frolicmap-prod --remote --file "$f"
  *      done
  * ─────────────────────────────────────────────────────────────────────────
  *
@@ -110,7 +110,7 @@ const OVERPASS_CACHE_PATH = path.join(OUT_DIR, 'photo-overpass-cache.jsonl')
 const COMMONS_CACHE_PATH = path.join(OUT_DIR, 'photo-commons-cache.jsonl')
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
-const USER_AGENT = 'funradar.app-photo-backfill/1.0 (contact: lz80521@gmail.com)'
+const USER_AGENT = 'frolicmap.app-photo-backfill/1.0 (contact: frolicmap.official@gmail.com)'
 const OVERPASS_BATCH_SIZE = 300
 const OVERPASS_MIN_INTERVAL_MS = 2000
 const COMMONS_MIN_INTERVAL_MS = 500
@@ -155,7 +155,7 @@ function fetchRemoteRows() {
     "AND status='approved' AND photo_url IS NULL"
   const res = spawnSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'funradar-prod', '--remote', '--json', '--command', sql],
+    ['wrangler', 'd1', 'execute', 'frolicmap-prod', '--remote', '--json', '--command', sql],
     { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, shell: false },
   )
   if (res.status !== 0) throw new Error(`wrangler failed: ${(res.stderr || '').slice(0, 300)}`)

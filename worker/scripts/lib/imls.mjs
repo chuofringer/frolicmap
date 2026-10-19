@@ -212,8 +212,8 @@ function buildRow(
   // Roughly two-thirds of the national IMLS corpus is rural and lands here.
   if (!metro) return { skipped: 'outside every metro bbox' }
 
-  // The Bay Area already has a curated library/museum layer (OSM rows,
-  // hand curation, BiblioCommons events). Emitting IMLS rows into `bay` at
+  // The Bay Area already has a curated library/museum layer (OSM rows and
+  // hand curation). Emitting IMLS rows into `bay` at
   // `approved` double-pins every SFPL/Oakland/SCCL branch on the flagship map
   // the moment the SQL is applied — before #355's dedup exists to merge them,
   // and against the plan's "Bay Area depth stack stays untouched" invariant.

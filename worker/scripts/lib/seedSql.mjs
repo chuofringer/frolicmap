@@ -15,9 +15,7 @@ export const esc = (v) =>
 export const num = (v) => (v === null || v === undefined ? 'NULL' : String(v))
 
 /**
- * Column list shared by every national importer. Deliberately omits the
- * event-shaped columns (start_time/end_time/rrule/exdates) and the U-Pick
- * columns — national Phase 1 is static places only (plan §2).
+ * Column list shared by every importer: static-place columns only.
  */
 export const IMPORT_COLUMNS = [
   'id', 'type', 'name', 'description', 'category', 'lat', 'lng', 'address',
@@ -32,12 +30,11 @@ export const IMPORT_COLUMNS = [
  * `rejected`/`archived` are obvious: never resurrect a row a human removed.
  * `approved` is the subtle one and it matters for any importer whose
  * `excluded.status` is `pending` — without it, a re-import silently demotes
- * every row the curator approved, which is the 2026-05-13 `upick-upick-orchards`
- * failure inverted (a routine overriding a curator decision). The repo's UPSERT
- * contract is explicit that an approved row stays approved.
+ * every row the curator approved. The repo's UPSERT contract is explicit that
+ * an approved row stays approved.
  *
  * These are static-place importers with no "material change → re-pend" case to
- * honour, so unlike `merge-aggregators.mjs` there's no field-diff condition.
+ * honour, so there is no field-diff condition.
  */
 export const PRESERVE_CURATOR_STATUS =
   "status=CASE WHEN items.status IN ('rejected','archived','approved') THEN items.status ELSE excluded.status END"

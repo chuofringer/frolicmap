@@ -29,7 +29,7 @@ import { renderMapCard, CATEGORY_MIN_PLACES } from './seoPages.mjs'
 import { escapeHtml as esc } from './htmlEscape.mjs'
 import { hreflangLinks } from './localeCopy.mjs'
 
-const SITE = 'https://funradar.app'
+const SITE = 'https://frolicmap.app'
 
 /**
  * The category list for title and og:image:alt — hardcoded to the SPA legend
@@ -39,7 +39,7 @@ const SITE = 'https://funradar.app'
  */
 const LEGEND_CATEGORIES = [
   'Playground', 'Park', 'Library', 'Museum', 'Aquarium/Zoo', 'Beach',
-  'Water Play', 'Hiking', 'Campground', 'Birthday Party', 'Restaurant', 'U-Pick Farm', 'Event',
+  'Water Play', 'Hiking', 'Campground',
 ]
 const LEGEND_LIST =
   `${LEGEND_CATEGORIES.slice(0, -1).join(', ')} & ${LEGEND_CATEGORIES[LEGEND_CATEGORIES.length - 1]}`
@@ -133,7 +133,7 @@ export function cityFallbackHtml({ metro, categoryLinks = [], comingSoon = [], n
   return `<div style="max-width:64rem;margin:0 auto;padding:2rem 1.25rem;` +
     `font:16px/1.55 system-ui,-apple-system,'Segoe UI',sans-serif;color:#1f2937">
   <nav style="font-size:.875rem;color:#6b7280;margin-bottom:1rem">` +
-    `<a href="${prefix}/" style="color:#0369a1">${tx ? esc(tx('home')) : 'funradar'}</a> › ` +
+    `<a href="${prefix}/" style="color:#0369a1">${tx ? esc(tx('home')) : 'frolicmap'}</a> › ` +
     `<a href="${prefix}/cities" style="color:#0369a1">${tx ? esc(tx('cities')) : 'Cities'}</a> › ${esc(name)}</nav>
   <h1 style="font-size:1.9rem;line-height:1.2;margin:.25rem 0 .5rem">` +
     `${tx ? esc(tx('cityHeading', { city: name })) : `Kids activities in ${esc(name)}`}</h1>
@@ -204,7 +204,7 @@ export function renderCityShell({
     : metro.blurb
       ? truncate(metro.blurb)
       : `An interactive map of kid-friendly places across ${metro.label} — playgrounds, parks, ` +
-        'libraries, museums and beaches. Free, no signup.'
+        'libraries, museums and beaches. Free to use.'
 
   let html = shell
   if (loc) html = html.replace(/<html lang="[^"]*"/, `<html lang="${loc.htmlLang}"`)
@@ -214,7 +214,7 @@ export function renderCityShell({
   html = replaceTagContent(html, 'property="og:title"', 'content', title)
   html = replaceTagContent(html, 'property="og:description"', 'content', description)
   html = replaceTagContent(html, 'property="og:url"', 'content', url)
-  // The og:image itself stays the shared site card (a Bay map screenshot) —
+  // The og:image itself stays the shared site card (a map screenshot) —
   // deliberate, see #385. But its alt must not claim "SF Bay Area" on another
   // metro's page: word it as the product per-city, carrying the same full
   // legend list as the title rather than trailing off with "and more".
@@ -222,7 +222,7 @@ export function renderCityShell({
     html, 'property="og:image:alt"', 'content',
     loc
       ? loc.t('cityImageAlt', { city: name, categories: legendList })
-      : `${metro.label} kids activities map on funradar.app — ${LEGEND_LIST}.`,
+      : `${metro.label} kids activities map on frolicmap.app — ${LEGEND_LIST}.`,
   )
   html = replaceTagContent(html, 'name="twitter:title"', 'content', title)
   html = replaceTagContent(html, 'name="twitter:description"', 'content', description)
@@ -231,7 +231,7 @@ export function renderCityShell({
     html, 'name="keywords"', 'content',
     loc
       ? loc.t('cityKeywords', { city: name })
-      : `kids activities ${metro.label}, things to do with kids ${metro.label}, family activities ${metro.label}, playgrounds near me, weekend family events, free kids activities`,
+      : `kids activities ${metro.label}, things to do with kids ${metro.label}, family activities ${metro.label}, playgrounds near me, weekend family outings, free kids activities`,
   )
   // Reciprocal hreflang: both locales' pages carry the same trio (en,
   // zh-Hans, x-default → English), placed right after the canonical link.
@@ -247,7 +247,7 @@ export function renderCityShell({
       url,
       description,
       inLanguage: loc ? loc.htmlLang : 'en',
-      isPartOf: { '@type': 'WebSite', name: 'funradar.app', url: 'https://funradar.app/' },
+      isPartOf: { '@type': 'WebSite', name: 'frolicmap.app', url: 'https://frolicmap.app/' },
     },
     null,
     2,

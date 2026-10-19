@@ -10,10 +10,9 @@
  *   node worker/scripts/dedup-national.mjs --metro austin --remote
  *
  * Losers are ARCHIVED, never deleted. `status='archived'` already means "was
- * real, no longer shown" in this schema (the daily expired-event sweep uses
- * it), the row stays available for audit, and a bad merge is one UPDATE away
- * from being undone. Deleting would make the pass irreversible and lose the
- * evidence needed to tune the thresholds.
+ * real, no longer shown" in this schema, the row stays available for audit,
+ * and a bad merge is one UPDATE away from being undone. Deleting would make
+ * the pass irreversible and lose the evidence needed to tune the thresholds.
  *
  * Per-metro rather than national in one shot: a metro is 5–10K rows, which
  * fits comfortably in a wrangler JSON response, and a failure costs one metro
@@ -125,7 +124,7 @@ function readRegion(regionId) {
     `FROM items WHERE region='${regionId}' AND status IN ('pending','approved')`
   const res = spawnSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'funradar-prod', args.remote ? '--remote' : '--local',
+    ['wrangler', 'd1', 'execute', 'frolicmap-prod', args.remote ? '--remote' : '--local',
       '--json', '--command', sql],
     { cwd: WORKER_DIR, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, shell: false },
   )
@@ -258,7 +257,7 @@ async function main() {
   if (written.length) {
     console.log('\nTo apply (review first):')
     for (const f of written) {
-      console.log(`  npx wrangler d1 execute funradar-prod --remote --file ${path.relative(WORKER_DIR, f)}`)
+      console.log(`  npx wrangler d1 execute frolicmap-prod --remote --file ${path.relative(WORKER_DIR, f)}`)
     }
   }
 }
