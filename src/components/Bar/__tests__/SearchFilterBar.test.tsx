@@ -330,13 +330,18 @@ describe('SearchFilterBar desktop chip row', () => {
     expect(categories()).toEqual([])
   })
 
-  it('every category is a live filter in a wave metro too (no coming-soon chips)', () => {
+  it('every category is a live filter in a wave metro too (only the Events placeholder says coming soon)', () => {
     renderAt('/cities/chicago')
     fireEvent.click(screen.getByRole('button', { name: 'Library' }))
     expect(categories()).toEqual(['library'])
     fireEvent.click(screen.getByRole('button', { name: 'Library' }))
     expect(categories()).toEqual([])
-    expect(screen.queryByText(/soon/i)).toBeNull()
+    // The one non-live chip is the UI-only Events placeholder: disabled, no filter effect.
+    expect(screen.getAllByText(/soon/i)).toHaveLength(1)
+    const events = screen.getByRole('button', { name: /Events/ })
+    expect(events).toBeDisabled()
+    fireEvent.click(events)
+    expect(categories()).toEqual([])
   })
 
   it('shows the Free-only chip only when the free filter is active, and clears it on click', () => {

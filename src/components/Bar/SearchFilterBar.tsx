@@ -15,6 +15,7 @@ import { inlineTitle, titleHaystack } from '@/utils/displayTitle'
 import { FiltersDrawer } from '@/components/Layout/FiltersDrawer'
 import { ViewToggle } from './ViewToggle'
 import { useCategoryChipState } from '@/components/Filters/useCategoryChipState'
+import { ComingSoonChip } from '@/components/Filters/ComingSoonChip'
 
 // Desktop inline chips — exactly FOUR (revision 3, item 2). Every other category
 // lives in the All-filters drawer + the legend. Labels come from the legend
@@ -379,6 +380,8 @@ function ChipRow({ onOpenFilters, filterCount }: { onOpenFilters: () => void; fi
           </button>
         )
       })}
+
+      <ComingSoonChip variant="inline" />
 
       {freeOnly && (
         <button

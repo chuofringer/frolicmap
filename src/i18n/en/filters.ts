@@ -22,4 +22,7 @@ export const filters = {
   showMoreFilters: 'Show more filters',
   settingsTitle: 'Filters & settings',
   settingsAriaLabel: 'Filters and settings',
+  eventsChip: 'Events',
+  comingSoon: 'Coming soon',
+  eventsComingSoonTitle: 'Events are coming soon — for now frolicmap maps places only.',
 } as const

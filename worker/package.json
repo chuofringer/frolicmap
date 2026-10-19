@@ -11,7 +11,7 @@
     "db:migrate:local": "wrangler d1 migrations apply frolicmap-prod --local",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:mjs": "node --test test/dedupCluster.test.mjs test/ingest-osm-national.test.mjs test/name-waterplay.test.mjs test/normalizeAddress.test.mjs test/wranglerExec.test.mjs test/migrationNumbers.test.mjs"
+    "test:mjs": "node --test test/dedupCluster.test.mjs test/ingest-osm-national.test.mjs test/name-waterplay.test.mjs test/normalizeAddress.test.mjs test/wranglerExec.test.mjs test/migrationNumbers.test.mjs test/import-funradar.test.mjs"
   },
   "dependencies": {
     "geojson-vt": "^4.0.2",

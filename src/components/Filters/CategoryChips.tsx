@@ -1,5 +1,6 @@
 import { CATEGORIES, CHIP_ORDER, categoryLabel, getCategoryEmoji } from '@/config/categories'
 import { useCategoryChipState } from './useCategoryChipState'
+import { ComingSoonChip } from './ComingSoonChip'
 
 export function CategoryChips() {
   // Toggle wiring is shared with the legend and the consolidated bar's inline
@@ -28,6 +29,7 @@ export function CategoryChips() {
           </button>
         )
       })}
+      <ComingSoonChip />
     </div>
   )
 }

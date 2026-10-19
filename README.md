@@ -116,6 +116,29 @@ this order:
    published metros from D1 and writes the city pages and sitemaps into `dist/`.
    In production the *Deploy Pages* workflow runs it.
 
+### One-off: import from the funradar database
+
+The owner's older funradar D1 database can seed matching metros. From the
+funradar repo, export one metro at a time (only frolicmap's columns; wrangler
+writes a JSON envelope, which the importer accepts, as it does a bare array):
+
+```bash
+npx wrangler d1 execute funradar-prod --remote --json --command \
+  "SELECT id,type,name,name_zh,description,category,lat,lng,address,age_min,age_max,cost,price_usd,indoor,opening_hours,photo_url,photo_attribution,website,source_url,source_type,confidence,status,last_verified,created_at,updated_at,region,city,attributes,slug,has_playground FROM items WHERE type='place' AND status='approved' AND source_type IN ('osm','imls','parkserve','nps') AND region='<metro>'" \
+  > funradar-<metro>.json
+```
+
+Then, from this repo, import and apply (`--dry-run` first to see the counts):
+
+```bash
+node worker/scripts/import-funradar.mjs --json funradar-<metro>.json --metro <metro>   # → data/funradar/<metro>.sql
+cd worker && npx wrangler d1 execute frolicmap-prod --local  --file ../data/funradar/<metro>.sql
+cd worker && npx wrangler d1 execute frolicmap-prod --remote --file ../data/funradar/<metro>.sql
+```
+
+Only the four open sources (OSM, IMLS, ParkServe, NPS) are carried over; scraped,
+calendar, manual and LLM-derived rows are skipped by the importer even if the export includes them.
+
 Optional clean-ups: `name-waterplay.mjs` (names for unnamed splash pads),
 `backfill-photos.mjs` (Commons photos) and `backfill-addresses.mjs` (reverse
 geocoding; see the policy note at the top of that file, a bulk run needs a

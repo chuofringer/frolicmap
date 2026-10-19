@@ -48,6 +48,8 @@ describe('configured basemaps', () => {
       expect(src.maxzoom).toBe(16)
       expect(src.attribution).toContain('USGS The National Map')
     }
+    expect(style.layers[0].type).toBe('background')
+    expect(style.layers.map((l) => l.id)).toEqual(['background', 'usgs-imagery'])
     expect(getBasemapTheme('satellite')).toBe('dark')
   })
 

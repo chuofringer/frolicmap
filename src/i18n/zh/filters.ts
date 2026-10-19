@@ -17,4 +17,7 @@ export const filters: Translation['filters'] = {
   showMoreFilters: '显示更多筛选项',
   settingsTitle: '筛选与设置',
   settingsAriaLabel: '筛选与设置',
+  eventsChip: '活动',
+  comingSoon: '即将推出',
+  eventsComingSoonTitle: '活动功能即将推出，目前 frolicmap 只收录地点。',
 }

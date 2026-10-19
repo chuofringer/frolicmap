@@ -61,6 +61,10 @@ export const BASEMAPS: BasemapConfig[] = [
         },
       },
       layers: [
+        // USGS imagery covers US land only; tiles elsewhere (open ocean, outside the
+        // US) are fully transparent. This deep-water colour makes those gaps read as
+        // sea instead of a black hole.
+        { id: 'background', type: 'background', paint: { 'background-color': '#0b2740' } },
         { id: 'usgs-imagery', type: 'raster', source: 'usgs', minzoom: 0, maxzoom: 22 },
       ],
     } satisfies StyleSpecification,

@@ -28,6 +28,7 @@ export function FAQOverlay({ onClose }: { onClose: () => void }) {
     { q: t('faq.items.q6'), a: t('faq.items.a6') },
     { q: t('faq.items.q7'), a: t('faq.items.a7') },
     { q: t('faq.items.q8'), a: t('faq.items.a8') },
+    { q: t('faq.items.q11'), a: t('faq.items.a11') },
     { q: t('faq.items.q9'), a: t('faq.items.a9') },
     { q: t('faq.items.q10'), a: t('faq.items.a10') },
   ]

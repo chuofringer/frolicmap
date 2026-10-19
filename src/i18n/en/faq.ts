@@ -41,6 +41,8 @@ export const faq = {
     a8: "Tap the pin to open its details, then Report an issue. That opens an email to us with the place's id, name and link already filled in; we'll review and update or remove it.",
     q9: 'What is frolicmap built with?',
     a9: 'A modern web stack: a React + TypeScript single-page app with an interactive vector map, a lightweight edge API, a managed SQL database, and standard open mapping services for basemaps and geocoding.',
+    q11: 'Do you list events?',
+    a11: 'Not yet. Events are on the roadmap; today frolicmap maps places only — playgrounds, parks, libraries, museums, aquariums and zoos, beaches, water play, hiking trails and campgrounds.',
     q10: 'Privacy',
     a10: 'frolicmap has no accounts, no newsletter and no ads. It stores only your display preferences (such as map style and language) in your browser. Geolocation ("Near me") runs entirely in your browser — your coordinates never leave your device. Basemap tiles and address search go through their respective providers under their own privacy policies. We may use Cloudflare’s privacy-first Web Analytics (no cookies, no cross-site tracking, no personal profiles); no other analytics service is in use. See the Privacy page for details.',
   },
