@@ -30,7 +30,7 @@ describe('public endpoints', () => {
   })
 
   beforeEach(async () => {
-    await env.DB.exec('DELETE FROM items; DELETE FROM reports;')
+    await env.DB.exec('DELETE FROM items;')
     await env.DB.exec('DELETE FROM id_fetch_watch;')
   })
 
@@ -550,89 +550,32 @@ describe('public endpoints', () => {
     expect(body.token.split('.')).toHaveLength(2)
   })
 
-  // Hardened alongside the other public write endpoints: session-gated +
-  // origin-guarded + Workers rate-limiter binding. Previously this was the
-  // one public write with no session gate, a spoofable x-forwarded-for
-  // fallback, and an unclamped item_id — a free spam vector into the
-  // admin ReportsView.
-  describe('POST /api/report', () => {
-    it('stores a report and returns ok', async () => {
-      const res = await SELF.fetch('https://example.com/api/report', {
-        method: 'POST',
-        headers: { 'cf-connecting-ip': '10.0.0.90', 'content-type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({ item_id: 'abc', reason: 'closed', note: 'shut down last week' }),
+  it('is read-only: report, item writes, health and robots routes are all gone', async () => {
+    for (const [method, path] of [
+      ['POST', '/api/report'],
+      ['PUT', '/api/items/abc'],
+      ['DELETE', '/api/items/abc'],
+      ['GET', '/api/health'],
+      ['GET', '/robots.txt'],
+    ] as const) {
+      const res = await SELF.fetch(`https://example.com${path}`, {
+        method,
+        headers: { 'cf-connecting-ip': '10.0.0.96', ...(await authHeaders()) },
       })
-      expect(res.status).toBe(200)
-      const { results } = await env.DB.prepare('SELECT item_id, reason FROM reports').all()
-      expect(results).toEqual([{ item_id: 'abc', reason: 'closed' }])
-    })
-
-    it('rejects missing fields', async () => {
-      const res = await SELF.fetch('https://example.com/api/report', {
-        method: 'POST',
-        headers: { 'cf-connecting-ip': '10.0.0.91', 'content-type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({ reason: 'closed' }),
-      })
-      expect(res.status).toBe(400)
-    })
-
-    it('returns 401 without an Authorization token', async () => {
-      const res = await SELF.fetch('https://example.com/api/report', {
-        method: 'POST',
-        headers: { 'cf-connecting-ip': '10.0.0.92', 'content-type': 'application/json' },
-        body: JSON.stringify({ item_id: 'abc', reason: 'closed' }),
-      })
-      expect(res.status).toBe(401)
-      const { results } = await env.DB.prepare('SELECT COUNT(*) as n FROM reports').all()
-      expect(results).toEqual([{ n: 0 }])
-    })
-
-    it('returns 403 on a foreign Origin', async () => {
-      const res = await SELF.fetch('https://example.com/api/report', {
-        method: 'POST',
-        headers: {
-          'cf-connecting-ip': '10.0.0.93',
-          'content-type': 'application/json',
-          'origin': 'https://evil.example.com',
-          ...(await authHeaders()),
-        },
-        body: JSON.stringify({ item_id: 'abc', reason: 'closed' }),
-      })
-      expect(res.status).toBe(403)
-    })
-
-    it('clamps oversized item_id to 128 chars', async () => {
-      const res = await SELF.fetch('https://example.com/api/report', {
-        method: 'POST',
-        headers: { 'cf-connecting-ip': '10.0.0.94', 'content-type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({ item_id: 'x'.repeat(500), reason: 'closed' }),
-      })
-      expect(res.status).toBe(200)
-      const { results } = await env.DB.prepare('SELECT item_id FROM reports').all()
-      expect((results[0] as { item_id: string }).item_id).toHaveLength(128)
-    })
-
-    it('rejects invalid JSON body with 400', async () => {
-      const res = await SELF.fetch('https://example.com/api/report', {
-        method: 'POST',
-        headers: { 'cf-connecting-ip': '10.0.0.95', 'content-type': 'application/json', ...(await authHeaders()) },
-        body: 'not-json',
-      })
-      expect(res.status).toBe(400)
-    })
+      expect(res.status, `${method} ${path}`).toBe(404)
+    }
   })
 
 })
 
 // #248 Phase 1 — Cloudflare Pages PR-preview builds
 // (`https://<hash>.frolicmap.pages.dev`) may use the READ-ONLY data surface
-// against prod so frontend PRs get a live-data visual review. Write paths stay
-// locked to the exact prod allowlist.
+// against prod so frontend PRs get a live-data visual review.
 describe('#248 Phase 1 — CF Pages preview origins (read-only)', () => {
   const PREVIEW = 'https://abc123.frolicmap.pages.dev'
 
   beforeEach(async () => {
-    await env.DB.exec('DELETE FROM items; DELETE FROM reports;')
+    await env.DB.exec('DELETE FROM items;')
     await seedItem('sf-a', 'approved')
   })
 
@@ -686,23 +629,6 @@ describe('#248 Phase 1 — CF Pages preview origins (read-only)', () => {
       },
     })
     expect(res.status).toBe(200)
-  })
-
-  it('REJECTS a preview Origin on the write path /api/report with 403', async () => {
-    const res = await SELF.fetch('https://api.frolicmap.app/api/report', {
-      method: 'POST',
-      headers: {
-        'cf-connecting-ip': '10.20.0.6',
-        'content-type': 'application/json',
-        origin: PREVIEW,
-        ...(await authHeaders()),
-      },
-      body: JSON.stringify({ item_id: 'sf-a', reason: 'closed' }),
-    })
-    // Preview builds must not be able to pollute the reports queue.
-    expect(res.status).toBe(403)
-    const { results } = await env.DB.prepare('SELECT COUNT(*) as n FROM reports').all()
-    expect(results).toEqual([{ n: 0 }])
   })
 
   // Spoof-resistance: the anchored `^https://[a-z0-9-]+\.frolicmap\.pages\.dev$`

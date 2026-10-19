@@ -64,7 +64,7 @@ describe('LegendButton — tappable category filters (revision 6)', () => {
   it('lists every category in a wave metro too (no coming-soon rows)', () => {
     openLegend('/cities/seattle')
     expect(screen.getByRole('button', { name: 'Water Play' })).toBeInTheDocument()
-    expect(screen.queryByText(/coming soon/i)).toBeNull()
+    expect(screen.queryByText(/soon/i)).toBeNull()
   })
 
   it('a row tap toggles the category and fires the filter_chip goal', () => {

@@ -19,7 +19,7 @@ describe('useMetro', () => {
   it('treats every non-/cities path as the Bay Area', () => {
     // The /cities index itself has no slug, so it falls back to Bay too — it's
     // a static page in production, but the SPA must still boot sanely on it.
-    for (const p of ['/terms', '/admin', '/anything', '/cities']) {
+    for (const p of ['/terms', '/privacy', '/anything', '/cities']) {
       expect(at(p).id, p).toBe('bay')
     }
   })

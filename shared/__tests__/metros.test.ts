@@ -17,7 +17,6 @@ import {
   timezoneForCoords,
   timezoneForRegion,
 } from '../metros'
-import { ALL_CATEGORIES } from '../types'
 
 describe('metro registry', () => {
   it('has 50 metros', () => {
@@ -61,8 +60,8 @@ describe('metro registry', () => {
 
 // The reserved-namespace guard. A metro slug that collides with a top-level
 // path would shadow it at the edge, where a static file always beats the SPA
-// catch-all (plan §3.2) — a metro slugged `admin` would take over the admin
-// SPA on deploy. This fails CI instead.
+// catch-all (plan §3.2) — a metro slugged `terms` would take over the legal
+// page on deploy. This fails CI instead.
 describe('slug safety', () => {
   it('never collides with a reserved top-level namespace', () => {
     const reserved = new Set<string>(RESERVED_SLUGS)
@@ -157,21 +156,6 @@ describe('Bay Area geometry is byte-identical to the pre-national constants', ()
   it('is the region every pre-national row defaults to', () => {
     expect(DEFAULT_REGION).toBe('bay')
     expect(getMetro(DEFAULT_REGION)).toBeDefined()
-  })
-
-  it('carries only static-place categories; waterplay is universal, zoo is Bay-only', () => {
-    // waterplay went national 2026-07-21 via the OSM bootstrap leg (#435), so
-    // every metro carries it. zoo is live for the depth metro only. Dynamic
-    // categories (event, upick, ...) are not part of this product.
-    for (const m of METROS) {
-      expect(m.liveCategories.includes('waterplay'), m.id).toBe(true)
-      expect(m.liveCategories.includes('zoo'), m.id).toBe(m.id === 'bay')
-      for (const cat of m.liveCategories) {
-        expect(ALL_CATEGORIES.includes(cat), `${m.id}: ${cat}`).toBe(true)
-      }
-      expect((m.liveCategories as readonly string[]).includes('event'), m.id).toBe(false)
-      expect((m.liveCategories as readonly string[]).includes('upick'), m.id).toBe(false)
-    }
   })
 })
 

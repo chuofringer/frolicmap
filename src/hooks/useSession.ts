@@ -9,7 +9,7 @@ const REFRESH_LEAD_SECONDS = 30
 
 // A returning tab (visibility/pageshow/online) whose token expires within this
 // window — or is already gone — is treated as stale and re-minted immediately.
-// Same 30s lead as the scheduled refresh: the point at which the current token
+// Same 30s lead as the timed refresh: the point at which the current token
 // can no longer be trusted for the tiles a wake will re-request.
 const STALE_THRESHOLD_MS = REFRESH_LEAD_SECONDS * 1000
 

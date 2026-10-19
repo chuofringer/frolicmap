@@ -63,7 +63,6 @@ if (!process.features.typescript && !process.env.__SEO_REEXEC) {
 
 const { METROS, getMetro } = await import('../../shared/metros.ts')
 const { CATEGORY_PLURAL, CATEGORY_FOLD } = await import('../../shared/categorySlugs.ts')
-const { ALL_CATEGORIES } = await import('../../shared/types.ts')
 
 // Chinese pages (#693) take their copy from the SPA's own zh locale slices —
 // nothing is duplicated into the generator. Importing the leaf files (not
@@ -77,15 +76,6 @@ const zh = makeZhContext({
   categories: zhCategories,
   names: zhMetro.names,
 })
-
-/**
- * Categories a hub page will mention — everything in the vocabulary. Ones
- * without data render as "coming soon" rather than being hidden, so the page
- * carries the search vocabulary and the roadmap stays visible (plan §4B).
- * Folded categories (zoo → the combined "Aquariums/Zoos" entry, #323) never
- * get a line of their own; their counts merge into the host below.
- */
-const ALL_PAGE_CATEGORIES = ALL_CATEGORIES.filter((c) => !(c in CATEGORY_FOLD))
 
 function parseArgs(argv) {
   const args = { metros: null, remote: false, dryRun: false, out: path.join(REPO_ROOT, 'dist') }
@@ -120,7 +110,7 @@ const args = parseArgs(process.argv.slice(2))
 
 function d1(sql) {
   // Retry transient wrangler failures (#654): a --remote read can fail
-  // mid-run when prod D1 is busy with a write burst (an OSM import or dedup
+  // mid-run when prod D1 is busy with a write burst (an import or dedup
   // apply), and a rerun with no other change succeeds. 4 attempts /
   // 2s-4s-8s backoff; only a nonzero wrangler exit throws inside the retried
   // closure — a JSON.parse failure on a genuine 0-exit result happens OUTSIDE
@@ -224,7 +214,7 @@ async function main() {
   // over the FULL published set, so partial runs see the same link graph —
   // and it is the SINGLE source of truth for emission: the per-metro loop
   // must not re-derive eligibility from its own later query, or a count
-  // shifting across the two reads (crons + admin write to the same prod D1)
+  // shifting across the two reads (a data load writing to the same prod D1)
   // reintroduces the linked-but-never-written page.
   const eligibleIds = new Set()
   {
@@ -249,12 +239,11 @@ async function main() {
       `WHERE region='${metro.id}' AND status='approved'`,
     )
 
-    // Count only LIVE categories: a "coming soon" layer has no map data, so it
-    // must never become a ?cat= deep link into an empty filtered view.
-    const live = new Set(metro.liveCategories)
+    // Counts come from the rows themselves, so a category with no rows in
+    // this metro is absent and never becomes a ?cat= deep link into an empty
+    // filtered view.
     const counts = {}
     for (const r of rows) {
-      if (!live.has(r.category)) continue
       // Fold zoo rows into the combined "Aquariums/Zoos" line (#323) — the
       // ?cat= deep link stays the host value; useUrlCategory expands it to
       // the full display group on load.
@@ -269,10 +258,6 @@ async function main() {
         metro,
         categoryCounts: counts,
         categoryPlural: CATEGORY_PLURAL,
-        // Everything in the vocabulary with no live data → "coming soon".
-        // Listed (never linked) so the page carries the search vocabulary and
-        // the roadmap stays visible (plan §4B).
-        allCategories: ALL_PAGE_CATEGORIES,
         nearbyMetros: nearestMetros(metro, linkable, 4),
       })
       if (!args.dryRun) write(args.out, page.path, page.html)
@@ -282,7 +267,6 @@ async function main() {
         metro,
         categoryCounts: counts,
         categoryPlural: CATEGORY_PLURAL,
-        allCategories: ALL_PAGE_CATEGORIES,
         nearbyMetros: nearestMetros(metro, linkable, 4),
         loc: zh,
       })
@@ -313,7 +297,7 @@ async function main() {
     // outside the card crop. D1 is SQLite and supports window functions.
     //
     // `ORDER BY rn` before the LIMIT is load-bearing: without it SQLite
-    // truncates in (category, id) order, so with 10 live categories × 40 rows
+    // truncates in (category, id) order, so with 10 categories × 40 rows
     // = 400 candidates against a 280 cap, every category from `playground`
     // onward was cut entirely — a card rendered zero playground dots,
     // the most legend-central colour. Ordering by rank interleaves the

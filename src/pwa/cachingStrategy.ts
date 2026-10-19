@@ -26,18 +26,12 @@
  *    entirely — the browser goes straight to the network and Pages'
  *    static-vs-fallback routing runs untouched.
  *
- * 3. `/admin` is excluded the same way. `AdminApp` is a lazy SPA route
- *    (`src/main.tsx`) gated by Cloudflare Access at the edge
- *    (`src/config/constants.ts`'s `ADMIN_API_BASE` note) — a cached shell
- *    answering a direct `/admin` navigation would race, and could win
- *    against, the Access redirect.
- *
- * 4. The MapLibre GL chunk (`assets/maplibre-gl-*.js`, ~1MB) is cache-first
+ * 3. The MapLibre GL chunk (`assets/maplibre-gl-*.js`, ~1MB) is cache-first
  *    and NOT precached — precaching 1MB on first paint is the thing to
  *    avoid. Its filename is content-hashed by Vite, so cache-first is safe:
  *    a new build ships a new URL, never a stale hit.
  *
- * 5. Third-party basemap tiles/styles/glyphs/sprites (CARTO, OpenFreeMap,
+ * 4. Third-party basemap tiles/styles/glyphs/sprites (CARTO, OpenFreeMap,
  *    Esri — see `src/config/mapStyle.ts`) are cache-first, opportunistic.
  *    They're public, unauthenticated, and slow-changing; a cache miss just
  *    falls through to the network, so this is purely a win for the "on cell
@@ -56,7 +50,7 @@ export type CacheDecision =
   | 'unhandled'
 
 /** Paths (locale-prefix aware) whose navigations must always hit the network. */
-const NAVIGATION_DENYLIST = ['/cities', '/admin']
+const NAVIGATION_DENYLIST = ['/cities']
 
 /**
  * Only `en` (root) and `zh` (`/zh/...`) are real prefixes (`src/i18n/locale.ts`

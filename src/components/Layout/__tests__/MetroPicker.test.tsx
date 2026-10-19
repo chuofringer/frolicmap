@@ -124,12 +124,12 @@ describe('MetroPicker list', () => {
   })
 
   it('keeps the /cities link and drops the coming-soon line once multiple metros are published', () => {
-    // The "More cities coming soon" line was the single-metro affordance;
+    // The "More cities soon" line was the single-metro affordance;
     // with the wave published (#362) it should be gone, while the browse-all
     // link stays as the permanent path to the index.
     render(<MetroPicker />)
     openPanel()
-    expect(screen.queryByText(/More cities coming soon/)).toBeNull()
+    expect(screen.queryByText(/More cities soon/)).toBeNull()
     const browse = screen.getByRole('link', { name: /Browse all cities/ })
     expect(browse.getAttribute('href')).toBe('/cities')
   })

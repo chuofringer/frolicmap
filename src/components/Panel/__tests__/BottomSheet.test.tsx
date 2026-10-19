@@ -137,7 +137,7 @@ describe('BottomSheet a11y contract', () => {
     expect(screen.queryByText(/affiliate/i)).toBeNull()
     expect(screen.getByRole('link', { name: 'Google Maps' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Report an issue' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Report an issue' })).toBeInTheDocument()
   })
 
   it('shows a try-again button for transient detail failures and retries on click', () => {

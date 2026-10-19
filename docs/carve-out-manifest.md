@@ -1,3 +1,5 @@
+Historical spec. The repository's current shape is described in README.md.
+
 # Carve-out manifest: funradar-app → frolicmap
 
 This repository is a fresh-history, static-places-only cut of the private

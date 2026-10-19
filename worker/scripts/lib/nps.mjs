@@ -134,7 +134,7 @@ export function npsParkToItem(park, metroFor, { status, confidence, skipRegions 
   // Plan §1.1: a unit outside every metro bbox is deferred, not ingested. Most
   // of the NPS system lands here — that's expected, not a bug.
   if (!metro) return { skipped: 'outside every metro bbox' }
-  if (skipRegions.has(metro.id)) return { skipped: `${metro.id} region (curated separately)` }
+  if (skipRegions.has(metro.id)) return { skipped: `${metro.id} region (skipped unless --include-bay)` }
 
   const { line: address, city } = physicalAddress(park?.addresses)
   // Canonical-source policy: nps.gov IS the publisher for a federal unit, so

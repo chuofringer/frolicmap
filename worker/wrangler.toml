@@ -5,8 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # Two routes serve the same handler. The apex `frolicmap.app/api/*` keeps the
 # SPA same-origin (corporate web filters often block young subdomains);
-# `api.frolicmap.app/*` is the pinned host for the Cloudflare Access-gated
-# admin API.
+# `api.frolicmap.app/*` serves the same read-only handler on a dedicated host.
 [[routes]]
 pattern = "api.frolicmap.app/*"
 zone_name = "frolicmap.app"
@@ -17,14 +16,6 @@ zone_name = "frolicmap.app"
 
 [vars]
 FRONTEND_URL = "https://frolicmap.app"
-# Cron-failure alert email (utils/email.ts). Both are no-ops until set:
-# ALERT_EMAIL is the operator inbox (empty = log only), RESEND_FROM_EMAIL the
-# verified Resend sender. RESEND_API_KEY is a secret, NOT a var:
-#   wrangler secret put RESEND_API_KEY
-RESEND_FROM_EMAIL = "alerts@frolicmap.app"
-ALERT_EMAIL = ""
-# DEV_ADMIN_BYPASS is intentionally unset in prod. Set to "yes" only via
-# `wrangler dev` overrides or a .dev.vars file to unlock the x-dev-admin header.
 
 [[d1_databases]]
 binding = "DB"
@@ -67,8 +58,3 @@ class_name = "RateLimiterDO"
 [[migrations]]
 tag = "v1-rate-limiter-do"
 new_sqlite_classes = ["RateLimiterDO"]
-
-[triggers]
-crons = [
-  "0 3 1 */3 *",    # OSM quarterly (1st of Jan/Apr/Jul/Oct 03:00 UTC) — static places rarely move
-]

@@ -35,10 +35,9 @@ export const publicRouter = new Hono<{ Bindings: Env }>()
 // (`evil-frolicmap.pages.dev`), and no suffix trickery
 // (`frolicmap.pages.dev.evil.com`).
 //
-// Preview origins are granted the READ-ONLY data surface ONLY (`/api/session`,
-// `/api/items.json`, `/api/items/:id`, `/api/tiles/*`). WRITES (`/api/report`)
-// stay locked to ALLOWED_ORIGINS: a preview build must never be able to
-// pollute the reports queue from an unreviewed branch.
+// The whole Worker is read-only (`/api/session`, `/api/items.json`,
+// `/api/items/:id`, `/api/items/:id/coords`, `/api/tiles/*`), so preview
+// origins may use every route.
 const PAGES_PREVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9-]+\.frolicmap\.pages\.dev$/
 
 // Read-only surface: exact allowlist OR a Cloudflare Pages preview origin.
@@ -60,12 +59,6 @@ publicRouter.use('/api/items/:id', cors({ origin: readOnlyCorsOrigin, credential
 publicRouter.use('/api/items/:id/coords', cors({ origin: readOnlyCorsOrigin, credentials: false, maxAge: 600 }))
 publicRouter.use('/api/session', cors({ origin: readOnlyCorsOrigin, credentials: false, maxAge: 600 }))
 publicRouter.use('/api/tiles/*', cors({ origin: readOnlyCorsOrigin, credentials: false, maxAge: 600 }))
-
-// Write path: CF Pages *preview* origins (the anchored `.pages.dev` regex)
-// are NEVER allowed here, because that regex matches ANY PR-preview build,
-// reviewed or not. Writes accept the exact prod/dev allowlist only.
-const writeCorsOrigin = (origin: string): string | null =>
-  isProdOrigin(origin) ? origin : null
 
 // Minified attribution. Credits the open datasets the places come from:
 // OpenStreetMap (ODbL), IMLS (libraries + museums), the National Park
@@ -391,7 +384,7 @@ publicRouter.get('/api/items/:id/coords', async (c) => {
 // detail so an attacker chaining tile + detail fetches burns one budget,
 // not two.
 //
-// Edge-cached 1h per (z, x, y). Admin mutations don't purge tiles yet (the
+// Edge-cached 1h per (z, x, y). Data loads don't purge tiles (the
 // purge set would be all covering tiles — doable but deferred to Phase 2c
 // along with the `status_rev` query-param-versioning the plan describes).
 // 1h staleness on a pin appearance is acceptable given daily archive-
@@ -600,50 +593,4 @@ publicRouter.post('/api/session', async (c) => {
   // across users and handed out by CF edge for the 1h TTL.
   c.header('Cache-Control', 'no-store')
   return c.json({ token, ttl_seconds: 300 })
-})
-
-// CORS for the report endpoint — same allowlist as the data endpoints.
-publicRouter.use('/api/report', cors({ origin: writeCorsOrigin, credentials: false, maxAge: 600 }))
-
-// User problem-reports ("closed", "wrong info", …) land in the admin
-// ReportsView. Hardened to match the other public writes: origin-guarded,
-// session-gated, and rate-limited via the Workers binding (this was
-// previously the one public write with none of those — an in-memory
-// per-isolate limiter and a spoofable x-forwarded-for fallback were the
-// only defenses, leaving a free spam vector into the admin queue).
-// List budget (10/min/IP): real users file roughly one report per session.
-publicRouter.post('/api/report', async (c) => {
-  const blocked = originGuard(c)
-  if (blocked) return blocked
-  const unauth = await sessionGuard(c)
-  if (unauth) return unauth
-
-  // cf-connecting-ip only — XFF is attacker-forgeable (see items.json).
-  const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
-  const { success } = await c.env.ITEMS_RATE_LIMITER.limit({ key: ip })
-  if (!success) {
-    c.header('Cache-Control', 'no-store')
-    c.header('Retry-After', '60')
-    return c.json({ error: 'rate limit exceeded' }, 429)
-  }
-
-  let body: { item_id?: unknown; reason?: unknown; note?: unknown }
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'invalid json' }, 400)
-  }
-  // Clamp lengths to prevent pathological payloads; real ids are well under 128.
-  const itemId = typeof body.item_id === 'string' ? body.item_id.slice(0, 128) : null
-  const reason = typeof body.reason === 'string' ? body.reason.slice(0, 200) : null
-  const note = typeof body.note === 'string' ? body.note.slice(0, 2000) : null
-  if (!itemId || !reason) return c.json({ error: 'item_id and reason required' }, 400)
-
-  await c.env.DB.prepare(
-    'INSERT INTO reports (item_id, reason, note, created_at) VALUES (?, ?, ?, ?)'
-  )
-    .bind(itemId, reason, note, new Date().toISOString())
-    .run()
-  c.header('Cache-Control', 'no-store')
-  return c.json({ ok: true })
 })

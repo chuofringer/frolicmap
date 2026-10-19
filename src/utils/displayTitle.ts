@@ -27,7 +27,7 @@ export interface DisplayTitle {
  * A translation equal to the English name yields no subtitle — that is what a
  * translator leaves behind on a venue whose name shouldn't change ("YMCA"),
  * and echoing it twice reads like a rendering bug. Blank strings are treated
- * as absent: the admin editor normalizes them to null, but the column is
+ * as absent: the import scripts normalize them to null, but the column is
  * nullable TEXT and this is the one place that assumption is load-bearing.
  */
 export function displayTitle(

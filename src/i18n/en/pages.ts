@@ -20,7 +20,6 @@ export const pages = {
     backToMap: '← Back to the map',
     heading: 'Kids activities by city',
     lede: 'Interactive maps of playgrounds, parks, libraries, museums, aquariums/zoos, beaches, water play, hiking and campgrounds — free, no account needed.',
-    moreComing: 'More cities coming soon.',
   },
   /**
    * Copy for the prerendered `/zh/cities` + `/zh/cities/{slug}` pages (#693).
@@ -39,8 +38,6 @@ export const pages = {
     cityImageAlt: '{{city}} kids activities map on frolicmap.app — {{categories}}.',
     loadingMap: 'Loading the interactive map…',
     browseCity: 'Browse {{city}}',
-    comingSoonHeading: 'Coming soon to {{city}}',
-    comingSoonTag: '(coming soon)',
     nearbyHeading: 'Nearby cities',
     browseAll: 'Browse all cities →',
     indexTitle: 'Kids Activities by City — {{categories}}',

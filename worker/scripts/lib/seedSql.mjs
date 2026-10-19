@@ -44,8 +44,8 @@ export const PRESERVE_CURATOR_STATUS =
  *
  * `website`/`city`/`attributes` use COALESCE so a re-import that happens to
  * lack a value doesn't null out one we already had. `slug` keeps the stored
- * value so a published /place/{slug} URL survives an upstream rename (the
- * admin route has an explicit escape hatch for genuine slug fixes).
+ * value so a published URL survives an upstream rename (a genuine slug fix is a
+ * hand-written UPDATE applied with `wrangler d1 execute`).
  */
 export function buildUpsertSet(extra = []) {
   return [

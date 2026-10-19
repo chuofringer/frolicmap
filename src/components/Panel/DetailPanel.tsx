@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMapStore } from '@/stores/useMapStore'
 import { useDetailData } from './useDetailData'
-import { ReportModal } from './ReportModal'
+import { reportMailto } from './detailHelpers'
 import { trackGoal } from '@/utils/analytics'
 import { displayTitle } from '@/utils/displayTitle'
 
@@ -24,7 +24,6 @@ export function DetailPanel() {
   const panelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
-  const [showReport, setShowReport] = useState(false)
   const [copied, setCopied] = useState(false)
   // A dead/expired external photo URL (Commons churn, a curator paste typo)
   // must fall back to the no-photo compact layout, never a browser's broken-
@@ -44,17 +43,14 @@ export function DetailPanel() {
   // remounts it and resets scroll/menu/copied without an id-change effect.
   useEffect(() => { panelRef.current?.focus() }, [])
 
-  // ESC closes the Report modal first (so a half-typed note isn't discarded —
-  // ReportModal has no keydown of its own), then the panel itself.
+  // ESC closes the panel.
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (showReport) { setShowReport(false); return }
-      setId(null)
+      if (e.key === 'Escape') setId(null)
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [showReport, setId])
+  }, [setId])
 
   if (!d) return null
 
@@ -219,8 +215,8 @@ export function DetailPanel() {
         </div>
 
         {/* Sticky footer — two map buttons up front (curator preference over the
-            single-Directions pattern) + Website + Share; Report is a visible text
-            button on the source line. */}
+            single-Directions pattern) + Website + Share; Report is a visible mailto
+            link on the source line. */}
         <div className="flex-shrink-0 border-t border-gray-100 dark:border-gray-800 px-[18px] pt-3.5 pb-3 flex flex-col gap-2 relative">
           <div className="flex items-stretch gap-2">
             <a
@@ -275,12 +271,10 @@ export function DetailPanel() {
                 {' · '}
               </>
             )}
-            <button type="button" onClick={() => setShowReport(true)} className="text-amber-600 dark:text-amber-400 hover:underline">{t('detail.reportAnIssue')}</button>
+            <a href={reportMailto(d.id, d.listItem.name, d.shareUrl)} className="text-amber-600 dark:text-amber-400 hover:underline">{t('detail.reportAnIssue')}</a>
           </div>
         </div>
       </div>
-
-      {showReport && <ReportModal itemId={d.id} onClose={() => setShowReport(false)} />}
     </>
   )
 }

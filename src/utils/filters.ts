@@ -17,8 +17,7 @@ function matchesCategoryFilter(item: ListItem, categories: Filters['categories']
   return categories.has('playground') && item.category === 'park' && item.has_playground === 1
 }
 
-// Generic over the specific shape of items so both full `Item` (admin
-// contexts) and redacted `ListItem` (public list payload) can flow through
+// Generic over the specific shape of items so both full `Item` and redacted `ListItem` (public list payload) can flow through
 // the same filter pipeline. All fields referenced below exist on both.
 export function applyFilters<T extends ListItem>(items: T[], filters: Filters): T[] {
   return items.filter((item) => {

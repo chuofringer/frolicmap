@@ -288,7 +288,7 @@ describe('SearchFilterBar desktop chip row', () => {
     expect(categories()).toEqual(['library'])
     fireEvent.click(screen.getByRole('button', { name: 'Library' }))
     expect(categories()).toEqual([])
-    expect(screen.queryByText(/coming soon/i)).toBeNull()
+    expect(screen.queryByText(/soon/i)).toBeNull()
   })
 
   it('shows the Free-only chip only when the free filter is active, and clears it on click', () => {

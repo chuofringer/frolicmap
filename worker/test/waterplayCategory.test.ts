@@ -9,7 +9,7 @@ describe('single schema (every category in ALL_CATEGORIES is insertable)', () =>
   })
 
   beforeEach(async () => {
-    await env.DB.exec('DELETE FROM items; DELETE FROM ingestion_log;')
+    await env.DB.exec('DELETE FROM items;')
   })
 
   it('accepts a row for EVERY category in ALL_CATEGORIES (CHECK list matches the shared union)', async () => {

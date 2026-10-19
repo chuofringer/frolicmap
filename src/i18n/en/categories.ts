@@ -8,8 +8,7 @@
  *
  * `zoo` never renders as a legend row of its own — it folds into the
  * aquarium chip, whose label is the combined "Aquarium/Zoo" (#323). Its own
- * label here serves the admin surfaces (PendingQueue groups by real DB
- * category).
+ * label still exists for contexts that name the real DB category.
  *
  * Category **slugs** are NOT translated — they are `?cat=` deep-link keys and
  * search terms, and they stay English in every locale.

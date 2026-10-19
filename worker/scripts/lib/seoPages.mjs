@@ -18,8 +18,8 @@ const DEFAULT_PIN_COLOR = '#f59e0b'
 
 /**
  * Metro pages live under `/cities/` (2026-07-19). Namespacing them frees the
- * top-level namespace entirely — a metro can no longer collide with `/api`,
- * `/admin` or a `public/` filename — and gives `/cities` a natural index
+ * top-level namespace entirely — a metro can no longer collide with `/api`
+ * or a `public/` filename — and gives `/cities` a natural index
  * page. Adopted from the sister project's `/risk/{state}/{city}` shape, and
  * free to do now because nothing has been published or indexed yet.
  */
@@ -61,6 +61,19 @@ export function truncateForMeta(s, max = 158) {
  * ARE the SPA shell; ours are hand-rolled, so the tags have to be explicit.
  * Without them a shared link renders as a bare text card.
  */
+/**
+ * Data attribution, on every generated page. OpenStreetMap's ODbL requires
+ * the credit to be visible and to link to its copyright page; the other three
+ * sources are credited by name. Proper nouns, so the same line serves every
+ * locale.
+ */
+export const DATA_ATTRIBUTION_TEXT =
+  'Place data © OpenStreetMap contributors (ODbL) · Institute of Museum and Library Services · ' +
+  'National Park Service · Trust for Public Land ParkServe'
+export const DATA_ATTRIBUTION_HTML =
+  'Place data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL) · ' +
+  'Institute of Museum and Library Services · National Park Service · Trust for Public Land ParkServe'
+
 const OG_IMAGE = `${SITE}/og-image.png`
 const OG_IMAGE_ALT =
   'frolicmap.app — a map of kid-friendly places: playgrounds, parks, libraries, museums and beaches.'
@@ -110,8 +123,6 @@ h2{font-size:1.25rem;margin:2rem 0 .75rem}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;padding:0;list-style:none}
 .chips a{display:inline-block;border:1px solid var(--line);border-radius:999px;
   padding:.35rem .8rem;text-decoration:none;color:var(--ink);font-size:.9rem}
-.chips .soon{display:inline-block;border:1px dashed var(--line);border-radius:999px;
-  padding:.35rem .8rem;color:var(--muted);font-size:.9rem}
 .cities{display:grid;gap:1.25rem;grid-template-columns:1fr;
   padding:0;list-style:none;margin:1.5rem 0 0}
 @media(min-width:64rem){.cities{grid-template-columns:repeat(3,1fr)}}
@@ -131,6 +142,7 @@ ${ld ? `<script type="application/ld+json">${jsonLd(ld)}</script>` : ''}
 ${body}
 <footer>
   ${footer ?? '<p><a href="/">frolicmap.app</a> — a map of kids activities.</p>'}
+  <p class="attribution">${DATA_ATTRIBUTION_HTML}</p>
 </footer>
 </div></body>
 </html>

@@ -14,7 +14,6 @@ export const pages: Translation['pages'] = {
     backToMap: '← 返回地图',
     heading: '按城市浏览亲子活动',
     lede: '游乐场、公园、图书馆、博物馆、水族馆/动物园、海滩、戏水乐园、徒步路线和露营地的互动地图——完全免费，无需注册。',
-    moreComing: '更多城市即将上线。',
   },
   citySeo: {
     home: 'frolicmap',
@@ -26,8 +25,6 @@ export const pages: Translation['pages'] = {
     cityImageAlt: 'frolicmap.app 上的{{city}}亲子活动地图——{{categories}}。',
     loadingMap: '正在加载互动地图…',
     browseCity: '浏览{{city}}',
-    comingSoonHeading: '{{city}}即将上线',
-    comingSoonTag: '（即将上线）',
     nearbyHeading: '附近城市',
     browseAll: '浏览全部城市 →',
     indexTitle: '按城市浏览亲子活动——{{categories}}',

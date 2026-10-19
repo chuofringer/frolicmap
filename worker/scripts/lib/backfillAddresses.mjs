@@ -79,8 +79,8 @@ export function chunk(arr, size) {
 /**
  * Guard against ever emitting a write for a Bay Area row.
  *
- * `region='bay'` is the original curated metro — its rows are out of scope for
- * this national backfill and must never be touched by it. The remote SELECT
+ * `region='bay'` was the original, separately curated metro — its rows are out
+ * of scope for this national backfill and must never be touched by it. The remote SELECT
  * already filters `region!='bay'`, but an `--input` file is operator-supplied
  * and could include anything, so we assert on the input and refuse to run
  * rather than trust the export was scoped correctly. Also validates that every

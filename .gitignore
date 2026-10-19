@@ -7,3 +7,6 @@ dist
 coverage
 *.log
 .DS_Store
+
+# Generated import output (SQL, caches); never committed.
+/data/

@@ -4,6 +4,7 @@ import {
   renderCitiesIndex, cityThumbUrl, nearestMetros,
   renderSitemap, renderSitemapIndex, pageKindFor,
   fitZoom, projectToCard, boundsToBbox, bboxCenter, roundedPlaces, renderMapCard,
+  DATA_ATTRIBUTION_TEXT,
   // @ts-expect-error — plain-JS script lib, no type declarations by design.
 } from '../scripts/lib/seoPages.mjs'
 import { getMetro, METROS, type Metro } from '@shared/metros'
@@ -103,10 +104,14 @@ describe('/cities index (the welcome page)', () => {
     expect(index.html).toContain('.dot{position:absolute')
   })
 
-  it('drops the data-source attributions from the footer and meta line', () => {
-    expect(index.html).not.toContain('OpenStreetMap')
-    expect(index.html).not.toContain('ParkServe')
-    expect(index.html).not.toContain('IMLS')
+  it('carries the data attribution footer, with OpenStreetMap linked to its copyright page', () => {
+    expect(index.html).toContain(
+      'Place data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL) · Institute of Museum and Library Services · National Park Service · Trust for Public Land ParkServe',
+    )
+    expect(DATA_ATTRIBUTION_TEXT).toBe(
+      'Place data © OpenStreetMap contributors (ODbL) · Institute of Museum and Library Services · ' +
+      'National Park Service · Trust for Public Land ParkServe',
+    )
     expect(index.html).toContain('frolicmap.app</a> — a map of kids activities.')
   })
 

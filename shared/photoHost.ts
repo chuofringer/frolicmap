@@ -8,18 +8,15 @@
 // (`worker/scripts/lib/backfillPhotos.mjs`) both already only ever produce a
 // Wikimedia Commons URL (`resolveCommonsTitle`'s "LICENSE SCOPE" comment).
 //
-// The admin editor's `photo_url` field is the one place a human can type or
-// paste ANYTHING, and until this file existed the server side only checked
-// the scheme (`https://`) — accepting a curator paste of any https host.
+// A hand-written `photo_url` is the one way a human could put ANYTHING into
+// the data, and a scheme check alone (`https://`) would accept any https host.
 // That is a real problem, not a hypothetical one: an `<img src>` pointed at
 // an arbitrary third-party host leaks every public viewer's IP + user-agent
 // to that host on every page load (tracking), can be swapped out from under
 // us by that host at any time, and sidesteps the license/attribution
 // guarantee the rest of this pipeline exists to uphold. This is the ONE
-// predicate for "is this URL safe to store and render publicly" — used by
-// both the worker's `PUT /api/admin/items/:id` (the actual gate) and the
-// admin UI's client-side mirror (`src/admin/ItemEditor.tsx`, so a curator
-// sees the problem before submitting rather than after a 400).
+// predicate for "is this URL safe to store and render publicly" — used by the
+// photo backfill scripts before they write a `photo_url`.
 export const ALLOWED_PHOTO_HOSTS: readonly string[] = ['upload.wikimedia.org', 'commons.wikimedia.org']
 
 /** Case-insensitive exact match against the allow-list (no subdomain wildcarding). */

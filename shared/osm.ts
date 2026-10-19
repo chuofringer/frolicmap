@@ -5,12 +5,9 @@ import type { Bbox } from './metros'
  * OSM / Overpass mapping core — the one copy of "what we ask OSM for" and
  * "how an Overpass element becomes an Item".
  *
- * This lives in `shared/` rather than `worker/src/ingest/osm.ts` because two
- * very different callers need it and neither should own a second copy:
- *
- *   - the quarterly Worker cron (`worker/src/ingest/osm.ts`), Bay-Area-scoped
- *   - the national bootstrap (`worker/scripts/ingest-osm-national.mjs`), which
- *     walks all 50 metro bboxes from a plain Node process
+ * This lives in `shared/` so that every caller shares one copy of it: the
+ * national bootstrap (`worker/scripts/ingest-osm-national.mjs`) walks the metro
+ * bboxes from a plain Node process, and the tests exercise the mapping directly.
  *
  * Everything here is pure and has NO runtime imports (the two `import type`
  * lines erase completely), which is what lets the `.mjs` script load this
@@ -48,7 +45,7 @@ const COMMONS_UPLOAD_RE = /^https?:\/\/upload\.wikimedia\.org\/wikipedia\/common
  * Ingest-time (network-free) half of the photo license-safety rule enforced
  * by `worker/scripts/lib/backfillPhotos.mjs::resolveCommonsTitle`. Resolving
  * a Commons title to a direct image URL + attribution needs a live Commons
- * API call (for `extmetadata`), which a cron must never make inline — so this
+ * API call (for `extmetadata`), which an ingest pass must never make inline — so this
  * only decides WHETHER a tag names a trustworthy Commons file and returns its
  * title; the backfill script (or a future offline pass reading
  * `attributes.photo_candidate`, see `overpassElementToItem` below) does the
@@ -111,9 +108,7 @@ export const CATEGORY_QUERY: Record<Category, string[]> = {
   // and the playground leg; the national bootstrap resolves that collision to
   // `waterplay` by ordering waterplay BEFORE playground in OSM_CATEGORIES (see
   // below). Colon-keys are quoted so Overpass parses them literally. The Bay
-  // Area keeps its hand-curated seed (seed-waterplay.sql) and never runs this
-  // leg — the national script skips the `bay` region and the quarterly Bay
-  // cron filters this category out (worker/src/ingest/osm.ts).
+  // Area is skipped by the national script unless `--include-bay` is passed.
   waterplay:  [`node[leisure=water_park]`, `way[leisure=water_park]`,
                `node[playground=splash_pad]`, `way[playground=splash_pad]`,
                `node["playground:water"=yes]`, `way["playground:water"=yes]`,
@@ -123,10 +118,9 @@ export const CATEGORY_QUERY: Record<Category, string[]> = {
 /**
  * Categories with a real OSM leg, smallest-first.
  *
- * The order matters for the Worker cron: its execution budget is spent on
- * the missing categories before re-upserting already-populated ones, so a
- * run that times out is still incrementally useful. The national script
- * keeps the same order for the same reason (and checkpoints per category).
+ * The order matters for an interrupted run: the national script checkpoints
+ * per category and works smallest-first, so a run that times out is still
+ * incrementally useful.
  *
  * `waterplay` is deliberately placed BEFORE `playground` (#435). A splash pad
  * tagged `playground:water=yes` is also `leisure=playground`, so the same OSM
@@ -174,13 +168,12 @@ export interface OsmItemOptions {
   bbox: Bbox
   /**
    * Tier signal (plan §1.6). Raw single-source OSM is Tier C —
-   * `'medium'`. The Bay Area quarterly cron passes `'high'` to preserve its
-   * pre-national behavior; see the note in `worker/src/ingest/osm.ts`.
+   * `'medium'`.
    */
   confidence: Confidence
   /**
    * `'approved'` for the national bootstrap (trusted structured sources
-   * auto-approve, plan §1.6/§4A.2), `'pending'` for the Bay cron.
+   * auto-approve, plan §1.6/§4A.2).
    */
   status: ItemStatus
   /** Optional `items.city`, when the caller knows it. */
@@ -206,7 +199,7 @@ function fallbackName(tags: Record<string, string>, category: Category): string 
 
 /**
  * Indoor/outdoor prior by category. `null` would mean "unknown", not
- * "outdoor"; curators override any of these in the admin UI.
+ * "outdoor"; an override is a hand-written UPDATE applied with `wrangler d1 execute`.
  */
 function indoorDefault(category: Category): 0 | 1 {
   return category === 'library' || category === 'museum' || category === 'aquarium' ? 1 : 0
@@ -228,7 +221,7 @@ export function overpassElementToItem(
   const address = buildAddress(el.tags ?? {})
   const now = new Date().toISOString()
   // #299: never write `photo_url` from ingest — resolving a Commons title
-  // needs a live API call this cron path must not make. Stash the candidate
+  // needs a live API call this ingest path must not make. Stash the candidate
   // in `attributes` so an offline pass (an extended `backfill-photos.mjs`)
   // can resolve + verify it without re-querying Overpass for tags this
   // element already gave us.
@@ -290,10 +283,8 @@ export function inBbox(bbox: Bbox, lat: number, lng: number): boolean {
  * for its own metro. When the registry (`metroForCoords`, population-order
  * first-match) names a different metro, this returns null and the walk emits
  * nothing: the canonical metro's bbox contains the point by definition, so
- * its own walk — or, for the Bay Area, the quarterly Worker cron — is the
- * sole emitter. Reassigning instead of ceding let a sacramento walk emit
- * `region='bay'` rows at approved/medium, bypassing the bay skip and
- * demoting the cron's high-confidence rows on apply.
+ * its own walk is the sole emitter. Reassigning instead of ceding let a
+ * sacramento walk emit `region='bay'` rows, bypassing the bay skip.
  *
  * `metroFor` is injected (same pattern as the IMLS importers' `metroFor`) so
  * this module keeps zero runtime imports — the constraint that lets plain

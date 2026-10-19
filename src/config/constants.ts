@@ -18,12 +18,3 @@ export const MIN_ZOOM = 8
 export const MAX_ZOOM = 18
 
 export const API_BASE = import.meta.env.VITE_API_BASE ?? ''
-
-// Admin endpoints (`/api/admin/*`) are pinned to `api.frolicmap.app`
-// because CF Access only intercepts that subdomain — not the apex
-// same-origin path added in #194. Same-origin admin calls land at
-// the worker without a `Cf-Access-Jwt-Assertion` header injected,
-// so the worker's `cfAccess` middleware 401s. To unify on same-origin
-// later, add `frolicmap.app/api/admin/*` to the CF Access Application's
-// destinations and switch this back to `API_BASE`.
-export const ADMIN_API_BASE = 'https://api.frolicmap.app'

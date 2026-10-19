@@ -43,7 +43,6 @@ describe('renderCityShell', () => {
     metro: SEATTLE,
     categoryCounts: { playground: 89, park: 2534, library: 115, beach: 4 },
     categoryPlural: CATEGORY_PLURAL,
-    allCategories: ['playground', 'park', 'library', 'beach', 'waterplay'],
     nearbyMetros: [{ slug: 'portland', label: 'Portland' }],
   })
 
@@ -122,12 +121,19 @@ describe('renderCityShell', () => {
     expect(page.html).not.toContain('cat=beach')
   })
 
-  it('lists coming-soon categories as plain text, never linked', () => {
-    // Filtering an empty layer would show an empty map, so a coming-soon
-    // category must not become a ?cat= link.
-    expect(page.html).toContain('(coming soon)')
-    expect(page.html).toContain('Water Play')
+  it('omits a category with zero rows entirely: no link, no placeholder label', () => {
+    // Filtering an empty layer would show an empty map, so a category with no
+    // rows in the metro never becomes a ?cat= link and is not labelled either.
     expect(page.html).not.toContain('cat=waterplay')
+    expect(page.html).not.toMatch(/soon/i)
+    expect(page.html).not.toContain('class="soon"')
+  })
+
+  it('ends the crawler fallback with the data attribution footer', () => {
+    expect(page.html).toContain(
+      'Place data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL) · ' +
+      'Institute of Museum and Library Services · National Park Service · Trust for Public Land ParkServe',
+    )
   })
 
   it('renders the nearby-metros footer with /cities links', () => {

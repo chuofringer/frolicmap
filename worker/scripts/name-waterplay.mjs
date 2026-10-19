@@ -16,8 +16,7 @@
  *   node worker/scripts/name-waterplay.mjs --metro chicago --local --dry-run
  *   node worker/scripts/name-waterplay.mjs --metro chicago --remote
  *
- * Run it after any OSM waterplay import + dedup pass, per metro — see
- * worker/scripts/run-osm.md.
+ * Run it after any OSM waterplay import + dedup pass, per metro.
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -79,9 +78,9 @@ name-waterplay.mjs — name generic OSM waterplay rows from nearby parks (#435)
   --metro <ids>   Comma-separated metro ids.
   --wave          The 12 September wave metros.
   --all           Every metro in the registry.
-  --include-bay   Also process the 'bay' region. Off by default — the Bay Area
-                  waterplay layer is hand-curated with real names and must not
-                  be touched. Passing this prints a warning and still refuses.
+  --include-bay   Accepted for symmetry with the other scripts, but the 'bay'
+                  region is always skipped: this pass has never been run
+                  against it. Passing this prints a warning and still skips.
   --local         Read from the LOCAL D1 (default).
   --remote        Read from the REMOTE D1. Read-only; this script never writes.
   --dry-run       Report only, write no SQL file.
@@ -116,15 +115,14 @@ function selectMetros() {
     if (unknown.length) { console.error(`unknown metro id(s): ${unknown.join(', ')}`); process.exit(1) }
     list = METROS.filter((m) => args.metros.includes(m.id))
   }
-  // Bay guard: the Bay Area waterplay layer is hand-curated with real names
-  // (seed-waterplay.sql) and never goes through the national OSM leg, so
-  // renaming its rows would corrupt curated data. Hard-exclude it even when
-  // explicitly named — mirroring dedup-national.mjs's curated-layer guard —
-  // and never honour --include-bay for a write-producing pass over it.
+  // Bay guard: the Bay Area waterplay layer came from a hand-curated seed
+  // with real names in the project this repo was carved from, so this
+  // write-producing pass hard-excludes it even when explicitly named, and
+  // never honours --include-bay.
   const before = list.length
   list = list.filter((m) => m.id !== DEFAULT_REGION)
   if (before !== list.length) {
-    console.log(`warning: skipping '${DEFAULT_REGION}' — curated waterplay layer, never renamed by this pass.`)
+    console.log(`warning: skipping '${DEFAULT_REGION}' — never renamed by this pass.`)
   }
   return list
 }

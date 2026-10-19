@@ -107,8 +107,9 @@ seed-imls-museums.mjs — IMLS Museum Data Files importer (#353)
                       see the vintage warning at the top of this file)
   --confidence <c>    Row confidence (default low — 8-year-old snapshot)
   --dry-run           Report only; write nothing
-  --include-bay       Emit Bay Area rows too. Off by default: the Bay museum layer is
-                      already curated, so these would double-pin the flagship map
+  --include-bay       Emit Bay Area rows too. Off by default (the Bay Area was a separate
+                      curated layer in the project this repo came from); pass it to
+                      load the Bay Area from this source
   --limit <n>         Process only the first n records per file
 
 Kept disciplines: ${Object.entries(MDF_CATEGORY_BY_DISCIPLINE).map(([d, c]) => `${d}→${c}`).join(', ')}

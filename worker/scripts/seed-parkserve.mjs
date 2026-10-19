@@ -99,8 +99,9 @@ seed-parkserve.mjs — TPL ParkServe park importer (#354)
   --metro <ids>      Comma-separated metro ids (default: every metro).
   --wave             Only the 12 September wave metros.
   --dry-run          Fetch + report, write nothing.
-  --include-bay      Emit Bay Area rows too. Off by default — the Bay park layer
-                     is already curated and these would double-pin the flagship map.
+  --include-bay      Emit Bay Area rows too. Off by default (the Bay Area was a separate
+                     curated layer in the project this repo came from); pass it to
+                     load the Bay Area from this source.
   --status <s>       Row status (default approved — trusted source, Tier C).
   --confidence <c>   Row confidence (default medium — Tier C, plan §1.6).
   --throttle-ms <n>  Delay between paged requests (default 500).

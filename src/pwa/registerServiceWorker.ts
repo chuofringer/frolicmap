@@ -14,7 +14,7 @@
  *
  * 2. A one-shot reload on `vite:preloadError`. Hashed chunk filenames mean a
  *    client that's had the app open across a deploy will request a chunk
- *    (e.g. `AdminApp-*.js`) that the new deploy no longer serves — 404, and
+ *    (e.g. `CitiesPage-*.js`) that the new deploy no longer serves — 404, and
  *    `import()` rejects. `skipWaiting`/`clientsClaim` in `src/sw.ts` narrow
  *    that window but can't close it (a request in flight when the new worker
  *    activates still finishes on the old one). Session-storage flag caps it

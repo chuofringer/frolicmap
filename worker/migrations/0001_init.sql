@@ -2,7 +2,7 @@
 --
 -- frolicmap initial schema: static places only. Collapsed from the 35
 -- migrations of the private codebase this repo was carved out of, keeping the
--- final shape of `items`, `ingestion_log`, `reports` and `id_fetch_watch`.
+-- final shape of `items` and `id_fetch_watch`.
 -- Event, crop, sign-in, newsletter, submission and analytics tables and
 -- columns are not carried over (see docs/carve-out-manifest.md).
 --
@@ -60,28 +60,6 @@ CREATE INDEX idx_items_status_lat_lng ON items(status, lat, lng);
 CREATE INDEX idx_items_region_status  ON items(region, status);
 CREATE UNIQUE INDEX idx_items_slug    ON items(slug) WHERE slug IS NOT NULL;
 CREATE INDEX idx_items_park_has_playground ON items(category, has_playground) WHERE has_playground = 1;
-
-CREATE TABLE ingestion_log (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  source_id   TEXT,
-  started_at  TEXT NOT NULL,
-  finished_at TEXT,
-  fetched     INTEGER,
-  inserted    INTEGER,
-  updated     INTEGER,
-  errors      TEXT
-);
-
-CREATE TABLE reports (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  item_id    TEXT NOT NULL,
-  reason     TEXT NOT NULL,
-  note       TEXT,
-  created_at TEXT NOT NULL,
-  resolved   INTEGER DEFAULT 0
-);
-
-CREATE INDEX idx_reports_resolved ON reports(resolved);
 
 -- Per-IP sequential-ID enumeration watch. Keyed on a SHA-256 hash of the
 -- caller's IP, never the raw IP. See worker/src/utils/enumerationGuard.ts and

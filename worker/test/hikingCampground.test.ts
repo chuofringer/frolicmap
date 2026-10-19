@@ -1,6 +1,8 @@
 import { env, applyD1Migrations } from 'cloudflare:test'
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
-import { runOsmIngest } from '../src/ingest/osm'
+import { overpassElementToItem } from '@shared/osm'
+import { getMetro } from '@shared/metros'
+import { upsert } from '../src/db/items'
 import { d1Migrations } from './helpers/migrations'
 
 describe('migration 0014 (hiking + campground categories)', () => {
@@ -9,7 +11,7 @@ describe('migration 0014 (hiking + campground categories)', () => {
   })
 
   beforeEach(async () => {
-    await env.DB.exec('DELETE FROM items; DELETE FROM ingestion_log;')
+    await env.DB.exec('DELETE FROM items;')
   })
 
   it('applies cleanly and accepts hiking + campground rows', async () => {
@@ -56,52 +58,29 @@ describe('migration 0014 (hiking + campground categories)', () => {
   })
 })
 
-describe('runOsmIngest — hiking + campground', () => {
-  beforeAll(async () => {
-    await applyD1Migrations(env.DB, d1Migrations)
-  })
+describe('overpassElementToItem — hiking + campground', () => {
+  const opts = {
+    region: 'bay',
+    bbox: getMetro('bay')!.contentBbox,
+    confidence: 'medium' as const,
+    status: 'approved' as const,
+  }
 
-  beforeEach(async () => {
-    await env.DB.exec('DELETE FROM items; DELETE FROM ingestion_log;')
-  })
-
-  it('upserts a trailhead as category=hiking and a camp_site as category=campground', async () => {
-    const fakeFetcher = async (category: string) => {
-      if (category === 'hiking') {
-        return [
-          {
-            type: 'node' as const,
-            id: 100,
-            lat: 37.857,
-            lon: -122.535,
-            tags: {
-              name: 'Tennessee Valley Trailhead',
-              information: 'trailhead',
-            },
-          },
-        ]
-      }
-      if (category === 'campground') {
-        return [
-          {
-            type: 'node' as const,
-            id: 200,
-            lat: 37.826,
-            lon: -122.481,
-            tags: {
-              name: 'Kirby Cove Campground',
-              tourism: 'camp_site',
-            },
-          },
-        ]
-      }
-      return []
-    }
-
-    const stats = await runOsmIngest(env.DB, fakeFetcher)
-    // Sanity: both rows fetched + inserted.
-    expect(stats.fetched).toBe(2)
-    expect(stats.inserted).toBe(2)
+  it('maps a trailhead to category=hiking and a camp_site to category=campground, and both insert cleanly', async () => {
+    const hiking = overpassElementToItem(
+      { type: 'node', id: 100, lat: 37.857, lon: -122.535, tags: { name: 'Tennessee Valley Trailhead', information: 'trailhead' } },
+      'hiking',
+      opts,
+    )
+    const camp = overpassElementToItem(
+      { type: 'node', id: 200, lat: 37.826, lon: -122.481, tags: { name: 'Kirby Cove Campground', tourism: 'camp_site' } },
+      'campground',
+      opts,
+    )
+    expect(hiking).not.toBeNull()
+    expect(camp).not.toBeNull()
+    await upsert(env.DB, hiking!)
+    await upsert(env.DB, camp!)
     const { results } = await env.DB
       .prepare("SELECT id, category, name, indoor FROM items WHERE id IN ('osm-node-100','osm-node-200') ORDER BY id")
       .all<{ id: string; category: string; name: string; indoor: number }>()
@@ -111,4 +90,3 @@ describe('runOsmIngest — hiking + campground', () => {
     ])
   })
 })
-

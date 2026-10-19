@@ -12,12 +12,10 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
+  # After loading data into D1, run this workflow by hand (Actions > Deploy
+  # Pages > Run workflow): the generator reads live D1, so new rows only show
+  # up in the city pages after a rebuild. There is no schedule.
   workflow_dispatch:
-  schedule:
-    # Weekly redeploy so data drift (curator approvals, the quarterly OSM
-    # ingest) reaches the site without a code change: the generator reads live
-    # D1, so approved-item changes only surface on a rebuild.
-    - cron: '0 6 * * TUE'
 
 # Serialize deploys: overlapping runs queue instead of racing.
 # cancel-in-progress:false so an in-flight upload always finishes rather than

@@ -179,9 +179,9 @@ const DATA_CATALOG_SOURCES = new Set<string>(['osm', 'imls', 'parkserve'])
 /**
  * The Website button's href. Prefers the curated `website`; falls back to
  * `source_url`, which the canonical-source policy requires to be the
- * venue/organizer's own page — aggregator merges don't carry a `website`
- * column at all, so without the fallback those rows show an orange Source
- * link at the panel's foot but no Website button.
+ * venue/organizer's own page — rows without a `website` column value would
+ * otherwise show an orange Source link at the panel's foot but no Website
+ * button.
  */
 export function websiteFor(
   detail: { website: string | null; source_url: string | null; source_type: string } | null | undefined,
@@ -190,4 +190,18 @@ export function websiteFor(
   if (detail.website) return detail.website
   if (DATA_CATALOG_SOURCES.has(detail.source_type)) return null
   return detail.source_url || null
+}
+
+/** Where problem reports go. The site has no write API: reporting is an email. */
+export const REPORT_EMAIL = 'frolicmap.official@gmail.com'
+
+/**
+ * `mailto:` link for "Report an issue" on a place. The subject carries the
+ * item id (what the operator searches the data by); the body carries the
+ * place's name and its shareable URL.
+ */
+export function reportMailto(itemId: string, itemName: string, itemUrl: string): string {
+  const subject = `frolicmap report: ${itemId}`
+  const body = `${itemName}\n${itemUrl}\n\nWhat is wrong with this place?\n`
+  return `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }

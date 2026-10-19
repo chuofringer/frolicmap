@@ -16,7 +16,6 @@
   "dependencies": {
     "geojson-vt": "^4.0.2",
     "hono": "^4.12.14",
-    "jose": "^6.2.12",
     "parse-address": "^1.1.2",
     "vt-pbf": "^3.1.3"
   },

@@ -66,7 +66,7 @@ export function FunMap() {
       pendingCloseRef.current = null
     }
   }, [])
-  // Clear a scheduled close on unmount (metro switch remounts the map).
+  // Clear a pending close on unmount (metro switch remounts the map).
   useEffect(() => cancelPendingClose, [cancelPendingClose])
 
   useEffect(() => {
@@ -208,7 +208,7 @@ export function FunMap() {
           }, CLOSE_ON_TAP_DELAY_MS)
           return
         }
-        // A feature click supersedes any close scheduled by a just-preceding
+        // A feature click supersedes any close queued by a just-preceding
         // empty tap — otherwise that timer would shut the panel this click is
         // about to open.
         cancelPendingClose()

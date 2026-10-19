@@ -55,30 +55,12 @@ export function storeLocale(l: Locale): void {
 }
 
 /**
- * Whether a path addresses the admin portal, with or without a locale prefix.
- *
- * `/zh/admin` has to count: the route matches under a `/zh` basename just as
- * `/admin` does at the root, so checking only the bare path would let a
- * curator who once chose Chinese reach a half-translated admin.
- */
-export function isAdminPath(pathname: string): boolean {
-  const prefix = localeFromPath(pathname)
-  const bare = prefix ? pathname.slice(`/${prefix}`.length) || '/' : pathname
-  return bare === '/admin' || bare.startsWith('/admin/')
-}
-
-/**
  * URL prefix first, then the stored preference, then English.
- *
- * `/admin` is pinned to English — the portal is single-curator and
- * deliberately untranslated, so a stored Chinese preference must not bleed
- * into it through `categoryLabel` and friends.
  *
  * NOTE: this is the *content* locale. It is deliberately NOT the source of the
  * router basename — see `redirectToStoredLocale`.
  */
 export function detectLocale(pathname: string = window.location.pathname): Locale {
-  if (isAdminPath(pathname)) return 'en'
   return localeFromPath(pathname) ?? storedLocale() ?? DEFAULT_LOCALE
 }
 
@@ -93,7 +75,7 @@ export function detectLocale(pathname: string = window.location.pathname): Local
  * `/cities/{slug}` links. The URL and the basename must always agree.
  *
  * Deliberately narrow: only fires when the URL carries no prefix at all, only
- * for a non-English stored choice, and never for admin. Crawlers have no
+ * for a non-English stored choice. Crawlers have no
  * localStorage, so they never see it.
  */
 export function redirectToStoredLocale(
@@ -103,7 +85,6 @@ export function redirectToStoredLocale(
 ): boolean {
   const { pathname } = window.location
   if (localeFromPath(pathname)) return false      // URL already states a locale
-  if (isAdminPath(pathname)) return false
   const stored = storedLocale()
   if (stored === null || stored === DEFAULT_LOCALE) return false
   // Target always carries the prefix, so the next load short-circuits above.
