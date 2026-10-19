@@ -66,20 +66,6 @@ describe('useItemDetail', () => {
     expect((result.current.error as ItemFetchError).status).toBe(404)
   })
 
-  it('fails fast on the events-gate 401 (signin-required is not transient)', async () => {
-    useSessionStore.setState({ token: 'tok' })
-    fetchMock.mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: 'unauthorized', reason: 'signin-required' }),
-    })
-
-    const { result } = renderWithClient('evt')
-
-    await waitFor(() => expect(result.current.isError).toBe(true))
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-  })
-
   it.each([401, 429, 503])('retries a %i (bounded) instead of treating it as gone', async (status) => {
     useSessionStore.setState({ token: 'tok' })
     fetchMock.mockResolvedValue({ ok: false, status, json: async () => ({}) })

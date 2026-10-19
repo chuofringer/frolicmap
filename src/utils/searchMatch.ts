@@ -8,7 +8,7 @@ import { CATEGORY_SLUG } from '@shared/categorySlugs'
  * no `description`. Per `docs/parent-ux-memo.md` § "Explicit non-goals" the
  * search stays "fuzzy matching against already-loaded fields only" rather
  * than growing the payload, so this module only ever looks at `name`,
- * `category`, `type`, `indoor`, and `cost` — every field a synonym rule below
+ * `category`, `indoor`, and `cost` — every field a synonym rule below
  * tests against is one `ListItem` already carries.
  *
  * A predicate (`indoor`/`cost`) narrows a synonym match to items that also
@@ -35,9 +35,7 @@ export const SEARCH_SYNONYMS: Record<string, SearchSynonymRule> = {
   trampoline: { categories: ['playground'] },
   climbing: { categories: ['playground', 'park'] },
   climb: { categories: ['playground', 'park'] },
-  farm: { categories: ['upick'] },
-  picking: { categories: ['upick'] },
-  storytime: { categories: ['library', 'event'] },
+  storytime: { categories: ['library'] },
   toddler: { categories: ['playground', 'library'] },
   splash: { categories: ['waterplay'] },
   swim: { categories: ['waterplay', 'beach'] },
@@ -51,8 +49,6 @@ export const SEARCH_SYNONYMS: Record<string, SearchSynonymRule> = {
   reading: { categories: ['library'] },
   art: { categories: ['museum'] },
   history: { categories: ['museum'] },
-  fair: { categories: ['event'] },
-  festival: { categories: ['event'] },
   free: { cost: 'free' },
   indoor: { indoor: 1 },
   rainy: { indoor: 1 },
@@ -89,12 +85,12 @@ function synonymPredicate(tokens: string[]): ResolvedPredicate | null {
   return matched ? { categories: [...categories], indoor, cost } : null
 }
 
-export type MatchableItem = Pick<ListItem, 'category' | 'type' | 'indoor' | 'cost'>
+export type MatchableItem = Pick<ListItem, 'category' | 'indoor' | 'cost'>
 
 /**
  * Whether `item` matches free-text `query` beyond plain name substring —
  * category label, category slug (the `?cat=` deep-link vocabulary — see
- * `shared/categorySlugs.ts`), the place/event type keyword, or the curated
+ * `shared/categorySlugs.ts`), or the curated
  * synonym table (§ above), AND-ing in the synonym's `indoor`/`cost`
  * predicate when it names one.
  *
@@ -113,7 +109,6 @@ export function matchesActivity(
   if (categoryLabel(item.category).toLowerCase().includes(q)) return true
   if (CATEGORY_SLUG[item.category].toLowerCase().includes(q)) return true
   if (item.category.includes(q)) return true
-  if (item.type === 'event' && 'event'.includes(q)) return true
 
   const predicate = synonymPredicate(tokenize(q))
   if (!predicate) return false

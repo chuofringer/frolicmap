@@ -2,7 +2,7 @@ import type { Translation } from '../en'
 
 export const map: Translation['map'] = {
   // Brand — the name stays in English/Latin script in both locales.
-  brandName: 'funradar',
+  brandName: 'frolicmap',
   brandSuffix: '.app',
   // Developer credit — the developer name is a proper noun, kept Latin script.
   developedBy: '开发者',
@@ -38,11 +38,6 @@ export const map: Translation['map'] = {
   networkErrorAllowlistAnd: '和',
   networkErrorAllowlistSuffix: '加入白名单。',
 
-  // RainyDayBanner (#213)
-  rainyBannerAriaLabel: '雨天室内活动提示',
-  rainyBannerBlurb: '{{metro}}目前正在下雨。',
-  rainyBannerCta: '查看室内地点',
-  rainyBannerDismissAriaLabel: '关闭雨天提示',
 
   basemaps: {
     light: '浅色',
@@ -51,5 +46,5 @@ export const map: Translation['map'] = {
     liberty: 'Liberty (3D)',
     satellite: '卫星影像',
   },
-  documentTitle: '亲子活动地图 | funradar.app',
+  documentTitle: '亲子活动地图 | frolicmap',
 }

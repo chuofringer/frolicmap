@@ -4,12 +4,6 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { FiltersDrawer } from '../FiltersDrawer'
 
-// Mock useItems — FiltersDrawer only reads it to decide whether to show the
-// U-Pick section header; we don't want real network in this test.
-vi.mock('@/hooks/useItems', () => ({
-  useItems: vi.fn(() => ({ data: { items: [] } })),
-}))
-
 function renderDrawer(onClose: () => void = () => {}) {
   return render(
     <MemoryRouter initialEntries={['/']}>

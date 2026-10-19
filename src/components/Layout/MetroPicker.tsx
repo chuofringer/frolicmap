@@ -49,8 +49,8 @@ export function MetroPicker() {
   const [geoMessage, setGeoMessage] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Both names resolve through the shared helper so the picker and the
-  // coming-soon copy can never disagree about what a city is called.
+  // Both names resolve through the shared helper so the picker and the rest
+  // of the UI can never disagree about what a city is called.
   const longName = metroName
   const shortName = metroShortName
 

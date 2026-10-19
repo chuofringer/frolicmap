@@ -45,14 +45,12 @@ export function useUrlItem() {
     if (id && id !== selectedId) {
       if (coordsQuery.data) {
         // Passive: the visitor arrived on the link rather than tapping —
-        // counts as a popup_open (bot-guarded) but is not event intent.
-        // The coords endpoint returns only `{lat, lng}` — no category/type —
-        // but neither is needed for a passive open (see openItemDetail).
+        // counts as a popup_open (bot-guarded). The coords endpoint returns
+        // only `{lat, lng}`, which is all a passive open needs.
         openItemDetail({ id }, { passive: true })
         setFlyTo({ longitude: coordsQuery.data.lng, latitude: coordsQuery.data.lat, zoom: 14 })
       } else if (coordsQuery.isError) {
-        // Stale share link — the item aged out (e.g. the daily archive
-        // cron retired a one-off event) or was never approved. Selecting a
+        // Stale share link — the item was archived or never approved. Selecting a
         // nonexistent id renders NO detail surface while the mobile bottom
         // bar still hides on `selectedId !== null`, stranding the user with
         // no controls. Drop the param instead.

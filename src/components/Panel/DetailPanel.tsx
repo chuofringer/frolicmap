@@ -3,11 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useMapStore } from '@/stores/useMapStore'
 import { useDetailData } from './useDetailData'
 import { ReportModal } from './ReportModal'
-import { UpickSeasonStrip } from './UpickSeasonStrip'
-import { SiblingDatesStrip } from './SiblingDatesStrip'
-import { EventUnlockCard } from './EventUnlockCard'
-import { ItemPopupSignupCTA } from './ItemPopupSignupCTA'
-import { trackGoal, trackOutboundClick } from '@/utils/analytics'
+import { trackGoal } from '@/utils/analytics'
 import { displayTitle } from '@/utils/displayTitle'
 
 /**
@@ -65,13 +61,13 @@ export function DetailPanel() {
   const { title, subtitle } = displayTitle(d.listItem)
 
   const share = () => {
-    trackGoal('share', d.id)
+    trackGoal('share')
     navigator.clipboard?.writeText(d.shareUrl)
       .then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600) })
       .catch(() => { /* older Safari — silent no-op */ })
   }
 
-  const outbound = (url: string) => { trackGoal('outbound_click'); trackOutboundClick(d.id, url) }
+  const outbound = () => trackGoal('outbound_click')
 
   const badge = (
     <span className="inline-flex items-center gap-1 bg-white/95 dark:bg-gray-900/95 text-amber-800 dark:text-amber-300 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm">
@@ -97,7 +93,7 @@ export function DetailPanel() {
         ref={panelRef}
         role="dialog"
         aria-modal="false"
-        aria-label={d.gated ? 'Event — sign in to unlock' : title}
+        aria-label={title}
         tabIndex={-1}
         className={`fixed top-3 right-3 bottom-3 w-[380px] max-w-[calc(100vw-24px)] z-40 flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-[0_16px_48px_rgba(0,0,0,0.24)] ring-1 ring-black/10 dark:ring-white/10 text-gray-900 dark:text-gray-100 transition-[transform,opacity] duration-200 ease-out focus:outline-none ${shown ? 'translate-x-0 opacity-100' : 'translate-x-6 opacity-0'}`}
       >
@@ -140,11 +136,7 @@ export function DetailPanel() {
             </button>
           )}
 
-          {/* Gated events blur the identifying teaser (title, badges, WHEN —
-              operator call 2026-07-26): the pin's category said "event",
-              the specifics are what sign-in unlocks. CSS-only blur —
-              presentational; the curated fields are withheld server-side. */}
-          <div className={d.gated ? 'blur-[6px] select-none pointer-events-none' : ''} aria-hidden={d.gated || undefined}>
+          <div>
             <h2 className="text-[19px] font-bold leading-[1.25]">{title}</h2>
             {/* English name under a Chinese title (#692). This panel is where a
                 parent acts on the row — directions, website, telling someone
@@ -166,7 +158,7 @@ export function DetailPanel() {
             )}
           </div>
 
-          <div className={`flex flex-wrap gap-1.5 ${d.gated ? 'blur-[6px] select-none pointer-events-none' : ''}`} aria-hidden={d.gated || undefined}>
+          <div className="flex flex-wrap gap-1.5">
             {d.isFree && <span className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-[11px] font-semibold px-2 py-0.5 rounded-md">{t('detail.free')}</span>}
             {d.indoor === 0 && <span className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold px-2 py-0.5 rounded-md">{t('detail.outdoor')}</span>}
             {d.indoor === 1 && <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[11px] font-semibold px-2 py-0.5 rounded-md">{t('detail.indoor')}</span>}
@@ -178,11 +170,9 @@ export function DetailPanel() {
             <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.5]">{d.description}</p>
           )}
 
-          {d.isUpick && <UpickSeasonStrip listItem={d.listItem} detail={d.detail ?? undefined} />}
-
-          {d.hoursLabel && d.hoursValue && (
-            <div className={`bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2.5 py-2 ${d.gated ? 'blur-[6px] select-none pointer-events-none' : ''}`} aria-hidden={d.gated || undefined}>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-0.5">{t(d.hoursLabel === 'WHEN' ? 'detail.when' : 'detail.hours')}</div>
+          {d.hoursValue && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-2.5 py-2">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-0.5">{t('detail.hours')}</div>
               <div className="text-xs text-gray-700 dark:text-gray-200">{d.hoursValue}</div>
             </div>
           )}
@@ -196,15 +186,6 @@ export function DetailPanel() {
               <div className="text-xs text-gray-500 dark:text-gray-400 italic">{t('detail.hoursUnknown')}</div>
             </div>
           )}
-
-          {/* Events sign-in gate: the WHEN box above stays as the teaser
-              (list-item fields); everything curated is behind the unlock.
-              description/goodToKnow/detailFailed self-gate — the detail fetch
-              is held back while gated — but the sibling-dates strip must be
-              hidden explicitly (it reads the free list payload). */}
-          {d.gated && <EventUnlockCard itemId={d.id} onDismiss={() => setId(null)} />}
-
-          {!d.gated && <SiblingDatesStrip siblings={d.siblings} currentId={d.id} onSelect={setId} />}
 
           {d.goodToKnow.length > 0 && (
             <div>
@@ -239,17 +220,14 @@ export function DetailPanel() {
 
         {/* Sticky footer — two map buttons up front (curator preference over the
             single-Directions pattern) + Website + Share; Report is a visible text
-            button on the source line. Hidden while the event gate is up: the
-            actions (directions, share URL) would leak the value the unlock
-            card is withholding. */}
-        {!d.gated && (
+            button on the source line. */}
         <div className="flex-shrink-0 border-t border-gray-100 dark:border-gray-800 px-[18px] pt-3.5 pb-3 flex flex-col gap-2 relative">
           <div className="flex items-stretch gap-2">
             <a
               href={d.googleMapsUrl}
               target="_blank"
               rel="noreferrer"
-              onClick={() => outbound(d.googleMapsUrl)}
+              onClick={outbound}
               className="flex-1 text-center bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-bold py-2.5 rounded-[10px] shadow-[0_4px_12px_rgba(245,158,11,0.35)] transition-colors"
             >
               {t('detail.googleMaps')}
@@ -258,7 +236,7 @@ export function DetailPanel() {
               href={d.appleMapsUrl}
               target="_blank"
               rel="noreferrer"
-              onClick={() => outbound(d.appleMapsUrl)}
+              onClick={outbound}
               className="flex-1 text-center bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[13px] font-semibold py-2.5 rounded-[10px] hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors"
             >
               {t('detail.appleMaps')}
@@ -270,7 +248,7 @@ export function DetailPanel() {
                 href={d.website}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => outbound(d.website!)}
+                onClick={outbound}
                 className="flex-1 text-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-[13px] font-semibold py-2.5 rounded-[10px] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 {t('detail.website')}
@@ -289,31 +267,17 @@ export function DetailPanel() {
             <div role="status" className="absolute -top-7 right-[18px] bg-gray-900 dark:bg-gray-700 text-white text-xs px-2.5 py-1 rounded-md shadow-lg">{t('detail.copied')}</div>
           )}
 
-          {/* FTC affiliate disclosure (#254) — renders only when the worker
-              actually swapped an outbound URL for an affiliate-tagged one, so
-              the footnote never claims affiliate links that aren't there. */}
-          {d.affiliateTagged && (
-            <div className="text-[11px] text-gray-400 dark:text-gray-500">
-              {t('detail.affiliateDisclosure')}
-            </div>
-          )}
-
           <div className="text-[11px] text-gray-400 dark:text-gray-500">
             {d.sourceUrl && d.sourceHost && (
               <>
-                {t('detail.source')} <a href={d.sourceUrl} target="_blank" rel="noreferrer" onClick={() => outbound(d.sourceUrl!)} className="text-amber-600 dark:text-amber-400 hover:underline">{d.sourceHost}</a>
+                {t('detail.source')} <a href={d.sourceUrl} target="_blank" rel="noreferrer" onClick={outbound} className="text-amber-600 dark:text-amber-400 hover:underline">{d.sourceHost}</a>
                 {d.lastVerified && <> · {t('detail.verified', { date: d.lastVerified.slice(0, 10) })}</>}
                 {' · '}
               </>
             )}
             <button type="button" onClick={() => setShowReport(true)} className="text-amber-600 dark:text-amber-400 hover:underline">{t('detail.reportAnIssue')}</button>
           </div>
-
-          {/* Third conversion surface (#251) — below every primary action so
-              it never competes with Directions/Website/Source for the tap. */}
-          <ItemPopupSignupCTA itemId={d.id} />
         </div>
-        )}
       </div>
 
       {showReport && <ReportModal itemId={d.id} onClose={() => setShowReport(false)} />}

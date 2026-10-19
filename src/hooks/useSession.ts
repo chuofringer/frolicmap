@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { useSessionStore } from '@/stores/useSessionStore'
-import { useAuthStore } from '@/stores/useAuthStore'
 import { mintSession, SessionUnavailableError } from '@/api/session'
 
 // Schedule the next refresh 30s BEFORE token expiry, matching the
@@ -68,9 +67,9 @@ export function useSession(): void {
       inFlight = true
       setStatus('loading')
       try {
-        const { token, ttl_seconds, member } = await mintSession()
+        const { token, ttl_seconds } = await mintSession()
         if (cancelled) return
-        setSession(token, ttl_seconds, member === true)
+        setSession(token, ttl_seconds)
         attemptRef.current = 0
         scheduleRefresh(ttl_seconds)
       } catch (err) {
@@ -129,24 +128,11 @@ export function useSession(): void {
     window.addEventListener('pageshow', onPageShow)
     window.addEventListener('online', onOnline)
 
-    // Real sign-in (2026-07-26): a credential change — sign-in on this tab,
-    // sign-in synced from another tab via the storage event, or a
-    // sign-out — must re-mint IMMEDIATELY so the session's tier matches. The
-    // current token may be minutes from its scheduled refresh, and until the
-    // re-mint lands, event-detail fetches would 401 `signin-required`.
-    const unsubAuth = useAuthStore.subscribe((state, prev) => {
-      if (state.credential === prev.credential) return
-      attemptRef.current = 0
-      clearTimer()
-      void mintAndSchedule()
-    })
-
     void mintAndSchedule()
 
     return () => {
       cancelled = true
       clearTimer()
-      unsubAuth()
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('pageshow', onPageShow)
       window.removeEventListener('online', onOnline)

@@ -10,31 +10,24 @@ import { useIsDesktop, useMediaQuery } from '@/hooks/useMediaQuery'
 import { useActiveFilterCount } from '@/hooks/useActiveFilterCount'
 import { useMapStore } from '@/stores/useMapStore'
 import { useFiltersStore } from '@/stores/useFiltersStore'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { EVENTS_GATE_ENABLED } from '@/config/constants'
-import { isGatedEventKind } from '@shared/eventsGate'
 import { trackGoal } from '@/utils/analytics'
 import { openItemDetail } from '@/utils/openItem'
 import { inlineTitle, titleHaystack } from '@/utils/displayTitle'
 import { FiltersDrawer } from '@/components/Layout/FiltersDrawer'
-import { PicksLauncher } from '@/components/Picks/PicksLauncher'
-import { PicksOverlay } from '@/components/Picks/PicksOverlay'
 import { ViewToggle } from './ViewToggle'
 import { useCategoryChipState } from '@/components/Filters/useCategoryChipState'
 
 // Desktop inline chips — exactly FOUR (revision 3, item 2). Every other category
 // lives in the All-filters drawer + the legend. Labels come from the legend
-// vocabulary (CATEGORIES[cat].label). Non-live categories render as coming-soon.
-const INLINE_CATEGORIES: Category[] = ['playground', 'park', 'museum', 'event']
+// vocabulary (categoryLabel).
+const INLINE_CATEGORIES: Category[] = ['playground', 'park', 'museum', 'library']
 
 const NEARBY_RADIUS_MILES = 10
 // Obstacles the centered pill must clear. The brand column ends ~208px from
-// the left. The top-right icon row (4 × 44px buttons + 3 × 8px gaps + the
-// right-3 margin) overlays at z-50 and ends 212px from the right — 220 with
+// the left. The top-right icon row (3 × 44px buttons + 2 × 8px gaps + the
+// right-3 margin) overlays at z-50 and ends ~160px from the right — 220 leaves
 // breathing room; when a detail panel is open the row shifts a further 392px
 // left (panel 380 + margins), so the clearance grows to 612.
-// The 5-button figure this used to carry went stale when the newsletter
-// envelope button was retired (2026-08-09); measured at 200px of buttons.
 const BRAND_CLEARANCE = 208
 const ICON_ROW_CLEARANCE = 220
 const PANEL_SHIFT = 392
@@ -67,17 +60,10 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
   const { data: geo } = useGeocodeQuery(debouncedQ)
   const { setFlyTo, setSearchMarker } = useMapStore()
   const setNearby = useFiltersStore((s) => s.setNearby)
-  const signedIn = useAuthStore((s) => s.signedIn)
   const listboxId = useId()
   const optionId = (idx: number) => `${listboxId}-option-${idx}`
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Events sign-in gate: gated rows are EXCLUDED from name suggestions for
-  // guests (found in the 2026-07-26 PR review) — echoing a matched event
-  // name back would undo the blur everywhere else, and a blurred suggestion
-  // is useless. Guests can't know these names to search for anyway; places
-  // still match normally.
-  const notGated = (i: { type: string; category: Category }) => !(EVENTS_GATE_ENABLED && !signedIn && isGatedEventKind(i))
   const items = itemsData?.items ?? []
   // Places: name-substring match, as before — but across BOTH titles (#692).
   // A bilingual reader types whichever name comes to mind, and the English one
@@ -85,7 +71,6 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
   // would make a venue findable in one language and invisible in the other.
   const itemMatches = items
     .filter((i) => q.length >= 2 && titleHaystack(i).some((n) => n.toLowerCase().includes(q.toLowerCase())))
-    .filter(notGated)
     .slice(0, 4)
   const itemMatchIds = new Set(itemMatches.map((i) => i.id))
   // Activities (issue #212): category/type/synonym keyword matches — "trampoline",
@@ -94,7 +79,6 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
   // `ListItem` fields only (no `description` — it isn't in this payload).
   const activityMatches = items
     .filter((i) => q.length >= 2 && !itemMatchIds.has(i.id) && matchesActivity(i, q, categoryLabel))
-    .filter(notGated)
     .slice(0, 3)
   const geoMatches = (geo ?? []).slice(0, 3)
   // One flat navigable list in visual order — Activities, then Places, then
@@ -369,21 +353,6 @@ function ChipRow({ onOpenFilters, filterCount }: { onOpenFilters: () => void; fi
       {INLINE_CATEGORIES.map((cat) => {
         const meta = CATEGORIES[cat]
         const c = chip.chipFor(cat)
-        if (!c.live) {
-          return (
-            <button
-              key={cat}
-              type="button"
-              onClick={c.comingSoon}
-              aria-label={c.comingSoonLabel}
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-gray-400/60 dark:border-gray-500 bg-white/80 dark:bg-gray-800/80 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 flex-shrink-0"
-            >
-              <span aria-hidden className="opacity-60">{getCategoryEmoji(cat)}</span>
-              {categoryLabel(cat)}
-              <span className="text-[10px] uppercase tracking-wide">{t('bar.soon')}</span>
-            </button>
-          )
-        }
         return (
           <button
             key={cat}
@@ -395,7 +364,6 @@ function ChipRow({ onOpenFilters, filterCount }: { onOpenFilters: () => void; fi
           >
             <span aria-hidden>{getCategoryEmoji(cat)}</span>
             {categoryLabel(cat)}
-            {c.locked && <span aria-hidden title={t('auth.signInToUnlock')} className="text-[10px] opacity-60">🔒</span>}
           </button>
         )
       })}
@@ -438,11 +406,6 @@ function MobileBottomBar({ onOpenFilters, filterCount }: { onOpenFilters: () => 
   const [expanded, setExpanded] = useState(false)
   return (
     <>
-      {!expanded && (
-        <div className="md:hidden fixed inset-x-3 bottom-[76px] z-30 flex justify-center pointer-events-none">
-          <PicksLauncher className="pointer-events-auto" />
-        </div>
-      )}
       {expanded && (
         <div className={`md:hidden fixed left-3 right-3 bottom-[76px] z-30 flex items-center gap-2 h-12 rounded-full ${PILL_SURFACE} px-4`}>
           <SearchField desktop={false} autoFocus dropUp onCollapse={() => setExpanded(false)} />
@@ -515,13 +478,12 @@ export function SearchFilterBar() {
   const drawer = overlay === 'filters' && <FiltersDrawer onClose={() => closeOverlay('filters')} />
 
   if (!isDesktop) {
-    // The bottom bar yields the screen to the detail sheet / list panel /
-    // calendar panel (any non-map view owns the screen on mobile).
+    // The bottom bar yields the screen to the detail sheet / list panel
+    // (any non-map view owns the screen on mobile).
     const barHidden = detailOpen || viewMode !== 'map'
     return (
       <>
         {!barHidden && <MobileBottomBar onOpenFilters={openFilters} filterCount={filterCount} />}
-        <PicksOverlay />
         {drawer}
       </>
     )
@@ -541,10 +503,8 @@ export function SearchFilterBar() {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             <ViewToggle compact />
             <ChipRow onOpenFilters={openFilters} filterCount={filterCount} />
-            <PicksLauncher />
           </div>
         </div>
-        <PicksOverlay />
         {drawer}
       </>
     )
@@ -565,10 +525,8 @@ export function SearchFilterBar() {
         </div>
         <div className="pointer-events-auto flex items-center gap-1.5 max-w-full overflow-x-auto no-scrollbar">
           <ChipRow onOpenFilters={openFilters} filterCount={filterCount} />
-          <PicksLauncher />
         </div>
       </div>
-      <PicksOverlay />
       {drawer}
     </>
   )

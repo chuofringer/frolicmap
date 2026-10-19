@@ -8,8 +8,8 @@ import { useFiltersStore } from '@/stores/useFiltersStore'
 const trackGoal = vi.fn()
 vi.mock('@/utils/analytics', () => ({ trackGoal: (n: string) => trackGoal(n) }))
 
-// `/` boots the Bay Area metro (every category live); `/cities/seattle` boots a
-// wave metro where U-Pick is coming-soon.
+// `/` boots the Bay Area metro; `/cities/seattle` boots a wave metro. Every
+// category is live in both.
 const renderAt = (path = '/') =>
   render(<LegendButton />, {
     wrapper: ({ children }) => <MemoryRouter initialEntries={[path]}>{children}</MemoryRouter>,
@@ -22,7 +22,7 @@ const openLegend = (path = '/') => {
 
 beforeEach(() => {
   trackGoal.mockClear()
-  useMapStore.setState({ overlay: null, selectedId: null, waitlistIntent: null })
+  useMapStore.setState({ overlay: null, selectedId: null })
   useFiltersStore.setState({ categories: new Set() })
 })
 afterEach(() => cleanup())
@@ -61,6 +61,12 @@ describe('LegendButton — tappable category filters (revision 6)', () => {
     expect(screen.getByText('Tap to filter')).toBeInTheDocument()
   })
 
+  it('lists every category in a wave metro too (no coming-soon rows)', () => {
+    openLegend('/cities/seattle')
+    expect(screen.getByRole('button', { name: 'Water Play' })).toBeInTheDocument()
+    expect(screen.queryByText(/coming soon/i)).toBeNull()
+  })
+
   it('a row tap toggles the category and fires the filter_chip goal', () => {
     openLegend()
     const playground = screen.getByRole('button', { name: 'Playground' })
@@ -87,15 +93,6 @@ describe('LegendButton — tappable category filters (revision 6)', () => {
     expect(screen.getByText('Categories')).toBeInTheDocument()
   })
 
-  it('a coming-soon row arms the waitlist (does not toggle a filter)', () => {
-    // Seattle: U-Pick is not a live category → coming-soon treatment.
-    openLegend('/cities/seattle')
-    const upick = screen.getByRole('button', { name: /U-Pick Farm — coming soon/ })
-    fireEvent.click(upick)
-    expect(trackGoal).toHaveBeenCalledWith('coming_soon_tap')
-    expect(useMapStore.getState().waitlistIntent).toEqual({ category: 'upick', metro: 'seattle' })
-    expect(useFiltersStore.getState().categories.has('upick')).toBe(false)
-  })
 })
 
 // #643 — first-mobile-visit auto-peek. jsdom's matchMedia never matches
@@ -127,13 +124,11 @@ describe('LegendButton — first-visit auto-peek (#643)', () => {
     expect(screen.queryByText('Categories')).toBeNull()
   })
 
-  it('the peek is compact: live rows only, no coming-soon rows, no tap-to-filter hint', () => {
-    // Seattle: U-Pick is coming-soon there — the peek must not list it.
+  it('the peek is compact: no tap-to-filter hint', () => {
     renderAt('/cities/seattle')
     act(() => vi.advanceTimersByTime(1_600))
     expect(screen.getByText('Categories')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Playground' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /coming soon/ })).toBeNull()
     expect(screen.queryByText('Tap to filter')).toBeNull()
   })
 

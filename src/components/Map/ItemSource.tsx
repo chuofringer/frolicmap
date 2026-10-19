@@ -3,7 +3,6 @@ import { Source, Layer } from 'react-map-gl/maplibre'
 import type { ExpressionSpecification } from 'maplibre-gl'
 import type { ListItem } from '@shared/types'
 import { CATEGORIES } from '@/config/categories'
-import { pickEarliestPerSource } from '@/utils/pickEarliestPerSource'
 import { API_BASE } from '@/config/constants'
 import { useSessionStore } from '@/stores/useSessionStore'
 
@@ -35,30 +34,14 @@ const CATEGORY_COLOR_EXPR = matchOnCategory('color', '#9ca3af') as any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CATEGORY_EMOJI_EXPR = matchOnCategory('emoji', '❓') as any
 
-// For upick features, read the pre-resolved primary_crop_emoji property
-// emitted by the tile handler (see worker/src/routes/public.ts). MapLibre
-// expressions can't invoke JS, so pre-resolving on the worker keeps the
-// expression tiny. Fallback '🍓' is strawberry-season default — only hit
-// on a seed row with missing/malformed crops_state.
-const EMOJI_EXPR = [
-  'case',
-  ['==', ['get', 'category'], 'upick'],
-    ['coalesce', ['get', 'primary_crop_emoji'], '🍓'],
-  CATEGORY_EMOJI_EXPR,
-] as unknown as ExpressionSpecification
+const EMOJI_EXPR = CATEGORY_EMOJI_EXPR as unknown as ExpressionSpecification
 
 export function ItemSource({ items, selectedId }: Props) {
-  // Dedup siblings and derive the allow-list of ids that should render on
-  // the map. Tiles from the worker contain every approved row in the tile
-  // bbox (including multi-date / multi-time-slot siblings and anything the
-  // current filter drawer would hide); the MapLibre layer filter below
-  // narrows to just the ones we want visible. Vector-tile rendering is
-  // the only thing that changed in Phase 2c2 — `pickEarliestPerSource`
-  // and `applyFilters` (called upstream) still shape the set.
-  const allowedIds = useMemo(
-    () => pickEarliestPerSource(items).map((i) => i.id),
-    [items],
-  )
+  // The allow-list of ids that should render on the map. Tiles from the
+  // worker contain every approved row in the tile bbox (including anything
+  // the current filter drawer would hide); the MapLibre layer filter below
+  // narrows to just the ones that pass `applyFilters` upstream.
+  const allowedIds = useMemo(() => items.map((i) => i.id), [items])
 
   // Filter expression: `id ∈ allowedIds`. MapLibre evaluates this per
   // feature per render; for our ~5k-row dataset this is cheap enough that

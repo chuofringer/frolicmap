@@ -8,7 +8,7 @@ export function LegalPage({ title, lastUpdated, children }: { title: string; las
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <header className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
         <Link to="/" className="font-bold text-lg whitespace-nowrap">
-          <span style={{ color: '#f59e0b' }}>funradar</span>
+          <span style={{ color: '#f59e0b' }}>frolicmap</span>
           <span className="text-gray-700 dark:text-gray-300">.app</span>
         </Link>
         <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-100">

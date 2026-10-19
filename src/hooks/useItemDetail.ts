@@ -18,9 +18,8 @@ import { useSessionStore } from '@/stores/useSessionStore'
 // Authorization can be attached; TanStack Query auto-runs the queryFn
 // when `enabled` transitions false → true.
 //
-// `retry` mirrors `useItemCoords`: a 404 (row gone / never approved) and the
-// events-gate 401 (`signin-required` — fixed only by signing in) are not
-// transient, so they fail fast; anything else (401 from a token mid-refresh,
+// `retry` mirrors `useItemCoords`: a 404 (row gone / never approved) is not
+// transient, so it fails fast; anything else (401 from a token mid-refresh,
 // 429 from the shared rate budget, 5xx, network blip) gets a bounded retry
 // and, if it still fails, the panel offers "try again" rather than claiming
 // the item is gone. See `isTransientDetailError`.
@@ -29,10 +28,7 @@ import { useSessionStore } from '@/stores/useSessionStore'
 // refetchInterval is left off so we don't hammer the detail endpoint
 // per open popup.
 export function isTransientDetailError(error: unknown): boolean {
-  if (error instanceof ItemFetchError) {
-    if (error.status === 404) return false
-    if (error.status === 401 && error.reason === 'signin-required') return false
-  }
+  if (error instanceof ItemFetchError && error.status === 404) return false
   return true
 }
 

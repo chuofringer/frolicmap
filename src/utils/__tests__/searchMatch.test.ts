@@ -7,14 +7,12 @@ import { matchesActivity, type MatchableItem } from '../searchMatch'
 const LABELS: Record<Category, string> = {
   playground: 'Playground', museum: 'Museum', library: 'Library', park: 'Park',
   aquarium: 'Aquarium/Zoo', zoo: 'Zoo', beach: 'Beach', waterplay: 'Water Play', hiking: 'Hiking',
-  campground: 'Campground', event: 'Event', upick: 'U-Pick Farm',
-  birthday_party: 'Birthday Party',
-  restaurant: 'Restaurant',
+  campground: 'Campground',
 }
 const label = (c: Category) => LABELS[c]
 
 const item = (over: Partial<MatchableItem>): MatchableItem => ({
-  category: 'playground', type: 'place', indoor: 0, cost: 'paid', ...over,
+  category: 'playground', indoor: 0, cost: 'paid', ...over,
 })
 
 describe('matchesActivity (issue #212)', () => {
@@ -29,12 +27,7 @@ describe('matchesActivity (issue #212)', () => {
 
   it('matches the category slug (the shared search-term vocabulary)', () => {
     expect(matchesActivity(item({ category: 'waterplay' }), 'splash-pads', label)).toBe(true)
-    expect(matchesActivity(item({ category: 'upick' }), 'u-pick-farms', label)).toBe(true)
-  })
-
-  it('matches the event type keyword', () => {
-    expect(matchesActivity(item({ type: 'event', category: 'event' }), 'event', label)).toBe(true)
-    expect(matchesActivity(item({ type: 'place', category: 'park' }), 'event', label)).toBe(false)
+    expect(matchesActivity(item({ category: 'park' }), 'parks', label)).toBe(true)
   })
 
   // The issue's own example queries.
@@ -43,13 +36,8 @@ describe('matchesActivity (issue #212)', () => {
     expect(matchesActivity(item({ category: 'museum' }), 'trampoline', label)).toBe(false)
   })
 
-  it('"farm" surfaces u-pick rows', () => {
-    expect(matchesActivity(item({ category: 'upick' }), 'farm', label)).toBe(true)
-  })
-
-  it('"storytime" surfaces both library and event rows', () => {
+  it('"storytime" surfaces library rows only', () => {
     expect(matchesActivity(item({ category: 'library' }), 'storytime', label)).toBe(true)
-    expect(matchesActivity(item({ category: 'event', type: 'event' }), 'storytime', label)).toBe(true)
     expect(matchesActivity(item({ category: 'beach' }), 'storytime', label)).toBe(false)
   })
 

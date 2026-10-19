@@ -1,24 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CategoryChips } from '@/components/Filters/CategoryChips'
-import { TimeChips } from '@/components/Filters/TimeChips'
 import { AgeSlider } from '@/components/Filters/AgeSlider'
 import { FreeToggle } from '@/components/Filters/FreeToggle'
-import { InSeasonChip } from '@/components/Filters/InSeasonChip'
 import { useFiltersStore } from '@/stores/useFiltersStore'
-import { useItems } from '@/hooks/useItems'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 export function FiltersDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const reset = useFiltersStore((s) => s.reset)
   const dialogRef = useRef<HTMLDivElement>(null)
-  // Hide the U-Pick section header when InSeasonChip would render null
-  // (off-season, freeze weeks, items still loading) — otherwise the
-  // section shows an empty "U-Pick" label above nothing.
-  const items = useItems().data?.items ?? []
-  const showInSeason = items.some((i) => i.category === 'upick' && i.in_season_now === 1)
-
   // Scroll affordances: track whether there's hidden content above/below so the
   // fades + the "more below" chevron only show when scrolling is actually
   // possible (an always-on fade reads as decoration and gets tuned out).
@@ -35,8 +26,8 @@ export function FiltersDrawer({ onClose }: { onClose: () => void }) {
     setCanScrollDown((prev) => (prev === down ? prev : down))
   }, [])
 
-  // Re-measure on mount and whenever content height can change (items load,
-  // U-Pick section toggles). A ResizeObserver also catches font/reflow shifts.
+  // Re-measure on mount and whenever content height can change. A
+  // ResizeObserver also catches font/reflow shifts.
   useEffect(() => {
     updateScroll()
     const el = scrollRef.current
@@ -45,7 +36,7 @@ export function FiltersDrawer({ onClose }: { onClose: () => void }) {
     ro.observe(el)
     for (const child of Array.from(el.children)) ro.observe(child)
     return () => ro.disconnect()
-  }, [updateScroll, items.length, showInSeason])
+  }, [updateScroll])
 
   const scrollDown = useCallback(() => {
     const el = scrollRef.current
@@ -97,16 +88,6 @@ export function FiltersDrawer({ onClose }: { onClose: () => void }) {
             <section>
               <div className={sectionLabel}>{t('filters.sectionCategory')}</div>
               <CategoryChips />
-            </section>
-            {showInSeason && (
-              <section>
-                <div className={sectionLabel}>{t('filters.sectionUpick')}</div>
-                <InSeasonChip />
-              </section>
-            )}
-            <section>
-              <div className={sectionLabel}>{t('filters.sectionWhen')}</div>
-              <TimeChips />
             </section>
             <section>
               <div className={sectionLabel}>{t('filters.sectionCost')}</div>

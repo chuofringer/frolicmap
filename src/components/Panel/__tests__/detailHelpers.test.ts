@@ -1,167 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest'
-import { deriveGoodToKnow, parseOpenUntil, formatDistanceMi, formatEventTiming, formatSiblingChip, websiteFor } from '../detailHelpers'
-import { viewerTimezone } from '@/utils/venueTime'
-import { i18next, loadLocale } from '@/i18n'
-
-describe('formatEventTiming (shared with ItemPopup)', () => {
-  it('describes a weekly RRULE by day', () => {
-    expect(formatEventTiming('2026-04-11T13:00:00Z', null, 'FREQ=WEEKLY;BYDAY=SA')).toMatch(/^Every Saturdays/)
-  })
-  it('describes a monthly RRULE by day', () => {
-    expect(formatEventTiming('2026-04-11T13:00:00Z', null, 'FREQ=MONTHLY;BYDAY=SA')).toMatch(/^Monthly on Saturdays/)
-  })
-  it('falls back to Recurring for other freqs', () => {
-    expect(formatEventTiming(null, null, 'FREQ=DAILY')).toBe('Recurring')
-  })
-  it('describes an ordinal-prefixed BYDAY (2nd Saturday) rather than degrading to Recurring', () => {
-    expect(formatEventTiming(null, null, 'FREQ=MONTHLY;BYDAY=2SA')).toBe('Monthly on 2nd Saturdays')
-  })
-  it('applies BYSETPOS ordinals to a single BYDAY weekday (#421)', () => {
-    expect(formatEventTiming(null, null, 'FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2,4'))
-      .toBe('Monthly on 2nd Sundays, 4th Sundays')
-  })
-  it('falls back to a generic phrase when BYSETPOS spans multiple weekdays', () => {
-    expect(formatEventTiming(null, null, 'FREQ=MONTHLY;BYDAY=SA,SU;BYSETPOS=1')).toBe('Recurring')
-  })
-  it('renders BYSETPOS ordinals in occurrence order, not token order', () => {
-    expect(formatEventTiming(null, null, 'FREQ=MONTHLY;BYDAY=SU;BYSETPOS=4,2'))
-      .toBe('Monthly on 2nd Sundays, 4th Sundays')
-    expect(formatEventTiming(null, null, 'FREQ=MONTHLY;BYDAY=SU;BYSETPOS=-1,2'))
-      .toBe('Monthly on 2nd Sundays, last Sundays')
-  })
-  it('ignores a vestigial BYSETPOS on non-MONTHLY freqs instead of demoting to Recurring', () => {
-    // The expansion engine ignores BYSETPOS outside MONTHLY, so the copy
-    // must keep the weekday label the occurrences actually follow.
-    expect(formatEventTiming(null, null, 'FREQ=WEEKLY;BYDAY=SA;BYSETPOS=1')).toMatch(/^Every Saturdays/)
-  })
-  it('renders a single start as date · time and a same-day range with a dash', () => {
-    expect(formatEventTiming('2026-04-11T13:00:00Z', null, null)).toContain('·')
-    expect(formatEventTiming('2026-04-11T13:00:00Z', '2026-04-11T15:00:00Z', null)).toContain('–')
-  })
-  it('returns empty string with no timing', () => {
-    expect(formatEventTiming(null, null, null)).toBe('')
-  })
-})
-
-describe('formatEventTiming — venue timezone', () => {
-  it('renders a New York event on the New York clock for every viewer', () => {
-    const s = formatEventTiming('2026-07-23T08:00:00-04:00', null, null, 'America/New_York')
-    expect(s).toContain('Jul 23')
-    expect(s).toContain('8:00 AM')
-    // Never the shifted clock a non-ET viewer used to see.
-    expect(s).not.toContain('5:00 AM')
-    expect(s).not.toContain('12:00 PM')
-  })
-
-  it('renders a true-UTC stored instant (ICS row) on the venue clock', () => {
-    const s = formatEventTiming('2026-05-03T17:30:00.000Z', '2026-05-03T18:30:00.000Z', null, 'America/Los_Angeles')
-    expect(s).toContain('10:30 AM')
-    expect(s).toContain('11:30 AM')
-    expect(s).toContain('May 3')
-  })
-
-  it('suffixes the venue zone exactly when it differs from the viewer zone', () => {
-    const s = formatEventTiming('2026-07-23T08:00:00-04:00', null, null, 'America/New_York')
-    if (viewerTimezone() === 'America/New_York') {
-      expect(s).not.toMatch(/E[DS]T/)
-    } else {
-      expect(s).toMatch(/8:00 AM EDT$/)
-    }
-  })
-
-  it('weekly RRULE time reads on the venue clock', () => {
-    const s = formatEventTiming('2026-07-04T10:00:00-04:00', null, 'FREQ=WEEKLY;BYDAY=SA', 'America/New_York')
-    expect(s).toMatch(/^Every Saturdays at 10:00 AM/)
-  })
-
-  it('renders bare-date rows as dates with NO clock time', () => {
-    const s = formatEventTiming('2027-08-01', null, null, 'America/Los_Angeles')
-    expect(s).toBe('Sun, Aug 1')
-    expect(s).not.toContain('·')
-  })
-
-  it('renders a bare-date range as a date span', () => {
-    const s = formatEventTiming('2027-08-01', '2027-08-03', null, 'America/Los_Angeles')
-    expect(s).toBe('Sun, Aug 1 – Tue, Aug 3')
-  })
-})
-
-describe('formatSiblingChip — venue timezone', () => {
-  it('chips carry the venue clock', () => {
-    expect(formatSiblingChip('2026-07-23T13:00:00-04:00', 'America/New_York')).toBe('Thu, Jul 23 · 1pm')
-  })
-  it('bare-date chips carry the date alone', () => {
-    expect(formatSiblingChip('2027-08-01', 'America/Los_Angeles')).toBe('Sun, Aug 1')
-  })
-})
-
-// #573 — midnight-timed rows that are semantically all-day (44 live rows:
-// mommypoppins same-day 00:00–23:59 spans, no-end library/farm-season
-// midnight starts, and one rrule row) rendered a literal "12:00 AM" instead
-// of collapsing to the date alone.
-describe('formatEventTiming — midnight-timed all-day rows (#573)', () => {
-  afterEach(async () => {
-    await i18next.changeLanguage('en')
-  })
-
-  it('collapses a same-day 00:00 -> 23:59:00 span to the date alone (aggregator-mommypoppins-pride)', () => {
-    const s = formatEventTiming('2026-09-19T00:00:00-07:00', '2026-09-19T23:59:00-07:00', null, 'America/Los_Angeles')
-    expect(s).toBe('Sat, Sep 19')
-    expect(s).not.toContain('12:00 AM')
-  })
-
-  it('collapses a same-day 00:00 -> 23:59:59 span to the date alone', () => {
-    const s = formatEventTiming('2026-09-19T00:00:00-07:00', '2026-09-19T23:59:59-07:00', null, 'America/Los_Angeles')
-    expect(s).toBe('Sat, Sep 19')
-  })
-
-  it('collapses a no-end midnight start to the date alone', () => {
-    const s = formatEventTiming('2026-08-21T00:00:00-07:00', null, null, 'America/Los_Angeles')
-    expect(s).toBe('Fri, Aug 21')
-    expect(s).not.toContain('12:00 AM')
-  })
-
-  it('renders the same shapes in Chinese with no leaked "12:00 AM"', async () => {
-    await loadLocale('zh')
-    const spanS = formatEventTiming('2026-09-19T00:00:00-07:00', '2026-09-19T23:59:00-07:00', null, 'America/Los_Angeles')
-    expect(spanS).not.toContain('12:00 AM')
-    expect(spanS).not.toContain('·')
-    const noEndS = formatEventTiming('2026-08-21T00:00:00-07:00', null, null, 'America/Los_Angeles')
-    expect(noEndS).not.toContain('12:00 AM')
-    expect(noEndS).not.toContain('·')
-  })
-
-  it('suppresses the "at 12:00 AM" suffix on an rrule row whose start is venue-midnight with no real end', () => {
-    const s = formatEventTiming('2026-09-08T00:00:00-07:00', null, 'FREQ=WEEKLY;BYDAY=TU', 'America/Los_Angeles')
-    expect(s).not.toContain('12:00 AM')
-    expect(s).not.toContain(' at ')
-  })
-
-  it('does NOT collapse a midnight start with a real same-day end (00:00-01:00) — aggregator-mommypoppins-visit shape', () => {
-    const s = formatEventTiming('2026-09-08T00:00:00-07:00', '2026-09-08T01:00:00-07:00', null, 'America/Los_Angeles')
-    expect(s).toContain('12:00 AM')
-    expect(s).toContain('1:00 AM')
-  })
-
-  it('does NOT collapse the same 00:00-01:00 shape on the rrule branch either', () => {
-    const s = formatEventTiming('2026-09-08T00:00:00-07:00', '2026-09-08T01:00:00-07:00', 'FREQ=WEEKLY;BYDAY=TU', 'America/Los_Angeles')
-    expect(s).toContain('12:00 AM')
-  })
-})
-
-describe('formatSiblingChip — midnight-timed all-day rows (#573)', () => {
-  it('collapses a no-end midnight start to the date alone', () => {
-    expect(formatSiblingChip('2026-08-21T00:00:00-07:00', 'America/Los_Angeles')).toBe('Fri, Aug 21')
-  })
-
-  it('collapses a same-day 00:00 -> 23:59 span to the date alone when the end is passed', () => {
-    expect(formatSiblingChip('2026-09-19T00:00:00-07:00', 'America/Los_Angeles', '2026-09-19T23:59:00-07:00')).toBe('Sat, Sep 19')
-  })
-
-  it('keeps the time for a real midnight-to-1am span', () => {
-    expect(formatSiblingChip('2026-09-08T00:00:00-07:00', 'America/Los_Angeles', '2026-09-08T01:00:00-07:00')).toBe('Tue, Sep 8 · 12am')
-  })
-})
+import { describe, it, expect } from 'vitest'
+import { deriveGoodToKnow, parseOpenUntil, formatDistanceMi, websiteFor, venueWallNow } from '../detailHelpers'
 
 describe('deriveGoodToKnow', () => {
   it('returns nothing for null/empty attributes (never invents facts)', () => {
@@ -227,12 +65,12 @@ describe('formatDistanceMi', () => {
 
 describe('websiteFor', () => {
   it('prefers the curated website when set', () => {
-    expect(websiteFor({ website: 'https://hiller.org', source_url: 'https://x.example', source_type: 'aggregator-bakf' }))
+    expect(websiteFor({ website: 'https://hiller.org', source_url: 'https://x.example', source_type: 'nps' }))
       .toBe('https://hiller.org')
   })
 
-  it('falls back to source_url for canonical-source rows (aggregators, manual, scraped)', () => {
-    expect(websiteFor({ website: null, source_url: 'https://www.hiller.org/event', source_type: 'aggregator-bakf' }))
+  it('falls back to source_url for canonical-source rows (manual, NPS)', () => {
+    expect(websiteFor({ website: null, source_url: 'https://www.hiller.org/event', source_type: 'nps' }))
       .toBe('https://www.hiller.org/event')
     expect(websiteFor({ website: null, source_url: 'https://venue.example', source_type: 'manual' }))
       .toBe('https://venue.example')
@@ -253,5 +91,19 @@ describe('websiteFor', () => {
     expect(websiteFor(null)).toBeNull()
     expect(websiteFor(undefined)).toBeNull()
     expect(websiteFor({ website: null, source_url: null, source_type: 'manual' })).toBeNull()
+  })
+})
+
+describe('venueWallNow', () => {
+  it('reads the venue clock, not the viewer clock', () => {
+    // 2026-07-01T20:00:00Z is 13:00 in San Francisco (PDT) and 16:00 in New York.
+    const instant = new Date('2026-07-01T20:00:00Z')
+    expect(venueWallNow(37.77, -122.42, instant).getHours()).toBe(13)
+    expect(venueWallNow(40.71, -74.0, instant).getHours()).toBe(16)
+  })
+
+  it('falls back to the viewer clock outside every metro', () => {
+    const instant = new Date('2026-07-01T20:00:00Z')
+    expect(venueWallNow(0, 0, instant).getTime()).toBe(instant.getTime())
   })
 })

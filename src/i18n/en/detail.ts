@@ -1,5 +1,5 @@
 /**
- * Detail surfaces: DetailPanel, BottomSheet, StackedFeatureList, SiblingDatesStrip, UpickSeasonStrip, ReportModal, NearbyBox, useDetailData.
+ * Detail surfaces: DetailPanel, BottomSheet, StackedFeatureList, ReportModal, useDetailData.
  *
  * Owned by one workstream — keep additions inside this file so parallel
  * extraction work never collides. Values are the exact English text that was
@@ -13,7 +13,6 @@ export const detail = {
   indoor: 'Indoor',
   ages: 'Ages {{min}}–{{max}}',
   hours: 'HOURS',
-  when: 'WHEN',
   goodToKnow: 'Good to know',
   detailsUnavailable: 'Details unavailable right now — try reopening.',
   detailsLoadFailed: 'Couldn’t load details.',
@@ -29,10 +28,6 @@ export const detail = {
   // Commons (CC BY-SA 4.0)") — not itself translated, since it names a
   // real person and a standard license code either way.
   photoAttribution: 'Photo: {{attribution}}',
-  // FTC affiliate disclosure (#254) — shown only when the open item's
-  // Website/Source link was rewritten to an affiliate-tagged URL.
-  affiliateDisclosure:
-    'Some links are affiliate links — funradar may earn a small commission, at no extra cost to you.',
   verified: 'Verified {{date}}',
   reportAnIssue: 'Report an issue',
   openUntilChip: 'Open · until {{time}}',
@@ -44,8 +39,6 @@ export const detail = {
   // an explicit "unknown" beats a silently missing section.
   hoursUnknown: 'Hours unknown — check the website',
   dragToResize: 'Drag to resize',
-  upcomingDates: 'Upcoming dates',
-  moreDates: '+{{count}} more',
   itemsHere: '{{count}} items here',
   goodToKnowFacts: {
     restrooms: 'Restrooms nearby',
@@ -63,21 +56,5 @@ export const detail = {
     detailsPlaceholder: 'Details (optional)',
     cancel: 'Cancel',
     send: 'Send',
-  },
-  upick: {
-    open: 'Open',
-    openToday: 'Open today',
-    closedForSeason: 'Closed for season',
-    opensDate: 'Opens {{date}}',
-    // "{{band}}" carries its own trailing hyphen in English ('early-', 'mid-',
-    // 'late-') so it butts straight against {{month}} with no separator —
-    // matches the original `${dayBand(...)}${fmtMonth(...)}` concatenation.
-    opensTypical: 'Opens ~{{band}}{{month}} (typical)',
-    season: 'Season: {{start}} – {{end}}, {{year}}',
-    dayBandEarly: 'early-',
-    dayBandMid: 'mid-',
-    dayBandLate: 'late-',
-    soonSuffix: ' · soon',
-    laterSuffix: ' · later',
   },
 } as const

@@ -10,5 +10,4 @@ export const legend = {
   legend: 'Legend',
   categories: 'Categories',
   tapToFilter: 'Tap to filter',
-  soon: 'soon',
 } as const

@@ -10,39 +10,29 @@
 import { common } from './common'
 import { categories } from './categories'
 import { detail } from './detail'
-import { time } from './time'
 import { bar } from './bar'
 import { filters } from './filters'
 import { list } from './list'
 import { search } from './search'
 import { legend } from './legend'
 import { faq } from './faq'
-import { auth } from './auth'
-import { calendar } from './calendar'
 import { map } from './map'
 import { metro } from './metro'
-import { signup } from './signup'
 import { pages } from './pages'
-import { submit } from './submit'
 
 export const en = {
   common,
   categories,
   detail,
-  time,
   bar,
   filters,
   list,
   search,
   legend,
   faq,
-  auth,
-  calendar,
   map,
   metro,
-  signup,
   pages,
-  submit,
 } as const
 
 export type Resources = typeof en

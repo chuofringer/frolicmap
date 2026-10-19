@@ -5,7 +5,6 @@ import { MemoryRouter, useSearchParams } from 'react-router-dom'
 import { useUrlItem } from '../useUrlItem'
 import { useMapStore } from '@/stores/useMapStore'
 import { useSessionStore } from '@/stores/useSessionStore'
-import { useEngagementStore } from '@/stores/useEngagementStore'
 
 // Mock useItemCoords — we control exactly when the `/api/items/:id/coords`
 // fetch settles so we can reproduce the race from #543 deterministically.
@@ -49,7 +48,6 @@ function harness(path: string, { strict = false } = {}) {
 beforeEach(() => {
   useMapStore.setState({ selectedId: null, flyTo: null })
   useSessionStore.setState({ token: null })
-  useEngagementStore.setState({ openedItemIds: new Set(), filterToggles: 0, eventIntents: 0 })
   mockUseItemCoords.mockReset()
   mockUseItemCoords.mockReturnValue(pending())
 })
@@ -71,24 +69,8 @@ describe('useUrlItem', () => {
     rerender()
 
     expect(useMapStore.getState().selectedId).toBe('abc')
-    expect(useEngagementStore.getState().openedItemIds).toEqual(new Set(['abc']))
     expect(useMapStore.getState().flyTo).toEqual({ longitude: -121.7, latitude: 37.9, zoom: 14 })
     expect(result.current.get('item')).toBe('abc')
-  })
-
-  it('treats a deep link to a gated event as a passive open — no event intent (#642)', () => {
-    // Arriving on a shared event link is not a tap: it must count as a
-    // popup_open (funnel denominator) but never arm the sign-in nudge, or a
-    // guest would get the unlock card and then the nudge after zero taps.
-    // The coords endpoint returns no category/type at all — irrelevant here,
-    // since a passive open skips the gated-event check regardless.
-    const { rerender } = harness('/?item=ev-1')
-    mockUseItemCoords.mockReturnValue(resolved(37.9, -121.7))
-    rerender()
-
-    expect(useMapStore.getState().selectedId).toBe('ev-1')
-    expect(useEngagementStore.getState().openedItemIds).toEqual(new Set(['ev-1']))
-    expect(useEngagementStore.getState().eventIntents).toBe(0)
   })
 
   // Regression test for #543: React StrictMode double-invokes effects on
@@ -110,7 +92,6 @@ describe('useUrlItem', () => {
     rerender()
 
     expect(useMapStore.getState().selectedId).toBe('abc')
-    expect(useEngagementStore.getState().openedItemIds).toEqual(new Set(['abc']))
     expect(useMapStore.getState().flyTo).toEqual({ longitude: -121.7, latitude: 37.9, zoom: 14 })
     expect(result.current.get('item')).toBe('abc')
   })

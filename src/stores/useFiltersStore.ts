@@ -6,11 +6,9 @@ type FiltersStore = Filters & {
   toggleCategory: (c: Category) => void
   toggleCategoryGroup: (cats: readonly Category[]) => void
   setCategories: (categories: Set<Category>) => void
-  setTime: (t: Filters['timeWindow']) => void
   setIndoorOutdoor: (io: 'indoor' | 'outdoor' | 'any') => void
   setAge: (min: number, max: number) => void
   setFreeOnly: (b: boolean) => void
-  toggleInSeasonNow: () => void
   setNearby: (center: [number, number] | null, radiusMiles?: number) => void
   reset: () => void
 }
@@ -33,11 +31,9 @@ export const useFiltersStore = create<FiltersStore>((set) => ({
     return { categories: next }
   }),
   setCategories: (categories) => set({ categories }),
-  setTime: (timeWindow) => set({ timeWindow }),
   setIndoorOutdoor: (io) => set({ indoorOnly: io === 'indoor', outdoorOnly: io === 'outdoor' }),
   setAge: (ageMin, ageMax) => set({ ageMin, ageMax }),
   setFreeOnly: (freeOnly) => set({ freeOnly }),
-  toggleInSeasonNow: () => set((s) => ({ inSeasonNow: !s.inSeasonNow })),
   setNearby: (center, radiusMiles) => set({
     nearbyCenter: center,
     nearbyRadiusMiles: radiusMiles ?? 5,

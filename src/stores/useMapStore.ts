@@ -7,10 +7,6 @@ export interface StackedFeatureEntry {
   id: string
   name: string
   category: Category
-  // Tile-feature `type` ('place' | 'event') when present — lets click sites
-  // run the shared events-gate predicate (isGatedEventKind) on a raw tile
-  // feature for the #642 event-intent signal.
-  type?: string
 }
 
 export interface StackedFeatureCluster {
@@ -23,7 +19,7 @@ export interface StackedFeatureCluster {
 // surfaces is open at a time, and opening any of them closes the detail panel /
 // bottom sheet. All render at z-50.
 //   'menu' = the mobile ⋯ action sheet (basemap + legend live inline in it).
-export type OverlayName = 'faq' | 'basemap' | 'filters' | 'metro' | 'legend' | 'menu' | 'submit' | 'picks'
+export type OverlayName = 'faq' | 'basemap' | 'filters' | 'metro' | 'legend' | 'menu'
 
 interface MapStore {
   flyTo: { longitude: number; latitude: number; zoom: number } | null
@@ -32,11 +28,10 @@ interface MapStore {
   setSearchMarker: (m: [number, number] | null) => void
   selectedId: string | null
   setSelectedId: (id: string | null) => void
-  // Map vs. List vs. Calendar view. The consolidated bar's segmented control
-  // drives this; ListPanel renders when 'list', CalendarPanel when 'calendar'.
-  // URL-synced as ?view=list / ?view=calendar via useUrlView.
-  viewMode: 'map' | 'list' | 'calendar'
-  setViewMode: (v: 'map' | 'list' | 'calendar') => void
+  // Map vs. List view. The consolidated bar's segmented control drives this;
+  // ListPanel renders when 'list'. URL-synced as ?view=list via useUrlView.
+  viewMode: 'map' | 'list'
+  setViewMode: (v: 'map' | 'list') => void
   stackedFeatures: StackedFeatureCluster | null
   setStackedFeatures: (c: StackedFeatureCluster | null) => void
   // Remembered when a detail popup is opened from a stacked list, so the
@@ -47,15 +42,6 @@ interface MapStore {
   setBasemap: (id: BasemapId) => void
   mapInstance: MapRef | null
   setMapInstance: (m: MapRef | null) => void
-  /**
-   * Coming-soon waitlist intent (#359). Set when a parent taps a disabled
-   * category chip in a metro where that layer isn't live; the slide-in reads
-   * it so the signup carries which metro and category were actually wanted —
-   * that pairing is the demand signal that picks the next depth metro.
-   */
-  waitlistIntent: { category: string; metro: string } | null
-  openWaitlistForCategory: (intent: { category: string; metro: string }) => void
-  clearWaitlistIntent: () => void
   // Single-open popover coordinator (item 1b). Opening any overlay closes the
   // detail panel/sheet and any other overlay; each popover derives its open
   // state from `overlay === '<name>'`.
@@ -67,7 +53,7 @@ interface MapStore {
 const loadBasemap = (): BasemapId => {
   if (typeof window === 'undefined') return 'light'
   try {
-    const v = localStorage.getItem('funradar.basemap')
+    const v = localStorage.getItem('frolicmap.basemap')
     if (v === 'light' || v === 'dark' || v === 'street' || v === 'liberty' || v === 'satellite') return v
   } catch {
     // localStorage unavailable (private mode / storage disabled) — use the default.
@@ -114,15 +100,12 @@ export const useMapStore = create<MapStore>((set) => ({
   basemap: loadBasemap(),
   setBasemap: (id) => {
     if (typeof window !== 'undefined') {
-      try { localStorage.setItem('funradar.basemap', id) } catch { /* private mode — preference just won't persist */ }
+      try { localStorage.setItem('frolicmap.basemap', id) } catch { /* private mode — preference just won't persist */ }
     }
     set({ basemap: id })
   },
   mapInstance: null,
   setMapInstance: (mapInstance) => set({ mapInstance }),
-  waitlistIntent: null,
-  openWaitlistForCategory: (intent) => set({ waitlistIntent: intent }),
-  clearWaitlistIntent: () => set({ waitlistIntent: null }),
   overlay: null,
   // Opening an overlay closes the detail panel/sheet and the stacked mini-list.
   openOverlay: (overlay) => set({ overlay, selectedId: null, stackedFeatures: null, lastStackedFeatures: null }),

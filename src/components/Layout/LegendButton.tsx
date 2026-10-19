@@ -12,7 +12,7 @@ import { LegendList } from './LegendList'
 // own for a few seconds and then folds back into the button. A tap anywhere
 // inside the peeked panel promotes it to a normally-opened legend (rows are
 // live filter toggles); the peek never fires while another surface is open.
-const PEEK_STORAGE_KEY = 'funradar:legend-peeked'
+const PEEK_STORAGE_KEY = 'frolicmap:legend-peeked'
 const PEEK_DELAY_MS = 1_500 // let the map paint first
 // QA note (PR #646): 5s read as ~3s on a real phone once first-paint jank ate
 // into it — a busy parent could miss the key entirely. 7s of visible time.

@@ -10,7 +10,7 @@ describe('loadLocale document metadata (#693)', () => {
   it('sets lang=zh-Hans and the generic zh title on an unlocalised shell', async () => {
     await loadLocale('zh')
     expect(document.documentElement.lang).toBe('zh-Hans')
-    expect(document.title).toBe('亲子活动地图 | funradar.app')
+    expect(document.title).toBe('亲子活动地图 | frolicmap')
     await loadLocale('en')
   })
 

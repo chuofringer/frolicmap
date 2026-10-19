@@ -26,7 +26,7 @@ export const INTL_LOCALE: Record<Locale, string> = {
   zh: 'zh-CN',
 }
 
-const STORAGE_KEY = 'funradar.lang'
+const STORAGE_KEY = 'frolicmap.lang'
 
 function isLocale(v: string | null): v is Locale {
   return v !== null && (LOCALES as readonly string[]).includes(v)

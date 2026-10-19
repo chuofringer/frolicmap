@@ -35,9 +35,9 @@ clientsClaim()
 // asset that isn't in this manifest).
 precacheAndRoute(self.__WB_MANIFEST)
 
-const NAV_CACHE = 'funradar-app-shell'
-const MAPLIBRE_CACHE = 'funradar-maplibre-chunk'
-const BASEMAP_CACHE = 'funradar-basemap-cdn'
+const NAV_CACHE = 'frolicmap-app-shell'
+const MAPLIBRE_CACHE = 'frolicmap-maplibre-chunk'
+const BASEMAP_CACHE = 'frolicmap-basemap-cdn'
 
 // Rule 2/3 — network-first navigations, EXCLUDING /cities* and /admin*
 // (`decideCachingStrategy` returns 'network-only' for those; returning false

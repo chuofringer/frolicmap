@@ -3,13 +3,10 @@ import { render, screen, fireEvent, cleanup, within, act } from '@testing-librar
 import type { ListItem } from '@shared/types'
 import { useMapStore } from '@/stores/useMapStore'
 import { useFiltersStore } from '@/stores/useFiltersStore'
-import { usePicksWindowStore } from '@/stores/usePicksWindowStore'
-import { restOfWeekend } from '@/utils/picksWindow'
 
 const mk = (over: Partial<ListItem> & Pick<ListItem, 'id' | 'name' | 'category' | 'lat' | 'lng'>): ListItem => ({
   type: 'place', age_min: null, age_max: null, cost: 'free', indoor: 0,
-  start_time: null, end_time: null, rrule: null, exdates: null,
-  status: 'approved', in_season_now: null, city: null, has_playground: null, name_zh: null, ...over,
+  status: 'approved', city: null, has_playground: null, name_zh: null, ...over,
 })
 
 // Origin is [0,0]; distances grow with |lng|,|lat|.
@@ -38,9 +35,7 @@ vi.mock('@/hooks/useMetro', () => ({
 }))
 const trackGoal = vi.fn()
 vi.mock('@/utils/analytics', () => ({
-  trackGoal: (n: string, c?: string) => trackGoal(n, c),
-  trackOutboundClick: vi.fn(),
-  trackRecView: vi.fn(),
+  trackGoal: (n: string) => trackGoal(n),
 }))
 
 import { ListPanel } from '../ListPanel'
@@ -53,7 +48,6 @@ beforeEach(() => {
   useFiltersStore.getState().reset()
   // jsdom has no matchMedia → useIsDesktop() is false, i.e. these render as mobile.
   useMapStore.setState({ viewMode: 'list', selectedId: null })
-  usePicksWindowStore.setState({ policy: restOfWeekend() })
 })
 afterEach(() => cleanup())
 
@@ -80,12 +74,12 @@ describe('ListPanel', () => {
     expect(screen.getByText('No places match your filters.')).toBeInTheDocument()
   })
 
-  it('card click selects the item and fires the popup_open goal (waitlist arming)', () => {
+  it('card click selects the item and fires the popup_open goal', () => {
     render(<ListPanel />)
     const alpha = document.querySelector('[data-item-id="a"]') as HTMLElement
     fireEvent.click(within(alpha!).getByText('Alpha'))
     expect(useMapStore.getState().selectedId).toBe('a')
-    expect(trackGoal).toHaveBeenCalledWith('popup_open', 'a')
+    expect(trackGoal).toHaveBeenCalledWith('popup_open')
   })
 
   it('hides the list on mobile while a selection is open (map + sheet take over)', () => {
@@ -219,106 +213,5 @@ describe('ListPanel', () => {
       expect(screen.getByText(/Distances from the map center/)).toBeInTheDocument()
     })
 
-  })
-
-  // #647: a guest's gated event rows collapse into ONE summary card — no more
-  // wall of identical blurred "sign in to unlock" rows, and no event name in
-  // the DOM at all for guests.
-  describe('events sign-in gate — locked-rows collapse (#647)', () => {
-    // Future-dated: eventStillRelevant (#647) hides past/dateless events.
-    const EVENT = mk({ id: 'ev', name: 'Toddler Storytime', category: 'event', lng: 0, lat: 0, type: 'event', start_time: '2099-07-04T10:00:00-07:00' })
-    const EVENT2 = mk({ id: 'ev2', name: 'Puppet Show', category: 'event', lng: 0, lat: 0, type: 'event', start_time: '2099-07-05T10:00:00-07:00' })
-
-    it('collapses all gated rows into one summary card for guests — names never render', async () => {
-      const { useAuthStore } = await import('@/stores/useAuthStore')
-      useAuthStore.setState({ credential: null, email: null, signedIn: false })
-      dataset = [EVENT, EVENT2, ALPHA]
-      render(<ListPanel />)
-      expect(screen.queryByText('Toddler Storytime')).toBeNull()
-      expect(screen.queryByText('Puppet Show')).toBeNull()
-      const summary = screen.getByText('2 events nearby — sign in to see this weekend')
-      expect(summary).toBeInTheDocument()
-      // Place cards render normally alongside.
-      const alpha = screen.getByText('Alpha')
-      expect(alpha).toBeInTheDocument()
-      // Pinned to the TOP of the list for exposure (operator call 2026-08-26),
-      // ahead of every place card regardless of distance order.
-      const buttons = Array.from(document.querySelectorAll('button'))
-      expect(buttons.indexOf(summary.closest('button')!)).toBeLessThan(buttons.indexOf(alpha.closest('button')!))
-    })
-
-    it('summary tap opens the sign-in gate and counts as event intent (#642)', async () => {
-      const { useAuthStore } = await import('@/stores/useAuthStore')
-      const { useGateRequestStore } = await import('@/stores/useGateRequestStore')
-      const { useEngagementStore } = await import('@/stores/useEngagementStore')
-      useAuthStore.setState({ credential: null, email: null, signedIn: false })
-      useGateRequestStore.setState({ requested: false })
-      useEngagementStore.setState({ eventIntents: 0 })
-      dataset = [EVENT]
-      render(<ListPanel />)
-      fireEvent.click(screen.getByText(/sign in to see this weekend/))
-      expect(useGateRequestStore.getState().requested).toBe(true)
-      expect(useEngagementStore.getState().eventIntents).toBe(1)
-    })
-
-    it('a VENUE row in the event category (type=place, dateless) collapses too — the old blur leak surface', async () => {
-      const { useAuthStore } = await import('@/stores/useAuthStore')
-      useAuthStore.setState({ credential: null, email: null, signedIn: false })
-      dataset = [mk({ id: 'venue-ev', name: 'San Mateo County Event Center', category: 'event', lng: 0, lat: 0, type: 'place' })]
-      render(<ListPanel />)
-      expect(screen.queryByText('San Mateo County Event Center')).toBeNull()
-      expect(screen.getByText(/1 events nearby/)).toBeInTheDocument()
-    })
-
-    it('renders event cards normally for signed-in members — no summary', async () => {
-      const { useAuthStore } = await import('@/stores/useAuthStore')
-      useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-      dataset = [EVENT]
-      render(<ListPanel />)
-      expect(screen.getByText('Toddler Storytime')).toBeInTheDocument()
-      expect(screen.queryByText(/sign in to see this weekend/)).toBeNull()
-      useAuthStore.setState({ credential: null, email: null, signedIn: false })
-    })
-  })
-
-  // #655: the signed-in "Top picks" rail sits above the distance-sorted
-  // list. Real integration through ListPanel (see WeekendPicksRail.test.tsx
-  // for the component's own unit coverage).
-  describe('"Top picks" rail (#655)', () => {
-    // Wed local wall-clock -> the upcoming weekend is Fri 08-14 17:00 through
-    // Mon 08-17 00:00. A naive (no-offset) start_time is used so the window
-    // math is self-consistent regardless of the test machine's real timezone.
-    const NOW = new Date(2026, 7, 12, 9, 0, 0)
-
-    beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['Date'] })
-      vi.setSystemTime(NOW)
-    })
-    afterEach(() => vi.useRealTimers())
-
-    it('does not render when no dataset item falls in the upcoming weekend', () => {
-      render(<ListPanel />) // ALPHA/BRAVO/CHARLIE carry no dates
-      expect(screen.queryByText('Top picks')).toBeNull()
-    })
-
-    it('renders atop the list, above the distance-sorted cards, when a one-off event qualifies', async () => {
-      const { useAuthStore } = await import('@/stores/useAuthStore')
-      useAuthStore.setState({ credential: 'cred', email: 'parent@example.com', signedIn: true })
-      const fair = mk({ id: 'fair', name: 'Neighborhood Fair', category: 'event', lng: 0, lat: 0, type: 'event', start_time: '2026-08-15T10:00:00', cost: 'free' })
-      const fair2 = mk({ id: 'fair2', name: 'Park Fair', category: 'event', lng: 0.01, lat: 0, type: 'event', start_time: '2026-08-15T11:00:00' })
-      const fair3 = mk({ id: 'fair3', name: 'Lawn Fair', category: 'event', lng: 0.02, lat: 0, type: 'event', start_time: '2026-08-15T12:00:00' })
-      dataset = [...ITEMS, fair, fair2, fair3]
-      render(<ListPanel />)
-      expect(screen.getByText('Top picks')).toBeInTheDocument()
-      // The rail card is a distinct element (own data attribute) from the
-      // list's own card for the same item; it sits in a strip above the
-      // scrollable rows, so it precedes every list card in document order —
-      // works whether or not the event happens to be gated for this guest.
-      const railCard = document.querySelector('[data-pick-id="fair"]') as HTMLElement
-      const alphaCard = document.querySelector('[data-item-id="a"]') as HTMLElement
-      expect(railCard).toBeTruthy()
-      expect(alphaCard).toBeTruthy()
-      expect(railCard.compareDocumentPosition(alphaCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    })
   })
 })

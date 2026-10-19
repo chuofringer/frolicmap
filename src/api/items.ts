@@ -34,15 +34,10 @@ export async function fetchItems(region?: string): Promise<ItemsResponse> {
 // would otherwise have to parse to make that call.
 export class ItemFetchError extends Error {
   readonly status: number
-  // Worker `reason` string from the JSON error body, when present — lets a
-  // caller tell the events-gate 401 (`signin-required`, not transient) from a
-  // 401 caused by a token mid-refresh.
-  readonly reason?: string
-  constructor(status: number, message: string, reason?: string) {
+  constructor(status: number, message: string) {
     super(message)
     this.name = 'ItemFetchError'
     this.status = status
-    this.reason = reason
   }
 }
 
@@ -57,16 +52,7 @@ export async function fetchItemDetail(id: string): Promise<Item> {
   const headers: Record<string, string> = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${API_BASE}/api/items/${encodeURIComponent(id)}`, { headers })
-  if (!res.ok) {
-    let reason: string | undefined
-    try {
-      const body = (await res.json()) as { reason?: unknown }
-      if (typeof body.reason === 'string') reason = body.reason
-    } catch {
-      // Non-JSON / empty error body — status alone is enough.
-    }
-    throw new ItemFetchError(res.status, `items/${id} fetch failed: ${res.status}`, reason)
-  }
+  if (!res.ok) throw new ItemFetchError(res.status, `items/${id} fetch failed: ${res.status}`)
   const { item } = (await res.json()) as { item: Item }
   return item
 }

@@ -2,34 +2,23 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ListItem } from '@shared/types'
 import { CATEGORIES, categoryLabel, getCategoryEmoji } from '@/config/categories'
-import { EVENTS_GATE_ENABLED } from '@/config/constants'
-import { isGatedEventKind } from '@shared/eventsGate'
 import { useItems } from '@/hooks/useItems'
 import { useFiltersStore } from '@/stores/useFiltersStore'
 import { useMapStore } from '@/stores/useMapStore'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useEngagementStore } from '@/stores/useEngagementStore'
 import { useDistanceOrigin } from '@/hooks/useDistanceOrigin'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { useActiveFilterCount } from '@/hooks/useActiveFilterCount'
 import { applyFilters } from '@/utils/filters'
-import { pickEarliestPerSource } from '@/utils/pickEarliestPerSource'
 import { haversineMiles } from '@/utils/distance'
 import { cityLabel } from '@/utils/place'
 import { displayTitle } from '@/utils/displayTitle'
 import { openItemDetail } from '@/utils/openItem'
-import { requestSignInGate } from '@/stores/useGateRequestStore'
 import { ViewToggle } from '@/components/Bar/ViewToggle'
 import { FiltersButton } from '@/components/Bar/SearchFilterBar'
 import { DistanceOriginNote } from '@/components/Distance/DistanceOriginNote'
-import { WeekendPicksRail } from '@/components/List/WeekendPicksRail'
 
 interface Row { item: ListItem; distanceMi: number }
-
-// #647: what the list renders — plain cards, plus at most one 'locked' entry
-// standing in for every gated event row a guest cannot read anyway.
-type ListEntry = { kind: 'card'; row: Row } | { kind: 'locked'; count: number }
 
 // Cap the number of DOM cards. Without it the Bay-with-no-filters set (~5,500
 // rows) mounts thousands of card buttons — a real jank/memory cost. Rows are
@@ -37,9 +26,6 @@ type ListEntry = { kind: 'card'; row: Row } | { kind: 'locked'; count: number }
 // TOTAL and a footer names the cap (no silent truncation). Zoom/filter narrows.
 const LIST_CAP = 150
 
-// Note on the events sign-in gate: gated rows no longer render as individual
-// (blurred) cards — #647 collapses them into the single locked-events summary
-// entry in ListPanel, so every card this component renders is readable.
 function ListCard({ row, selected, onClick }: {
   row: Row
   selected: boolean
@@ -120,7 +106,6 @@ export function ListPanel() {
   const setViewMode = useMapStore((s) => s.setViewMode)
   const selectedId = useMapStore((s) => s.selectedId)
   const openOverlay = useMapStore((s) => s.openOverlay)
-  const signedIn = useAuthStore((s) => s.signedIn)
   const { data } = useItems()
   const filters = useFiltersStore()
   const filterCount = useActiveFilterCount()
@@ -135,7 +120,7 @@ export function ListPanel() {
   const { offset, dragging, grabberProps } = useDragToDismiss(() => setViewMode('map'))
 
   const rows = useMemo(() => {
-    const visible = pickEarliestPerSource(applyFilters(data?.items ?? [], filters))
+    const visible = applyFilters(data?.items ?? [], filters)
     const withDist: Row[] = visible.map((item) => ({
       item,
       distanceMi: haversineMiles(origin, [item.lng, item.lat]),
@@ -143,23 +128,6 @@ export function ListPanel() {
     withDist.sort((a, b) => a.distanceMi - b.distanceMi)
     return withDist
   }, [data, filters, origin])
-
-  // #647: for guests, every gated event row collapses into ONE summary entry
-  // PINNED TO THE TOP of the list (operator call 2026-08-26: maximum
-  // exposure for the sign-in ask) — a guest's list is otherwise a wall of
-  // identical blurred "sign in to unlock" rows. Signed-in visitors get the
-  // untouched card list.
-  const entries = useMemo<ListEntry[]>(() => {
-    const gateActive = EVENTS_GATE_ENABLED && !signedIn
-    const out: ListEntry[] = []
-    let lockedCount = 0
-    for (const row of rows) {
-      if (gateActive && isGatedEventKind(row.item)) lockedCount++
-      else out.push({ kind: 'card', row })
-    }
-    if (lockedCount > 0) out.unshift({ kind: 'locked', count: lockedCount })
-    return out
-  }, [rows, signedIn])
 
   // Map/URL selection → scroll the list to the matching card via scrollTop
   // math (not scrollIntoView). Card clicks set fromCardClick so we skip them.
@@ -213,10 +181,6 @@ export function ListPanel() {
         <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{t('list.sortedByDistance')}</span>
       </div>
 
-      {/* #655: curated rail sits above the distance-sorted list, scored from
-          the raw catalog (not the active filters) — see WeekendPicksRail. */}
-      <WeekendPicksRail />
-
       {/* "Sorted by distance" above is only half the sentence — this names the
           point the sort and every card's mileage are measured from. */}
       <DistanceOriginNote />
@@ -225,43 +189,20 @@ export function ListPanel() {
         {rows.length === 0 && (
           <p className="text-sm text-gray-500 dark:text-gray-400 p-4 text-center">{t('list.noMatches')}</p>
         )}
-        {entries.slice(0, LIST_CAP).map((entry) =>
-          entry.kind === 'locked' ? (
-            // #647: guests used to scroll 15+ identical blurred "sign in to
-            // unlock" rows — every gated event collapses into this one card
-            // at the position of the nearest one. Tapping it is event intent
-            // (#642) and opens the sign-in gate.
-            <button
-              key="locked-events"
-              type="button"
-              onClick={() => {
-                useEngagementStore.getState().bumpEventIntent()
-                requestSignInGate()
-              }}
-              className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-            >
-              <div className="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-[15px] bg-amber-500 text-white ring-2 ring-white dark:ring-gray-900 shadow-sm" aria-hidden>
-                🔒
-              </div>
-              <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                {t('list.lockedEventsSummary', { count: entry.count })}
-              </span>
-            </button>
-          ) : (
-            <ListCard
-              key={entry.row.item.id}
-              row={entry.row}
-              selected={entry.row.item.id === selectedId}
-              onClick={() => {
-                fromCardClick.current = true
-                openItemDetail(entry.row.item)
-              }}
-            />
-          ),
-        )}
-        {entries.length > LIST_CAP && (
+        {rows.slice(0, LIST_CAP).map((row) => (
+          <ListCard
+            key={row.item.id}
+            row={row}
+            selected={row.item.id === selectedId}
+            onClick={() => {
+              fromCardClick.current = true
+              openItemDetail(row.item)
+            }}
+          />
+        ))}
+        {rows.length > LIST_CAP && (
           <p className="text-[13px] text-gray-500 dark:text-gray-400 py-3 text-center">
-            {t('list.showingNearest', { cap: LIST_CAP, total: entries.length })}
+            {t('list.showingNearest', { cap: LIST_CAP, total: rows.length })}
           </p>
         )}
       </div>

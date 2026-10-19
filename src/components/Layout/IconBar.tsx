@@ -1,11 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BasemapButton } from './BasemapButton'
-import { CoffeeButton } from './CoffeeButton'
 import { FAQButton } from './FAQButton'
 import { LanguageButton } from '@/components/I18n/LanguageButton'
 import { FAQOverlay } from './FAQOverlay'
-import { SubmitModal } from '@/components/Submit/SubmitModal'
 import { BASEMAPS, basemapLabel } from '@/config/mapStyle'
 import { useIsDesktop, useMediaQuery } from '@/hooks/useMediaQuery'
 import { use3DToggle } from '@/hooks/use3DToggle'
@@ -13,15 +11,13 @@ import { useMapStore } from '@/stores/useMapStore'
 
 const ICON_BTN = 'w-11 h-11 flex items-center justify-center backdrop-blur-md bg-white/90 dark:bg-gray-900/90 text-gray-700 dark:text-gray-200 rounded-lg shadow-lg ring-1 ring-black/20 dark:ring-white/10 hover:bg-white dark:hover:bg-gray-900 transition-colors'
 
-// Top-right chrome. Desktop (md+): the inline icon row (coffee, basemap, FAQ,
+// Top-right chrome. Desktop (md+): the inline icon row (basemap, FAQ,
 // language), each driven by the shared overlay coordinator so only one popover
 // is open at a time and opening one closes the detail panel. Mobile (< md): a
 // top-right column. A single ⋯ button HORIZONTALLY EXPANDS a row of three 44px
-// icons to its left — [map style][FAQ][3D] — sliding/fading in; coffee and
-// language stack standalone below it. The 3D control lives here on mobile
-// (removed from the standalone MapControls < md). The newsletter envelope
-// button was retired 2026-08-09: the newsletter surface is now the opt-in
-// checkbox on the sign-in gates, and /signup redirects into the welcome gate.
+// icons to its left — [map style][FAQ][3D] — sliding/fading in; the language
+// toggle stacks standalone below it. The 3D control lives here on mobile
+// (removed from the standalone MapControls < md).
 export function IconBar() {
   const { t } = useTranslation()
   const isDesktop = useIsDesktop()
@@ -34,23 +30,17 @@ export function IconBar() {
   const setBasemap = useMapStore((s) => s.setBasemap)
   const { is3D, supports3D, toggle3D } = use3DToggle()
   // Whether the -392px detail-panel shift leaves room for the icon row to
-  // clear the top-left brand column: brand (~190px) + row (4×44 + gaps ≈
-  // 200px) + panel (380 + 12) + margins. Below this the shifted row lands on
-  // the funradar.app logo, so the row stays put and yields to the panel.
-  // (900 kept after the envelope button's 2026-08-09 removal — it still
-  // clears with margin, and a narrower breakpoint buys nothing.)
+  // clear the top-left brand column: brand (~190px) + row (3×44 + gaps ≈
+  // 160px) + panel (380 + 12) + margins. Below this the shifted row lands on
+  // the frolicmap logo, so the row stays put and yields to the panel.
   const shiftFits = useMediaQuery('(min-width: 900px)')
   const ref = useRef<HTMLDivElement>(null)
 
   const basemapOpen = overlay === 'basemap'
   const faqOpen = overlay === 'faq'
   const menuOpen = overlay === 'menu'
-  const submitOpen = overlay === 'submit'
 
-  // ESC closes whichever of this bar's surfaces is open. SubmitModal has its
-  // own focus trap (useFocusTrap) with its own Escape handling, so it's
-  // deliberately excluded here — a second document-level listener would
-  // double-fire closeOverlay() on the same keypress.
+  // ESC closes whichever of this bar's surfaces is open.
   useEffect(() => {
     if (!(basemapOpen || faqOpen || menuOpen)) return
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') closeOverlay() }
@@ -76,7 +66,6 @@ export function IconBar() {
             z-30 so the z-40 panel covers it instead of the row piling onto the
             brand box. */}
         <div className={`absolute top-3 right-3 flex items-center gap-2 transition-transform duration-200 ${detailOpen && !shiftFits ? 'z-30' : 'z-50'} ${detailOpen && shiftFits ? '-translate-x-[392px]' : ''}`}>
-          <CoffeeButton />
           <BasemapButton
             open={basemapOpen}
             onToggle={() => (basemapOpen ? closeOverlay('basemap') : openOverlay('basemap'))}
@@ -86,13 +75,12 @@ export function IconBar() {
           <LanguageButton />
         </div>
         {faqOpen && <FAQOverlay onClose={() => closeOverlay('faq')} />}
-        {submitOpen && <SubmitModal onClose={() => closeOverlay('submit')} />}
       </>
     )
   }
 
-  // Mobile: the list / calendar panels start at 112px while this column runs
-  // to 212px, so the column yields entirely there — same rule as the bottom
+  // Mobile: the list panel starts at 112px while this column runs
+  // to 160px, so the column yields entirely there — same rule as the bottom
   // control bar. The detail sheet is different: at its peek/half snaps the
   // map (and the column's area) stays visible, so the column stays MOUNTED
   // and instead drops below the sheet's z-40 (see the wrapper class below) —
@@ -100,7 +88,7 @@ export function IconBar() {
   // card opened, even with the sheet only peeking at the bottom.
   if (viewMode !== 'map') return null
 
-  // Mobile: ⋯ horizontal expander on top, standalone coffee + language below it.
+  // Mobile: ⋯ horizontal expander on top, standalone language toggle below it.
   return (
     <>
       {/* While the detail sheet is open the column drops to z-30 so the z-40
@@ -110,7 +98,7 @@ export function IconBar() {
 
           pointer-events-none on the column, auto on its children: the
           always-mounted (hidden) ⋯ expander row inflates the column's box to
-          ~200px wide × 160px tall of mostly TRANSPARENT area, and at z-50 it
+          ~200px wide × 108px tall of mostly TRANSPARENT area, and at z-50 it
           renders after the metro picker in the DOM — so the invisible box sat
           on top of the picker dialog's close ✕ and swallowed the tap
           (operator repro 2026-08-25: outside-tap closed, ✕ didn't). */}
@@ -158,25 +146,21 @@ export function IconBar() {
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
           </button>
         </div>
-        {/* Buy Me a Coffee support link — standalone below ⋯, same 8px gap.
-            (⋯ 12–56, coffee 64–108, language 116–160); the mobile basemap
-            popover + MapControls compass open at 168px to clear the column. */}
-        <div className="pointer-events-auto"><CoffeeButton /></div>
         {/* Language toggle — standalone, never collapsed into ⋯. Someone
             reading Chinese who lands on the English map cannot be expected to
             open a ⋯ menu to discover the site speaks their language; that is
             the one control that has to be visible without exploration.
-            Column bottom: 160px. */}
+            Column bottom: 108px. */}
         <LanguageButton className="pointer-events-auto" />
       </div>
 
       {/* Independent mobile basemap popover (not anchored to the collapsing row).
-          Opens below the standalone language button (bottom 160px + 8px gap)
+          Opens below the standalone language button (bottom 108px + 8px gap)
           so it never sits under the top-right column. */}
       {basemapOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => closeOverlay('basemap')} aria-hidden />
-          <div role="dialog" aria-label={t('map.mapStyleLabel')} className="fixed top-[168px] right-3 z-50 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 rounded-lg shadow-lg ring-1 ring-black/20 dark:ring-white/10 overflow-hidden min-w-[180px] text-gray-700 dark:text-gray-200">
+          <div role="dialog" aria-label={t('map.mapStyleLabel')} className="fixed top-[116px] right-3 z-50 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 rounded-lg shadow-lg ring-1 ring-black/20 dark:ring-white/10 overflow-hidden min-w-[180px] text-gray-700 dark:text-gray-200">
             <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 px-3 py-1.5 border-b border-gray-100 dark:border-gray-800">{t('map.mapStyleLabel')}</div>
             {BASEMAPS.map((b) => (
               <button
@@ -196,7 +180,6 @@ export function IconBar() {
       )}
 
       {faqOpen && <FAQOverlay onClose={() => closeOverlay('faq')} />}
-      {submitOpen && <SubmitModal onClose={() => closeOverlay('submit')} />}
     </>
   )
 }

@@ -1,257 +1,120 @@
 import { useTranslation } from 'react-i18next'
 import { LegalPage, H2, P, UL } from './LegalPage'
 
+const EMAIL = 'frolicmap.official@gmail.com'
+
 export default function TermsPage() {
   const { t } = useTranslation()
   return (
-    <LegalPage title={t('pages.legal.termsTitle')} lastUpdated="2026-08-09">
+    <LegalPage title={t('pages.legal.termsTitle')} lastUpdated="2026-10-19">
       <P>
-        These Terms of Service (the "Terms") constitute a legally binding agreement between
-        the operator of funradar.app (the "Operator", "we", "us", or "our") and any
-        individual or entity (the "User", "you", or "your") accessing or using the
-        funradar.app website, application programming interfaces, mobile applications, and
-        all related content and functionality (collectively, the "Service"). By accessing
-        or using any portion of the Service, the User acknowledges having read, understood,
-        and agreed to be bound by these Terms. If the User does not agree to these Terms in
-        their entirety, the User shall not access or use the Service.
+        These Terms of Service (the "Terms") govern your use of frolicmap.app and its
+        related application programming interfaces (the "Service"), which is operated by
+        the maintainers of frolicmap (the "Operator", "we", or "us"). By using the
+        Service you agree to these Terms. If you do not agree, please do not use the
+        Service.
       </P>
 
-      <H2>1. Definitions</H2>
+      <H2>1. What the Service is</H2>
       <P>
-        For purposes of these Terms, the following capitalized terms shall have the
-        meanings set forth below:
+        frolicmap is a free, informational map of places that may suit families with
+        children: playgrounds, parks, libraries, museums, aquariums and zoos, beaches,
+        water play areas, hiking trails and campgrounds in the metropolitan areas listed
+        on the Service's "/cities" page. There are no accounts, no sign-in, no
+        newsletter, no advertising and no paid features. The covered areas may change at
+        any time.
+      </P>
+
+      <H2>2. Information may be wrong</H2>
+      <P>
+        Place records come from public datasets (see Data sources below) and may be
+        out of date, incomplete or mislocated. Hours, prices, age suitability,
+        accessibility, closures and safety conditions can change without notice. Always
+        confirm details with the venue before you travel, and use your own judgment about
+        whether a place is safe and suitable for your children. Supervise children at all
+        times.
+      </P>
+
+      <H2>3. Data sources and licences</H2>
+      <P>
+        The source code of frolicmap is open source under the MIT licence. The data shown
+        on the map is not MIT-licensed: each place record keeps the licence of the
+        source it came from.
       </P>
       <UL>
-        <li>"Content" means all data, text, listings, descriptions, photographs, categorizations, compilations, source code, design elements, and other materials made available through the Service.</li>
-        <li>"Curated Database" means the structured collection of places, events, and associated metadata assembled, selected, organized, edited, verified, and presented by the Operator.</li>
-        <li>"Third-Party Sources" means external data providers, including but not limited to OpenStreetMap, governmental open-data portals, and public calendar feeds, from which underlying factual data is obtained.</li>
+        <li>OpenStreetMap data is © OpenStreetMap contributors, available under the Open Database Licence (ODbL) 1.0. See openstreetmap.org/copyright.</li>
+        <li>Library and museum records come from the Institute of Museum and Library Services (IMLS), a U.S. federal agency; that data is in the public domain.</li>
+        <li>National park records come from the National Park Service (NPS); that data is in the public domain.</li>
+        <li>Park records may also come from the Trust for Public Land's ParkServe dataset, used under its own terms.</li>
+        <li>Photographs, where shown, come from Wikimedia Commons and are credited to their authors under their individual Creative Commons or other licences, as stated in the credit shown with each photograph.</li>
+        <li>Basemap imagery is provided by third parties (such as CARTO, OpenFreeMap and Esri) under their own terms and attributions, shown in the corner of the map.</li>
       </UL>
-
-      <H2>2. Description of the Service</H2>
       <P>
-        The Service provides an informational, map-based directory of family- and
-        child-oriented locations and events within the metropolitan areas of the United
-        States that the Service covers from time to time, as listed on the Service's
-        "/cities" page. The set of covered areas may be expanded, reduced, or otherwise
-        modified by the Operator at any time without notice. Information presented
-        through the Service is aggregated
-        from Third-Party Sources and editorially reviewed prior to publication. The
-        Service is provided for general informational purposes only and does not
-        constitute professional advice of any kind.
+        If you reuse any data you obtain from the Service, you are responsible for
+        complying with the licence of the underlying source, including attribution and,
+        for OpenStreetMap-derived data, share-alike requirements.
       </P>
 
-      <H2>3. Eligibility</H2>
-      <P>
-        Use of the Service is intended for individuals who are at least eighteen (18)
-        years of age and who are legally competent to enter into binding agreements under
-        the laws of their jurisdiction of residence. By using the Service, the User
-        represents and warrants that the User satisfies these eligibility requirements.
-        Minors shall not use the Service except under the direct supervision of a parent
-        or legal guardian.
-      </P>
-
-      <H2>4. Limited License</H2>
-      <P>
-        Subject to and conditioned upon the User's continuing compliance with these Terms,
-        the Operator grants to the User a limited, non-exclusive, non-transferable,
-        non-sublicensable, revocable license to access and use the Service solely for the
-        User's personal, non-commercial purposes. All rights not expressly granted herein
-        are reserved by the Operator.
-      </P>
-
-      <H2>5. Restrictions on Use</H2>
-      <P>
-        The User shall not, and shall not permit, authorize, or facilitate any third
-        party to, directly or indirectly:
-      </P>
+      <H2>4. Acceptable use</H2>
+      <P>You agree not to:</P>
       <UL>
-        <li>(a) access, scrape, crawl, harvest, mirror, index, cache, or otherwise systematically extract, copy, or reproduce any portion of the Service or the Curated Database, whether by automated means, scripts, robots, spiders, data-mining tools, or by any manual process designed to circumvent ordinary interactive use;</li>
-        <li>(b) reproduce, duplicate, copy, sell, resell, license, sublicense, distribute, publicly display, publicly perform, transmit, broadcast, or otherwise exploit any portion of the Content or the Curated Database for any commercial purpose whatsoever;</li>
-        <li>(c) use any portion of the Content or the Curated Database to develop, train, fine-tune, validate, benchmark, or evaluate any artificial intelligence model, machine-learning model, large language model, or any derivative dataset thereof;</li>
-        <li>(d) reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code, underlying ideas, algorithms, structure, or organizational form of the Service, except to the extent that such activity is expressly permitted by applicable law notwithstanding this prohibition;</li>
-        <li>(e) circumvent, bypass, disable, or interfere with any security feature, rate limit, session token, access control, authentication mechanism, or other technological measure intended to protect the Service or the Curated Database;</li>
-        <li>(f) use the Service or any Content to develop, populate, or operate any product, service, database, or directory that competes with the Service, or that aggregates or replicates the Curated Database in whole or in substantial part;</li>
-        <li>(g) use the names, trademarks, service marks, logos, trade dress, or other distinctive branding elements of the Operator in any manner, including without limitation in any meta tags, advertising, or domain names, that suggests sponsorship, endorsement, or affiliation by or with the Operator without the Operator's prior express written consent;</li>
-        <li>(h) introduce any virus, worm, trojan horse, malware, or other malicious code into the Service, or take any action that imposes an unreasonable or disproportionately large load on the infrastructure of the Service;</li>
-        <li>(i) use the Service in violation of any applicable federal, state, local, or international law, regulation, or court order; or</li>
-        <li>(j) remove, alter, or obscure any copyright, trademark, or other proprietary-rights notice contained in or on any portion of the Service.</li>
+        <li>bypass or interfere with the Service's session tokens, rate limits or other protective measures;</li>
+        <li>send automated or excessive requests that place an unreasonable load on the Service (if you need bulk data, obtain it from the original sources listed above or from the open-source repository);</li>
+        <li>introduce malicious code or attempt to gain unauthorized access to the Service or its administrative interface; or</li>
+        <li>use the Service in violation of any applicable law.</li>
       </UL>
 
-      <H2>6. Intellectual Property Rights</H2>
+      <H2>5. Reports and feedback</H2>
       <P>
-        The Service, the Curated Database, and all Content (excluding the underlying
-        factual data obtained from Third-Party Sources) are the exclusive property of the
-        Operator and are protected by the copyright laws of the United States, the laws of
-        the State of California, and applicable international treaties and conventions,
-        including without limitation copyright in compilations under Section 103 of Title
-        17 of the United States Code and database rights recognized under the laws of
-        applicable foreign jurisdictions. The Operator asserts proprietary rights in,
-        without limitation:
-      </P>
-      <UL>
-        <li>(a) the selection, coordination, arrangement, categorization, and editorial enhancement of factual data within the Curated Database;</li>
-        <li>(b) all original written descriptions, summaries, headings, taxonomies, and editorial notes;</li>
-        <li>(c) the user interface, visual design, layout, color palette, and trade dress of the Service;</li>
-        <li>(d) the source code, application logic, data schemas, and software architecture of the Service;</li>
-        <li>(e) the names "funradar" and "funradar.app", together with all associated logos, marks, and brand elements; and</li>
-        <li>(f) the methodology, processes, and editorial criteria by which Content is selected, verified, categorized, and presented.</li>
-      </UL>
-      <P>
-        Underlying factual data obtained from Third-Party Sources remains subject to the
-        terms, licenses, and conditions imposed by the respective providers thereof, and
-        the Operator makes no claim of ownership in such underlying factual data
-        independent of its incorporation into the Curated Database.
+        The Service lets you report a problem with a listing. By sending a report or
+        writing to us, you allow us to use what you send to correct or remove the listing
+        and to improve the Service, without obligation to you. Please do not include
+        personal information about yourself or others in a report.
       </P>
 
-      <H2>7. User Submissions</H2>
+      <H2>6. Third-party links and services</H2>
       <P>
-        The User may from time to time submit reports, corrections, suggestions, comments,
-        or other materials to the Operator (collectively, "Submissions"), whether through
-        the Service's reporting feature, by electronic mail, or by other means. By
-        transmitting any Submission, the User hereby grants to the Operator a perpetual,
-        irrevocable, worldwide, royalty-free, fully paid-up, non-exclusive, transferable,
-        and sublicensable license to use, reproduce, modify, adapt, publish, translate,
-        create derivative works from, distribute, perform, and display such Submission, in
-        whole or in part, in any media now known or hereafter developed, for any purpose
-        whatsoever, without compensation to the User. The User represents and warrants
-        that each Submission is accurate to the best of the User's knowledge and does not
-        infringe, misappropriate, or violate any rights of any third party.
+        The Service links to third-party websites and apps (for example map apps and
+        venue websites) and relies on third-party map and search services. We do not
+        control them and are not responsible for their content, availability or
+        practices. Your use of them is governed by their own terms.
       </P>
 
-      <H2>8. Third-Party Content and External Links</H2>
+      <H2>7. Disclaimer of warranties</H2>
       <P>
-        The Service contains hyperlinks and references to websites, applications,
-        services, and content operated by third parties. The Operator does not control,
-        endorse, sponsor, or assume responsibility for any third-party content, terms of
-        use, privacy practices, or business practices. The User's access to and use of any
-        third-party website or service shall be governed solely by the applicable terms
-        and policies of such third party, and any such access or use shall be at the
-        User's sole risk.
+        THE SERVICE AND ALL CONTENT ARE PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT
+        WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF
+        ACCURACY, COMPLETENESS, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+        NON-INFRINGEMENT, TO THE MAXIMUM EXTENT PERMITTED BY LAW.
       </P>
 
-      <H2>9. Disclaimer of Warranties</H2>
+      <H2>8. Limitation of liability</H2>
       <P>
-        TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SERVICE AND ALL CONTENT ARE
-        PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-        WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE. THE OPERATOR HEREBY DISCLAIMS
-        ALL WARRANTIES, INCLUDING WITHOUT LIMITATION THE IMPLIED WARRANTIES OF
-        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT,
-        ACCURACY, COMPLETENESS, RELIABILITY, AND UNINTERRUPTED OR ERROR-FREE OPERATION.
-        WITHOUT LIMITING THE FOREGOING, THE OPERATOR MAKES NO REPRESENTATION OR WARRANTY
-        THAT ANY LISTING, EVENT, OPERATING HOUR, PRICE, AGE SUITABILITY, OR SAFETY
-        CONDITION DESCRIBED IN THE SERVICE IS CURRENT, ACCURATE, OR COMPLETE. THE USER
-        SHALL INDEPENDENTLY VERIFY ALL SUCH INFORMATION DIRECTLY WITH THE APPLICABLE VENUE
-        OR EVENT ORGANIZER PRIOR TO RELYING UPON IT.
+        TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE OPERATOR WILL NOT BE LIABLE FOR ANY
+        INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, OR FOR ANY
+        INJURY, LOSS OR DAMAGE SUSTAINED AT OR IN CONNECTION WITH ANY PLACE LISTED ON
+        THE SERVICE. THE OPERATOR'S TOTAL LIABILITY FOR ANY CLAIM RELATING TO THE SERVICE
+        WILL NOT EXCEED ONE HUNDRED UNITED STATES DOLLARS (US $100).
       </P>
 
-      <H2>10. Limitation of Liability</H2>
+      <H2>9. Changes and termination</H2>
       <P>
-        TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE OPERATOR,
-        ITS AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, CONTRACTORS, AGENTS, OR LICENSORS
-        BE LIABLE TO THE USER OR TO ANY THIRD PARTY FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
-        CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS,
-        REVENUES, BUSINESS, GOODWILL, DATA, OR USE, ARISING OUT OF OR IN CONNECTION WITH
-        THESE TERMS OR THE USE OF, OR INABILITY TO USE, THE SERVICE, REGARDLESS OF THE
-        LEGAL THEORY UNDER WHICH SUCH DAMAGES ARE SOUGHT, AND WHETHER OR NOT THE OPERATOR
-        HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. WITHOUT LIMITING THE
-        FOREGOING, THE OPERATOR SHALL HAVE NO LIABILITY FOR ANY INJURY, ILLNESS, LOSS, OR
-        DAMAGE SUSTAINED BY ANY PERSON AT OR IN CONNECTION WITH ANY VENUE, EVENT, OR
-        ACTIVITY DESCRIBED IN THE SERVICE. THE AGGREGATE LIABILITY OF THE OPERATOR ARISING
-        OUT OF OR RELATED TO THESE TERMS OR THE SERVICE SHALL NOT EXCEED ONE HUNDRED
-        UNITED STATES DOLLARS (US $100.00).
+        We may change the Service or these Terms at any time. Changes take effect when
+        posted here, and the "Last updated" date above will change. Continuing to use the
+        Service after a change means you accept the updated Terms. We may suspend or
+        block access to the Service for anyone who abuses it.
       </P>
 
-      <H2>11. Indemnification</H2>
+      <H2>10. Governing law</H2>
       <P>
-        The User shall indemnify, defend, and hold harmless the Operator and its
-        affiliates, officers, directors, employees, contractors, agents, and licensors
-        from and against any and all claims, demands, actions, proceedings, losses,
-        liabilities, damages, judgments, settlements, fines, costs, and expenses
-        (including reasonable attorneys' fees and court costs) arising out of or relating
-        to: (a) the User's use of or access to the Service; (b) the User's breach or
-        alleged breach of these Terms; (c) any Submission provided by the User; or (d)
-        the User's violation of any applicable law or of any right of any third party.
+        These Terms are governed by the laws of the State of California, United States,
+        without regard to its conflict-of-laws rules.
       </P>
 
-      <H2>12. Termination</H2>
+      <H2>11. Contact</H2>
       <P>
-        The Operator may, in its sole discretion and without prior notice or liability to
-        the User, suspend, restrict, or terminate the User's access to the Service, in
-        whole or in part, for any reason or for no reason, including without limitation
-        upon any actual or suspected breach of these Terms, any pattern of automated or
-        excessive use, or any use that the Operator determines, in its sole judgment, to
-        be competitive with the Service. The provisions of Sections 5 (Restrictions on
-        Use), 6 (Intellectual Property Rights), 7 (User Submissions), 9 (Disclaimer of
-        Warranties), 10 (Limitation of Liability), 11 (Indemnification), 13 (Governing
-        Law and Forum), and 14 (General Provisions) shall survive any termination of
-        these Terms.
-      </P>
-
-      <H2>13. Governing Law and Forum</H2>
-      <P>
-        These Terms, and any dispute, claim, or controversy arising out of or relating to
-        these Terms or the Service (whether sounding in contract, tort, statute, or
-        otherwise), shall be governed by and construed in accordance with the laws of the
-        State of California, United States of America, without regard to its conflict of
-        laws principles. The User and the Operator hereby irrevocably consent to the
-        exclusive jurisdiction of, and venue in, the state and federal courts located in
-        the City and County of San Francisco, California, for the resolution of any such
-        dispute, claim, or controversy, and each party hereby waives any objection to
-        such jurisdiction or venue on the grounds of inconvenient forum or otherwise.
-      </P>
-
-      <H2>14. General Provisions</H2>
-      <P>
-        <strong>14.1 Entire Agreement.</strong> These Terms, together with the Privacy
-        Policy referenced herein, constitute the entire agreement between the User and
-        the Operator with respect to the subject matter hereof and supersede all prior or
-        contemporaneous understandings, communications, or agreements, whether written or
-        oral.
-      </P>
-      <P>
-        <strong>14.2 Amendments.</strong> The Operator reserves the right, in its sole
-        discretion, to modify these Terms at any time. Any modification shall be effective
-        upon posting to the Service, and the "Last updated" date set forth at the top of
-        this document shall be revised accordingly. The User's continued use of the
-        Service following any such modification shall constitute the User's acceptance of
-        the modified Terms.
-      </P>
-      <P>
-        <strong>14.3 Severability.</strong> If any provision of these Terms is held by a
-        court of competent jurisdiction to be invalid, illegal, or unenforceable, such
-        provision shall be modified to the minimum extent necessary to render it
-        enforceable, or, if such modification is not possible, severed from these Terms,
-        and the remaining provisions shall continue in full force and effect.
-      </P>
-      <P>
-        <strong>14.4 No Waiver.</strong> The failure of the Operator to enforce any right
-        or provision of these Terms shall not constitute a waiver of such right or
-        provision, nor shall any single or partial exercise of any right preclude any
-        other or further exercise thereof.
-      </P>
-      <P>
-        <strong>14.5 Assignment.</strong> The User shall not assign, transfer, or delegate
-        any of the User's rights or obligations under these Terms without the prior
-        written consent of the Operator. The Operator may freely assign or transfer these
-        Terms, in whole or in part, without restriction.
-      </P>
-      <P>
-        <strong>14.6 No Agency.</strong> Nothing in these Terms shall be construed to
-        create any partnership, joint venture, employment, agency, or fiduciary
-        relationship between the parties.
-      </P>
-      <P>
-        <strong>14.7 Notices.</strong> All notices to the Operator under these Terms shall
-        be delivered in writing by electronic mail to{' '}
-        <a href="mailto:frolicmap.official@gmail.com" style={{ color: '#f59e0b' }} className="hover:underline">frolicmap.official@gmail.com</a>
-        {' '}and shall be deemed given upon transmission, provided no failure notice is
-        received.
-      </P>
-
-      <H2>15. Contact Information</H2>
-      <P>
-        Inquiries regarding these Terms may be directed to the Operator at{' '}
-        <a href="mailto:frolicmap.official@gmail.com" style={{ color: '#f59e0b' }} className="hover:underline">frolicmap.official@gmail.com</a>.
+        Questions about these Terms can be sent to{' '}
+        <a href={`mailto:${EMAIL}`} style={{ color: '#f59e0b' }} className="hover:underline">{EMAIL}</a>.
       </P>
     </LegalPage>
   )

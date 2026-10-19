@@ -1,40 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { ListItem } from '@shared/types'
 import { useFiltersStore } from '@/stores/useFiltersStore'
 import { useMapStore } from '@/stores/useMapStore'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useEngagementStore } from '@/stores/useEngagementStore'
-import { usePicksWindowStore } from '@/stores/usePicksWindowStore'
-import { restOfWeekend } from '@/utils/picksWindow'
 
 // Fixed items catalog for the search-suggestion tests (chip tests don't read
 // item data). Geocode is stubbed empty so no debounce/network is in play.
 const mkItem = (over: Partial<ListItem> & Pick<ListItem, 'id' | 'name' | 'category' | 'lat' | 'lng'>): ListItem => ({
   type: 'place', age_min: null, age_max: null, cost: 'free', indoor: 0,
-  start_time: null, end_time: null, rrule: null, exdates: null,
-  status: 'approved', in_season_now: null, city: null, has_playground: null, name_zh: null, ...over,
+  status: 'approved', city: null, has_playground: null, name_zh: null, ...over,
 })
 vi.mock('@/hooks/useItems', () => ({
   useItems: () => ({
     data: {
       items: [
-        mkItem({
-          id: 'ev-1',
-          name: 'First Friday Nights',
-          category: 'event',
-          type: 'event',
-          lat: 37.5,
-          lng: -122.3,
-          start_time: '2026-08-15T10:00:00-07:00',
-        }),
+        mkItem({ id: 'lib-2', name: 'First Branch Library', category: 'library', lat: 37.5, lng: -122.3, cost: 'free', indoor: 1 }),
         mkItem({ id: 'pg-1', name: 'First Street Park', category: 'park', lat: 37.5, lng: -122.3 }),
         // Issue #212 fixtures: no "trampoline"/"storytime"/etc. in the name —
         // these only surface via the Activities (category/synonym) match.
         mkItem({ id: 'pg-2', name: 'Bounce Zone', category: 'playground', lat: 37.5, lng: -122.3 }),
-        mkItem({ id: 'up-1', name: 'Sunny Slope Orchard', category: 'upick', lat: 37.5, lng: -122.3 }),
         mkItem({ id: 'lib-1', name: 'Downtown Branch', category: 'library', lat: 37.5, lng: -122.3, cost: 'free', indoor: 1 }),
       ],
     },
@@ -80,128 +66,10 @@ const categories = () => [...useFiltersStore.getState().categories]
 
 beforeEach(() => {
   useFiltersStore.getState().reset()
-  useMapStore.setState({ selectedId: null, viewMode: 'map', waitlistIntent: null, overlay: null })
-  useAuthStore.setState({ credential: null, email: null, signedIn: false })
-  useEngagementStore.setState({ openedItemIds: new Set(), filterToggles: 0, eventIntents: 0 })
-  usePicksWindowStore.setState({ policy: restOfWeekend() })
+  useMapStore.setState({ selectedId: null, viewMode: 'map', overlay: null })
   geoResults.current = []
 })
 afterEach(() => cleanup())
-
-describe('search suggestions × events sign-in gate (2026-07-26 review fix)', () => {
-  beforeEach(() => stubMatchMedia(true))
-
-  const type = (q: string) => {
-    const input = screen.getByPlaceholderText(/Search playgrounds/)
-    fireEvent.change(input, { target: { value: q } })
-  }
-
-  it('excludes gated event names from guest suggestions — the search box must not undo the blur', () => {
-    renderAt('/')
-    type('first')
-    expect(screen.getByRole('option', { name: /First Street Park/ })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: /First Friday Nights/ })).toBeNull()
-  })
-
-  it('suggests event names again once signed in', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    renderAt('/')
-    type('first')
-    expect(screen.getByRole('option', { name: /First Friday Nights/ })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: /First Street Park/ })).toBeInTheDocument()
-  })
-})
-
-describe('signed-in map recommendations', () => {
-  beforeEach(() => {
-    stubMatchMedia(true)
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-08-12T16:00:00Z'))
-  })
-
-  afterEach(() => vi.useRealTimers())
-
-  it('hides the recommendations entry point from guests', () => {
-    renderAt('/')
-    expect(screen.queryByRole('button', { name: /top picks/i })).toBeNull()
-  })
-
-  it('opens a focused five-event recommendations panel for signed-in users', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    renderAt('/')
-
-    fireEvent.click(screen.getByRole('button', { name: /top picks/i }))
-
-    expect(useMapStore.getState().overlay).toBe('picks')
-    expect(screen.getByRole('dialog', { name: /top picks/i })).toHaveFocus()
-    expect(screen.getByText('First Friday Nights')).toBeInTheDocument()
-  })
-
-  // The panel occupies the same slot as ListPanel/CalendarPanel at the same
-  // z-index, and those render later in App's tree — so offering the entry
-  // point outside map view opens a panel the user cannot see.
-  it('offers recommendations only in map view', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    for (const viewMode of ['list', 'calendar'] as const) {
-      useMapStore.setState({ viewMode })
-      renderAt('/')
-      expect(screen.queryByRole('button', { name: /top picks/i })).toBeNull()
-      cleanup()
-    }
-  })
-
-  it('closes an open recommendations panel when the user leaves map view', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    renderAt('/')
-    fireEvent.click(screen.getByRole('button', { name: /top picks/i }))
-
-    act(() => useMapStore.getState().setViewMode('list'))
-
-    expect(useMapStore.getState().overlay).toBeNull()
-    expect(screen.queryByRole('dialog', { name: /top picks/i })).toBeNull()
-  })
-
-  // Operator-reported 2026-09-13: the panel was unclosable on mobile. It sat at
-  // z-40 under the z-50 IconBar column, whose coffee/language buttons land
-  // exactly on the panel's own ✕. ListPanel/CalendarPanel never hit this — the
-  // IconBar unmounts outside map view, and this is the only z-40 panel that
-  // renders WHILE in map view. Rendered in the MOBILE layout on purpose: the
-  // backdrop is `md:hidden`, so asserting it from a desktop render would be
-  // asserting a node real CSS never shows.
-  it('renders the panel above the icon bar and closes on an outside tap', () => {
-    stubMatchMedia(false)
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    renderAt('/')
-    fireEvent.click(screen.getByRole('button', { name: /top picks/i }))
-
-    const panel = screen.getByRole('dialog', { name: /top picks/i })
-    expect(panel.className).toContain('z-50')
-
-    fireEvent.click(screen.getByTestId('picks-backdrop'))
-    expect(useMapStore.getState().overlay).toBeNull()
-  })
-
-  it('closes on the panel close button', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    renderAt('/')
-    fireEvent.click(screen.getByRole('button', { name: /top picks/i }))
-
-    fireEvent.click(screen.getByRole('button', { name: /close top picks/i }))
-    expect(useMapStore.getState().overlay).toBeNull()
-  })
-
-  it('keeps the entry point mounted while the panel is open so it toggles closed', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
-    renderAt('/')
-    const launcher = screen.getByRole('button', { name: /top picks/i })
-
-    fireEvent.click(launcher)
-    expect(launcher).toHaveAttribute('aria-pressed', 'true')
-
-    fireEvent.click(launcher)
-    expect(useMapStore.getState().overlay).toBeNull()
-  })
-})
 
 describe('SearchField combobox keyboard navigation (#482)', () => {
   beforeEach(() => stubMatchMedia(true))
@@ -213,7 +81,6 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
   }
 
   it('exposes combobox/listbox roles and tracks aria-activedescendant as the active option', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
     renderAt('/')
     const input = type('first')
     expect(input).toHaveAttribute('role', 'combobox')
@@ -221,7 +88,7 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
     expect(input).not.toHaveAttribute('aria-activedescendant')
 
     const listbox = screen.getByRole('listbox')
-    const first = screen.getByRole('option', { name: /First Friday Nights/ })
+    const first = screen.getByRole('option', { name: /First Branch Library/ })
     expect(listbox).toContainElement(first)
 
     fireEvent.keyDown(input, { key: 'ArrowDown' })
@@ -230,13 +97,12 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
   })
 
   it('moves aria-activedescendant across both item and geocode results as one flat list, wrapping at the ends', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
     geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
     renderAt('/')
     const input = type('first')
     const options = screen.getAllByRole('option')
     expect(options.map((o) => o.textContent)).toEqual([
-      expect.stringContaining('First Friday Nights'),
+      expect.stringContaining('First Branch Library'),
       expect.stringContaining('First Street Park'),
       expect.stringContaining('123 Main St'),
     ])
@@ -256,7 +122,6 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
   })
 
   it('first ArrowUp with no active option lands on the LAST option (APG)', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
     geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
     renderAt('/')
     const input = type('first')
@@ -267,7 +132,6 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
   })
 
   it('ignores arrow/Enter keydowns fired during IME composition', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
     renderAt('/')
     const input = type('first')
     fireEvent.keyDown(input, { key: 'ArrowDown', isComposing: true })
@@ -280,20 +144,19 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
   })
 
   it('Enter selects the active item result', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
     renderAt('/')
     const input = type('first')
-    fireEvent.keyDown(input, { key: 'ArrowDown' }) // → First Friday Nights
+    fireEvent.keyDown(input, { key: 'ArrowDown' }) // → First Branch Library
     fireEvent.keyDown(input, { key: 'Enter' })
-    expect(useMapStore.getState().selectedId).toBe('ev-1')
-    expect(useEngagementStore.getState().openedItemIds).toEqual(new Set(['ev-1']))
+    expect(useMapStore.getState().selectedId).toBe('lib-2')
     expect(screen.queryByRole('listbox')).toBeNull()
   })
 
   it('Enter selects the active geocode result', () => {
     geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
-    renderAt('/') // guest: only the place item + the geocode row are in the list
+    renderAt('/')
     const input = type('first')
+    fireEvent.keyDown(input, { key: 'ArrowDown' }) // → First Branch Library (item)
     fireEvent.keyDown(input, { key: 'ArrowDown' }) // → First Street Park (item)
     fireEvent.keyDown(input, { key: 'ArrowDown' }) // → 123 Main St (geocode)
     fireEvent.keyDown(input, { key: 'Enter' })
@@ -315,11 +178,9 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
     type('first')
     fireEvent.mouseDown(screen.getByRole('option', { name: /First Street Park/ }))
     expect(useMapStore.getState().selectedId).toBe('pg-1')
-    expect(useEngagementStore.getState().openedItemIds).toEqual(new Set(['pg-1']))
   })
 
   it('resets the active option when the query changes', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
     renderAt('/')
     const input = type('first')
     fireEvent.keyDown(input, { key: 'ArrowDown' })
@@ -355,18 +216,11 @@ describe('activity keyword search (issue #212)', () => {
     expect(screen.queryByRole('option', { name: /Downtown Branch/ })).toBeNull()
   })
 
-  it('finds a u-pick row via "farm"', () => {
-    renderAt('/')
-    type('farm')
-    expect(screen.getByRole('option', { name: /Sunny Slope Orchard/ })).toBeInTheDocument()
-  })
-
-  it('finds library and event rows via "storytime"', () => {
-    useAuthStore.setState({ credential: 'cred.x', email: 'p@e.com', signedIn: true })
+  it('finds library rows via "storytime"', () => {
     renderAt('/')
     type('storytime')
     expect(screen.getByRole('option', { name: /Downtown Branch/ })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: /First Friday Nights/ })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /First Branch Library/ })).toBeInTheDocument()
   })
 
   it('finds playground/park rows via "climbing"', () => {
@@ -381,7 +235,7 @@ describe('activity keyword search (issue #212)', () => {
     type('free indoor')
     expect(screen.getByRole('option', { name: /Downtown Branch/ })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /Bounce Zone/ })).toBeNull()
-    expect(screen.queryByRole('option', { name: /Sunny Slope Orchard/ })).toBeNull()
+    expect(screen.queryByRole('option', { name: /First Street Park/ })).toBeNull()
   })
 
   it('groups results under Activities/Places headers and a literal name match wins the Places slot, not Activities', () => {
@@ -404,13 +258,6 @@ describe('activity keyword search (issue #212)', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(useMapStore.getState().selectedId).toBe('pg-2')
   })
-
-  it('excludes gated event Activities matches from guest suggestions ("storytime")', () => {
-    renderAt('/') // guest
-    type('storytime')
-    expect(screen.getByRole('option', { name: /Downtown Branch/ })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: /First Friday Nights/ })).toBeNull()
-  })
 })
 
 describe('SearchFilterBar desktop chip row', () => {
@@ -418,11 +265,11 @@ describe('SearchFilterBar desktop chip row', () => {
 
   it('shows exactly the four inline categories', () => {
     renderAt('/')
-    for (const name of ['Playground', 'Park', 'Museum', 'Event']) {
+    for (const name of ['Playground', 'Park', 'Museum', 'Library']) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
     }
-    // Trimmed categories are no longer inline chips.
-    expect(screen.queryByRole('button', { name: 'Library' })).toBeNull()
+    // Other categories are no longer inline chips.
+    expect(screen.queryByRole('button', { name: 'Beach' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Water Play' })).toBeNull()
   })
 
@@ -435,21 +282,13 @@ describe('SearchFilterBar desktop chip row', () => {
     expect(categories()).toEqual([])
   })
 
-  it('renders a non-live category as a coming-soon chip that arms the waitlist, not the filter', () => {
-    // Events went live in every published metro on 2026-07-25 (2026-W30
-    // batch approved), so the inline Event chip is a real filter in Chicago
-    // now. The coming-soon mechanism is still exercised by U-Pick, which
-    // stays Bay-only — its drawer chip arms the waitlist instead of the
-    // filter.
+  it('every category is a live filter in a wave metro too (no coming-soon chips)', () => {
     renderAt('/cities/chicago')
-    fireEvent.click(screen.getByRole('button', { name: 'Event' }))
-    expect(categories()).toEqual(['event'])
-    fireEvent.click(screen.getByRole('button', { name: 'Event' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
+    expect(categories()).toEqual(['library'])
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
     expect(categories()).toEqual([])
-    fireEvent.click(screen.getByRole('button', { name: 'All filters' }))
-    fireEvent.click(screen.getByRole('button', { name: /U-Pick Farm — coming soon/ }))
-    expect(categories()).toEqual([])
-    expect(useMapStore.getState().waitlistIntent).toEqual({ category: 'upick', metro: 'chicago' })
+    expect(screen.queryByText(/coming soon/i)).toBeNull()
   })
 
   it('shows the Free-only chip only when the free filter is active, and clears it on click', () => {
@@ -464,7 +303,7 @@ describe('SearchFilterBar desktop chip row', () => {
 
   it('opens the FiltersDrawer from All filters (via the overlay coordinator) with a count badge', () => {
     useFiltersStore.getState().setFreeOnly(true)
-    useFiltersStore.getState().setTime('weekend')
+    useFiltersStore.getState().setIndoorOutdoor('indoor')
     renderAt('/')
     const allFilters = screen.getByRole('button', { name: 'All filters' })
     expect(allFilters).toHaveTextContent('2')

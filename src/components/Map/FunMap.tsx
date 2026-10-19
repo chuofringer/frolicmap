@@ -1,15 +1,16 @@
 import { useRef, useEffect, useMemo, useCallback } from 'react'
-import Map, { type MapRef, type MapLayerMouseEvent } from 'react-map-gl/maplibre'
+import Map, { AttributionControl, type MapRef, type MapLayerMouseEvent } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { getBasemapStyle } from '@/config/mapStyle'
 import { MIN_ZOOM, MAX_ZOOM } from '@/config/constants'
 import { useMetro } from '@/hooks/useMetro'
 import { useItems } from '@/hooks/useItems'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useFiltersStore } from '@/stores/useFiltersStore'
 import { useMapStore } from '@/stores/useMapStore'
 import { useSessionStore } from '@/stores/useSessionStore'
 import { applyFilters } from '@/utils/filters'
-import { trackGoal, setAnalyticsRegion, trackMetroView } from '@/utils/analytics'
+import { trackGoal, trackMetroView } from '@/utils/analytics'
 import { openItemDetail } from '@/utils/openItem'
 import { ItemSource } from './ItemSource'
 import { NearbyOverlay } from './NearbyOverlay'
@@ -17,6 +18,12 @@ import { SearchMarker } from './SearchMarker'
 import { StackedFeatureList } from '@/components/Panel/StackedFeatureList'
 import type { Category } from '@shared/types'
 import type { StackedFeatureEntry } from '@/stores/useMapStore'
+
+// Licence requirement: OpenStreetMap data (the pins, and most basemaps) is ODbL
+// and must be credited wherever it is shown. The basemap styles carry their own
+// attribution (CARTO, OpenFreeMap, Esri) which MapLibre merges with this one.
+export const OSM_ATTRIBUTION =
+  '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>'
 
 const HOVER_LAYERS = ['unclustered-point', 'unclustered-emoji']
 // Pixel radius for the click-time queryRenderedFeatures bbox. A few px
@@ -45,6 +52,7 @@ export function FunMap() {
   const setStackedFeatures = useMapStore((s) => s.setStackedFeatures)
   const setMapInstance = useMapStore((s) => s.setMapInstance)
   const basemap = useMapStore((s) => s.basemap)
+  const isDesktop = useIsDesktop()
 
   const onRef = useCallback((node: MapRef | null) => {
     mapRef.current = node
@@ -67,15 +75,10 @@ export function FunMap() {
     }
   }, [flyTo])
 
-  // Per-city analytics (#243). While the map is mounted, tag every `trackGoal`
-  // beacon with the current metro so the behavior dashboard can segment by
-  // city; fire the once-per-session `metro_view` visit signal. Cleanup resets
-  // the region to null so off-metro pages (e.g. /signup) don't inherit it.
-  // Keyed on metro.id so a client-side metro switch re-tags and re-fires.
+  // Once-per-session `metro_view` visit signal (Cloudflare beacon only).
+  // Keyed on metro.id so a client-side metro switch re-fires.
   useEffect(() => {
-    setAnalyticsRegion(metro.id)
     trackMetroView(metro.id)
-    return () => setAnalyticsRegion(null)
   }, [metro.id])
 
   const filtered = useMemo(
@@ -137,7 +140,7 @@ export function FunMap() {
         const isOurTile =
           parsed !== null &&
           parsed.pathname.startsWith('/api/tiles/') &&
-          (parsed.hostname === window.location.hostname || parsed.hostname === 'api.funradar.app')
+          (parsed.hostname === window.location.hostname || parsed.hostname === 'api.frolicmap.app')
         if (isOurTile) {
           const token = useSessionStore.getState().token
           if (token) {
@@ -166,6 +169,9 @@ export function FunMap() {
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       transformRequest={transformRequest}
+      // The default control is replaced by <AttributionControl> below so it can
+      // carry the OSM credit and collapse on small screens.
+      attributionControl={false}
       style={{ width: '100%', height: '100%' }}
       interactiveLayerIds={HOVER_LAYERS}
       onMouseMove={handleMouseMove}
@@ -215,10 +221,10 @@ export function FunMap() {
         let anchorLat = e.lngLat.lat
         let anchorSet = false
         for (const f of rendered) {
-          const p = f.properties as { id?: string; name?: string; category?: Category; type?: string } | null
+          const p = f.properties as { id?: string; name?: string; category?: Category } | null
           if (!p?.id || seen.has(p.id)) continue
           seen.add(p.id)
-          entries.push({ id: p.id, name: p.name ?? '(unnamed)', category: (p.category ?? 'event') as Category, type: p.type })
+          entries.push({ id: p.id, name: p.name ?? '(unnamed)', category: (p.category ?? 'park') as Category })
           if (!anchorSet && f.geometry?.type === 'Point') {
             const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates
             anchorLng = lng
@@ -232,8 +238,8 @@ export function FunMap() {
           openItemDetail(entries[0])
           return
         }
-        // Stack open stays contextless (the item isn't chosen yet — the pick in
-        // StackedFeatureList logs its own popup_open with the id). #481
+        // Stack open: the item isn't chosen yet; the pick in StackedFeatureList
+        // logs its own popup_open.
         trackGoal('popup_open')
         setStackedFeatures({ lng: anchorLng, lat: anchorLat, features: entries })
       }}
@@ -242,6 +248,10 @@ export function FunMap() {
       <NearbyOverlay />
       <SearchMarker />
       <StackedFeatureList />
+      {/* Bottom-left (not the default bottom-right) so it is not hidden by the
+          detail panel; on phones it is lifted above the bottom bar in
+          index.css. Compact (an "i" button) on mobile. */}
+      <AttributionControl position="bottom-left" compact={!isDesktop} customAttribution={[OSM_ATTRIBUTION]} />
     </Map>
   )
 }

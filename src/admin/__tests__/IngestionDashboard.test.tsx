@@ -1,6 +1,4 @@
-// Cron health card (issue #273 — surfaces the 2 Claude Code Desktop routines
-// alongside the 3 Worker crons). No prior test file existed for this
-// component; mocking follows the pattern in BehaviorView.test.tsx.
+// Cron health card for the quarterly OSM ingest.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -30,8 +28,6 @@ type Cron = {
   status: 'healthy' | 'late' | 'failed' | 'unknown'
 }
 
-// All 5 scheduled jobs (issue #273 done-when #1): 3 Worker crons + the 2
-// routines (aggregators, upick).
 const FIXTURE_CRONS: Cron[] = [
   {
     source_id: 'osm',
@@ -44,56 +40,9 @@ const FIXTURE_CRONS: Cron[] = [
     days_since: 20,
     status: 'healthy',
   },
-  {
-    source_id: 'structured-feeds',
-    schedule: '0 4 * * MON',
-    cadence: 'weekly',
-    last_run_at: '2026-08-18T04:00:00.000Z',
-    last_inserted: 5,
-    last_updated: 1,
-    last_errors: null,
-    days_since: 4,
-    status: 'healthy',
-  },
-  {
-    source_id: 'archive-expired',
-    schedule: '0 8 * * *',
-    cadence: 'daily',
-    last_run_at: '2026-08-22T08:00:00.000Z',
-    last_inserted: 0,
-    last_updated: 3,
-    last_errors: null,
-    days_since: 0.1,
-    status: 'healthy',
-  },
-  {
-    source_id: 'aggregators',
-    schedule: 'Tue 21:00 PT (weekly Claude Code routine)',
-    cadence: 'weekly',
-    last_run_at: '2026-08-19T04:00:00.000Z',
-    last_inserted: 38,
-    last_updated: 0,
-    last_errors: null,
-    days_since: 3,
-    status: 'healthy',
-  },
-  {
-    source_id: 'upick',
-    schedule: 'Mon 21:00 PT (weekly Apr–Oct Claude Code routine)',
-    cadence: 'weekly, Apr–Oct',
-    last_run_at: null,
-    last_inserted: null,
-    last_updated: null,
-    last_errors: null,
-    days_since: null,
-    status: 'unknown',
-  },
 ]
 
-const FIXTURE = {
-  crons: FIXTURE_CRONS,
-  outbound_clicks: { total_last_30d: 0, top_hosts: [] },
-}
+const FIXTURE = { crons: FIXTURE_CRONS }
 
 const renderDashboard = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -113,39 +62,24 @@ beforeEach(() => {
 afterEach(() => cleanup())
 
 describe('IngestionDashboard cron health card', () => {
-  it('renders all 5 scheduled jobs — 3 Worker crons + aggregators + upick', async () => {
+  it('renders the OSM job card', async () => {
     renderDashboard()
     await waitFor(() => expect(observability).toHaveBeenCalled())
-
-    for (const id of ['osm', 'structured-feeds', 'archive-expired', 'aggregators', 'upick']) {
-      expect(await screen.findByText(id)).toBeInTheDocument()
-    }
+    expect(await screen.findByText('osm')).toBeInTheDocument()
   })
 
-  it('shows routine-managed rows-inserted counts on the aggregators card', async () => {
+  it('summary tiles count healthy/failed and rows added for the job', async () => {
     renderDashboard()
-    await screen.findByText('aggregators')
-    expect(screen.getByText('38')).toBeInTheDocument()
+    await screen.findByText('osm')
+    expect(screen.getByText('Healthy').parentElement).toHaveTextContent('1')
+    expect(screen.getByText('Failed').parentElement).toHaveTextContent('0')
+    expect(screen.getByText('Rows added').parentElement).toHaveTextContent('10')
   })
 
-  it('upick shows the unknown/gray chip + "never" when off-season with no logged run', async () => {
+  it('offers a manual OSM run and no other cron triggers', async () => {
     renderDashboard()
-    await screen.findByText('upick')
-    expect(screen.getByText('unknown')).toBeInTheDocument()
-    expect(screen.getByText('never')).toBeInTheDocument()
-  })
-
-  it('summary tiles count healthy/failed across all 5 jobs, not just the 3 Worker crons', async () => {
-    renderDashboard()
-    await screen.findByText('upick')
-    // 4 healthy (osm, structured-feeds, archive-expired, aggregators); upick is
-    // unknown (off-season, never run) so it counts toward neither healthy nor failed.
-    const healthyTile = screen.getByText('Healthy').parentElement
-    expect(healthyTile).toHaveTextContent('4')
-    const failedTile = screen.getByText('Failed').parentElement
-    expect(failedTile).toHaveTextContent('0')
-    // Rows added tile sums last_inserted across all 5 (10+5+0+38+null→0 = 53).
-    const rowsTile = screen.getByText('Rows added').parentElement
-    expect(rowsTile).toHaveTextContent('53')
+    await screen.findByText('osm')
+    expect(screen.getAllByRole('button', { name: 'Run now' })).toHaveLength(1)
+    expect(screen.queryByText(/structured feeds|archive expired/i)).toBeNull()
   })
 })

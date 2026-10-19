@@ -7,9 +7,8 @@ import { zh } from '../zh'
  *
  * The resource tree is split per domain so parallel work never edits the same
  * file — which is exactly why the same English sentence can end up on two
- * surfaces, translated twice, differently. `signup.heading` and
- * `pages.signup.heading` are both "Newsletter launching soon" in English; they
- * rendered as two different Chinese sentences until this test existed.
+ * surfaces, translated twice, differently (the same string in two slices once
+ * rendered as two different Chinese sentences).
  *
  * The rule: **if two keys say the same thing in English, they must say the
  * same thing in every other language.** Where the surfaces genuinely need

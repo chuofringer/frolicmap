@@ -1,5 +1,4 @@
 import type { Category } from '@shared/types'
-import { seasonalEmoji } from '@shared/seasonalEmoji'
 import { CATEGORY_COLOR, CATEGORY_FOLD } from '@shared/categorySlugs'
 import { i18next } from '@/i18n'
 
@@ -27,10 +26,6 @@ export const CATEGORIES: Record<Category, CategoryMeta> = {
   waterplay:  { emoji: '💦', color: CATEGORY_COLOR.waterplay },
   hiking:     { emoji: '🥾', color: CATEGORY_COLOR.hiking },
   campground: { emoji: '🏕️', color: CATEGORY_COLOR.campground },
-  event:      { emoji: '🎪', color: CATEGORY_COLOR.event },
-  upick:      { emoji: '🍓', color: CATEGORY_COLOR.upick },
-  birthday_party: { emoji: '🎂', color: CATEGORY_COLOR.birthday_party },
-  restaurant: { emoji: '🍔', color: CATEGORY_COLOR.restaurant },
 }
 
 /**
@@ -48,29 +43,18 @@ export function categoryLabel(cat: Category): string {
 }
 
 export const CATEGORY_ORDER = [
-  'playground', 'park', 'library', 'museum', 'aquarium', 'zoo', 'beach', 'waterplay', 'hiking', 'campground', 'birthday_party', 'restaurant', 'upick', 'event',
+  'playground', 'park', 'library', 'museum', 'aquarium', 'zoo', 'beach', 'waterplay', 'hiking', 'campground',
 ] as const satisfies readonly Category[]
 
 /**
- * Categories that are parked with no launch plan (#199 birthday party, #200
- * restaurant — both P3, zero rows in any metro). Kept out of every public
- * chip/legend surface (operator call 2026-08-25): a permanent "coming soon"
- * row for a category that isn't coming reads as broken, not as a teaser —
- * unlike metro-scoped coming-soon chips, whose category IS live somewhere.
- * Admin surfaces keep the full CATEGORY_ORDER.
- */
-const PARKED_CATEGORIES: ReadonlySet<Category> = new Set(['birthday_party', 'restaurant'])
-
-/**
- * Chip/legend render order — CATEGORY_ORDER minus folded categories (#323)
- * and parked ones (above). `zoo` has no row of its own: the aquarium chip
+ * Chip/legend render order — CATEGORY_ORDER minus folded categories. `zoo` has no row of its own: the aquarium chip
  * renders as "Aquarium/Zoo" and speaks for both. Legend, filter chips and
  * the /cities vocabulary list iterate THIS; admin surfaces (PendingQueue)
  * keep the full CATEGORY_ORDER because curators triage the real DB
  * categories.
  */
 export const CHIP_ORDER: readonly Category[] = CATEGORY_ORDER.filter(
-  (c) => !(c in CATEGORY_FOLD) && !PARKED_CATEGORIES.has(c),
+  (c) => !(c in CATEGORY_FOLD),
 )
 
 /**
@@ -98,11 +82,7 @@ type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : fa
 const _categoryOrderExhaustive: AssertEqual<(typeof CATEGORY_ORDER)[number], Category> = true
 void _categoryOrderExhaustive
 
-// Per-render emoji for a category. upick rotates monthly (strawberry Mar-May,
-// cherry Jun, peach Jul-Aug, apple Sep-Oct, pumpkin Nov-Feb); all other
-// categories return their static `CATEGORIES[cat].emoji`. Date parameter
-// exists for testability; callers normally omit it.
-export function getCategoryEmoji(cat: Category, date: Date = new Date()): string {
-  if (cat === 'upick') return seasonalEmoji(date)
+/** Emoji glyph for a category. */
+export function getCategoryEmoji(cat: Category): string {
   return CATEGORIES[cat].emoji
 }

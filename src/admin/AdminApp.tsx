@@ -4,10 +4,6 @@ import { PendingQueue } from './PendingQueue'
 import { ItemEditor } from './ItemEditor'
 import { ReportsView } from './ReportsView'
 import { IngestionDashboard } from './IngestionDashboard'
-import { StatsView } from './StatsView'
-import { WaitlistView } from './WaitlistView'
-import { BehaviorView } from './BehaviorView'
-import { SubmissionsQueue } from './SubmissionsQueue'
 
 // A single admin nav tab. The current tab gets an amber pill so the curator
 // always knows where they are. `end` pins the Pending tab (its path is the
@@ -39,15 +35,11 @@ export function AdminApp() {
       <div className="max-w-6xl mx-auto p-6">
         <header className="flex items-center gap-1 mb-8 flex-wrap border-b pb-3">
           <Link to="/admin" className="font-semibold text-base mr-3">
-            funradar admin
+            frolicmap admin
           </Link>
           <NavTab to="/admin" end>Pending</NavTab>
-          <NavTab to="/admin/submissions">Submissions</NavTab>
           <NavTab to="/admin/reports">Reports</NavTab>
           <NavTab to="/admin/ingestion">Ingestion</NavTab>
-          <NavTab to="/admin/stats">Stats</NavTab>
-          <NavTab to="/admin/waitlist">Waitlist</NavTab>
-          <NavTab to="/admin/behavior">Behavior</NavTab>
           <Link to="/" className="text-gray-500 hover:text-gray-700 ml-auto text-sm">
             View site →
           </Link>
@@ -55,12 +47,8 @@ export function AdminApp() {
         <Routes>
           <Route index element={<PendingQueue />} />
           <Route path="items/:id" element={<ItemEditor />} />
-          <Route path="submissions" element={<SubmissionsQueue />} />
           <Route path="reports" element={<ReportsView />} />
           <Route path="ingestion" element={<IngestionDashboard />} />
-          <Route path="stats" element={<StatsView />} />
-          <Route path="waitlist" element={<WaitlistView />} />
-          <Route path="behavior" element={<BehaviorView />} />
         </Routes>
       </div>
     </div>

@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { useMapStore } from '@/stores/useMapStore'
 
 /**
- * Two-way sync of the Map/List/Calendar view with `?view=` — same shape as
- * `useUrlItem`. `?view=list` / `?view=calendar` on load selects that view;
+ * Two-way sync of the Map/List view with `?view=` — same shape as
+ * `useUrlItem`. `?view=list` on load selects the list view;
  * toggling the view rewrites the param (map removes it). Any other value is
  * treated as the default map view.
  */
@@ -21,7 +21,7 @@ export function useUrlView() {
   const pendingUrlSync = useRef(false)
   useEffect(() => {
     const raw = params.get('view')
-    const want = raw === 'list' || raw === 'calendar' ? raw : 'map'
+    const want = raw === 'list' ? raw : 'map'
     if (want !== viewMode) {
       pendingUrlSync.current = true
       setViewMode(want)

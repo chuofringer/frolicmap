@@ -31,23 +31,32 @@ body {
   display: none;
 }
 
-/* funradar popup — compact, rounded, no forced min-height */
-.funradar-popup .maplibregl-popup-content {
+/* frolicmap popup — compact, rounded, no forced min-height */
+.frolicmap-popup .maplibregl-popup-content {
   padding: 10px 12px;
   border-radius: 10px;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05);
 }
-.dark .funradar-popup .maplibregl-popup-content {
+.dark .frolicmap-popup .maplibregl-popup-content {
   background: #1e293b;
   color: #e2e8f0;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
 }
-.funradar-popup .maplibregl-popup-close-button {
+.frolicmap-popup .maplibregl-popup-close-button {
   display: none;
 }
-.funradar-popup .maplibregl-popup-tip {
+.frolicmap-popup .maplibregl-popup-tip {
   border-top-color: #ffffff;
 }
-.dark .funradar-popup .maplibregl-popup-tip {
+.dark .frolicmap-popup .maplibregl-popup-tip {
   border-top-color: #1e293b !important;
+}
+
+/* Map attribution (OpenStreetMap ODbL credit must stay visible). It sits
+   bottom-left; on phones lift it above the fixed bottom control bar (the bar
+   is 48px tall at ~12px from the bottom edge). */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-bottom-left {
+    margin-bottom: 64px;
+  }
 }

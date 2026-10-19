@@ -29,14 +29,3 @@ export function useMetro(): Metro {
     return metro
   }, [pathname])
 }
-
-/**
- * Whether a category has real data in this metro.
- *
- * Everything else renders as a disabled "coming soon" chip rather than
- * disappearing — the roadmap stays visible in the UI, and a tap is the demand
- * signal that decides which metro earns depth next (plan §4B).
- */
-export function isCategoryLive(metro: Metro, category: string): boolean {
-  return (metro.liveCategories as readonly string[]).includes(category)
-}

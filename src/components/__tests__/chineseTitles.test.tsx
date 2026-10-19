@@ -6,7 +6,6 @@ import type { ListItem } from '@shared/types'
 import { i18next, loadLocale } from '@/i18n'
 import { useMapStore } from '@/stores/useMapStore'
 import { useFiltersStore } from '@/stores/useFiltersStore'
-import { useAuthStore } from '@/stores/useAuthStore'
 
 /**
  * Chinese item titles, end to end through the components (#692).
@@ -18,8 +17,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
  */
 const mk = (over: Partial<ListItem> & Pick<ListItem, 'id' | 'name' | 'category' | 'lat' | 'lng'>): ListItem => ({
   type: 'place', age_min: null, age_max: null, cost: 'free', indoor: 0,
-  start_time: null, end_time: null, rrule: null, exdates: null,
-  status: 'approved', in_season_now: null, city: null, has_playground: null, name_zh: null, ...over,
+  status: 'approved', city: null, has_playground: null, name_zh: null, ...over,
 })
 
 const GGP = mk({
@@ -36,7 +34,7 @@ vi.mock('@/hooks/useDistanceOrigin', () => ({
 }))
 vi.mock('@/hooks/useGeocode', () => ({ useGeocodeQuery: () => ({ data: [] }) }))
 vi.mock('@/utils/analytics', () => ({
-  trackGoal: vi.fn(), trackOutboundClick: vi.fn(), trackRecView: vi.fn(),
+  trackGoal: vi.fn(),
 }))
 
 import { ListPanel } from '@/components/List/ListPanel'
@@ -55,7 +53,6 @@ const renderBar = () =>
 beforeEach(() => {
   useFiltersStore.getState().reset()
   useMapStore.setState({ viewMode: 'list', selectedId: null, overlay: null })
-  useAuthStore.setState({ credential: null, email: null, signedIn: false })
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: () => ({ matches: true, addEventListener: () => {}, removeEventListener: () => {} }),
