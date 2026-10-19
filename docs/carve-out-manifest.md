@@ -23,6 +23,17 @@ for code; data is not MIT (see §5).
 - Everything event-related, aggregator/LLM-related, sign-in, newsletter,
   submissions, affiliate, weather, U-Pick is OUT.
 - The old site keeps running unchanged until this one deploys.
+- **Decision 2026-10-19 (supersedes the admin/cron lines above and below): no admin, no cron, no email.**
+  The worker is read-only: `/api/session`, `/api/items.json`, `/api/items/:id`,
+  `/api/items/:id/coords`, `/api/tiles/*`. Remove the admin router and SPA, the
+  Cloudflare Access middleware (`jose`), the scheduled handler and `ingest/osm.ts`,
+  `cronHealth`, the alert email and every `RESEND_*`/`ALERT_EMAIL`/`CF_ACCESS_*`/
+  `DEV_ADMIN_BYPASS` binding, `/api/report` and the `reports` table,
+  `ingestion_log`, `shared/qualityGate.ts` and `data/quality/`. Keep
+  `id_fetch_watch` (enumeration guard). Data is loaded offline: the import
+  scripts emit SQL that the operator applies with `wrangler d1 execute`; refresh
+  is a manual re-run, never a cron. The detail panel's "report a problem"
+  becomes a `mailto:frolicmap.official@gmail.com` link with the item id.
 
 All paths below are relative to the source repo unless stated. Line numbers
 are from the source tree at the time of writing; verify before editing.
