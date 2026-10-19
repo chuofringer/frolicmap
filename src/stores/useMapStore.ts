@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { MapRef } from 'react-map-gl/maplibre'
-import type { BasemapId } from '@/config/mapStyle'
+import { resolveBasemapId, type BasemapId } from '@/config/mapStyle'
 import type { Category } from '@shared/types'
 
 export interface StackedFeatureEntry {
@@ -54,7 +54,9 @@ const loadBasemap = (): BasemapId => {
   if (typeof window === 'undefined') return 'light'
   try {
     const v = localStorage.getItem('frolicmap.basemap')
-    if (v === 'light' || v === 'dark' || v === 'street' || v === 'liberty' || v === 'satellite') return v
+    // Validated through the resolver: a retired id (e.g. an old stored value)
+    // falls back to the default with one warning instead of rendering blank.
+    if (v !== null) return resolveBasemapId(v)
   } catch {
     // localStorage unavailable (private mode / storage disabled) — use the default.
   }
@@ -98,7 +100,8 @@ export const useMapStore = create<MapStore>((set) => ({
       : { stackedFeatures: null }),
   lastStackedFeatures: null,
   basemap: loadBasemap(),
-  setBasemap: (id) => {
+  setBasemap: (requested) => {
+    const id = resolveBasemapId(requested)
     if (typeof window !== 'undefined') {
       try { localStorage.setItem('frolicmap.basemap', id) } catch { /* private mode — preference just won't persist */ }
     }

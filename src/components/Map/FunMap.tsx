@@ -21,7 +21,8 @@ import type { StackedFeatureEntry } from '@/stores/useMapStore'
 
 // Licence requirement: OpenStreetMap data (the pins, and most basemaps) is ODbL
 // and must be credited wherever it is shown. The basemap styles carry their own
-// attribution (CARTO, OpenFreeMap, Esri) which MapLibre merges with this one.
+// attribution (OpenFreeMap, USGS) which MapLibre merges with this one; the
+// default control is replaced by <AttributionControl> below but never hides it.
 export const OSM_ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>'
 
@@ -130,7 +131,7 @@ export function FunMap() {
   // #194's same-origin flip, API_BASE is the empty string in production,
   // so a `&& API_BASE` short-circuit silently dropped the auth header
   // and the worker returned 401 for every tile (issue: pins disappeared).
-  // Basemap tiles from CARTO / OpenFreeMap / Esri use different hosts
+  // Basemap tiles from OpenFreeMap / USGS use different hosts
   // and paths, so they don't match this filter.
   const transformRequest = useCallback(
     (url: string, resourceType?: string) => {

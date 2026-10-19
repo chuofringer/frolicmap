@@ -82,7 +82,7 @@ export default function PrivacyPage() {
         privacy policy:
       </P>
       <UL>
-        <li>basemap tile providers, such as CARTO, OpenFreeMap and Esri, which serve the map imagery;</li>
+        <li>basemap tile providers, such as OpenFreeMap and the U.S. Geological Survey, which serve the map imagery;</li>
         <li>OpenStreetMap's Nominatim geocoding service, which receives the text of an address search when you press Enter in the search field (not as you type);</li>
         <li>Wikimedia Commons (upload.wikimedia.org), which serves place photographs when one is shown;</li>
         <li>Cloudflare, which hosts and secures the Service; and</li>

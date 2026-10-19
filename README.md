@@ -43,7 +43,8 @@ a place opens a pre-filled `mailto:` link; nothing is posted to the Worker.
 | [National Park Service](https://www.nps.gov/subjects/developer/) API | National park units | Public domain. Needs a free API key; credit "National Park Service". |
 | [Trust for Public Land ParkServe](https://www.tpl.org/parkserve) | Park polygons and names | Check the ParkServe terms before redistributing a derived dataset. |
 | [Wikimedia Commons](https://commons.wikimedia.org) | Optional place photos | Per-photo licence; attribution is stored in `photo_attribution` and shown with the photo. Only Commons hosts are accepted (`shared/photoHost.ts`). |
-| CARTO basemap / Esri World Imagery | Map background | CARTO's free tiles are for non-commercial use: a commercial deployment needs its own basemap or a CARTO plan. The satellite basemap uses ArcGIS Online World Imagery tiles without an API key. Esri's terms require the attribution string that is already set and an ArcGIS Developer account/API key for production applications, so before a public launch either add a key or remove the `satellite` entry from `src/config/mapStyle.ts`. |
+| [OpenFreeMap](https://openfreemap.org) | Map background (Light, Dark, Street, Liberty 3D) | OpenMapTiles schema; data © OpenStreetMap contributors (ODbL); tiles free, no key, and [self-hostable](docs/basemaps.md). Style attribution is shown in the map's attribution control. |
+| [USGS The National Map](https://www.usgs.gov/core-science-systems/national-geospatial-program/national-map) imagery | Satellite basemap (and city-card map thumbnails, USGS Topo) | US government work, public domain; no key. Credit "USGS The National Map" is shown in the map's attribution control. Coverage is the US, which includes every metro we publish. |
 
 Code is MIT; data is not. Each row carries a `source_type`, and the data is
 redistributed under its source's terms, not under the MIT licence.

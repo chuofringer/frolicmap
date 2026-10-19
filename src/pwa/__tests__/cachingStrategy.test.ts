@@ -89,15 +89,15 @@ describe('decideCachingStrategy — MapLibre chunk', () => {
 })
 
 describe('decideCachingStrategy — basemap CDN hosts', () => {
-  it('is cache-first for CARTO style/tile hosts', () => {
+  it('is cache-first for an OpenFreeMap style', () => {
     expect(
-      decideCachingStrategy(req('https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', { sameOrigin: false })),
+      decideCachingStrategy(req('https://tiles.openfreemap.org/styles/positron', { sameOrigin: false })),
     ).toBe('cache-first-basemap-cdn')
   })
 
-  it('is cache-first for a CARTO tile subdomain', () => {
+  it('is cache-first for an OpenFreeMap tile subdomain', () => {
     expect(
-      decideCachingStrategy(req('https://a.basemaps.cartocdn.com/light_all/10/163/396.png', { sameOrigin: false })),
+      decideCachingStrategy(req('https://a.tiles.openfreemap.org/planet/20260101_000000_pt/10/163/396.pbf', { sameOrigin: false })),
     ).toBe('cache-first-basemap-cdn')
   })
 
@@ -107,10 +107,10 @@ describe('decideCachingStrategy — basemap CDN hosts', () => {
     )
   })
 
-  it('is cache-first for the Esri imagery host', () => {
+  it('is cache-first for the USGS imagery host', () => {
     expect(
       decideCachingStrategy(
-        req('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/1/2/3', {
+        req('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/10/357/164', {
           sameOrigin: false,
         }),
       ),
