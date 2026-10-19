@@ -43,9 +43,9 @@ describe('localeCopy helpers', () => {
   })
   it('emits a reciprocal trio pointing x-default at English', () => {
     const links = hreflangLinks('/cities/seattle')
-    expect(links).toContain('hreflang="en" href="https://funradar.app/cities/seattle"')
-    expect(links).toContain('hreflang="zh-Hans" href="https://funradar.app/zh/cities/seattle"')
-    expect(links).toContain('hreflang="x-default" href="https://funradar.app/cities/seattle"')
+    expect(links).toContain('hreflang="en" href="https://frolicmap.app/cities/seattle"')
+    expect(links).toContain('hreflang="zh-Hans" href="https://frolicmap.app/zh/cities/seattle"')
+    expect(links).toContain('hreflang="x-default" href="https://frolicmap.app/cities/seattle"')
   })
 })
 
@@ -54,8 +54,8 @@ describe('zh city page', () => {
 
   it('lives at /zh/cities/{slug} and is self-canonical', () => {
     expect(page.path).toBe('/zh/cities/seattle')
-    expect(page.html).toContain('<link rel="canonical" href="https://funradar.app/zh/cities/seattle"')
-    expect(page.html).toContain('property="og:url" content="https://funradar.app/zh/cities/seattle"')
+    expect(page.html).toContain('<link rel="canonical" href="https://frolicmap.app/zh/cities/seattle"')
+    expect(page.html).toContain('property="og:url" content="https://frolicmap.app/zh/cities/seattle"')
   })
 
   it('sets html lang=zh-Hans and Chinese title/description from the locale slice', () => {
@@ -74,9 +74,9 @@ describe('zh city page', () => {
   })
 
   it('carries reciprocal hreflang', () => {
-    expect(page.html).toContain('hreflang="en" href="https://funradar.app/cities/seattle"')
-    expect(page.html).toContain('hreflang="zh-Hans" href="https://funradar.app/zh/cities/seattle"')
-    expect(page.html).toContain('hreflang="x-default" href="https://funradar.app/cities/seattle"')
+    expect(page.html).toContain('hreflang="en" href="https://frolicmap.app/cities/seattle"')
+    expect(page.html).toContain('hreflang="zh-Hans" href="https://frolicmap.app/zh/cities/seattle"')
+    expect(page.html).toContain('hreflang="x-default" href="https://frolicmap.app/cities/seattle"')
   })
 
   it('still boots the SPA shell (script tag + root div survive)', () => {
@@ -90,11 +90,11 @@ describe('English page gains hreflang but is otherwise unchanged', () => {
   it('keeps path, lang and canonical', () => {
     expect(page.path).toBe('/cities/seattle')
     expect(page.html).toMatch(/<html lang="en"/)
-    expect(page.html).toContain('<link rel="canonical" href="https://funradar.app/cities/seattle"')
+    expect(page.html).toContain('<link rel="canonical" href="https://frolicmap.app/cities/seattle"')
   })
   it('has the same hreflang trio as its zh twin', () => {
-    expect(page.html).toContain('hreflang="zh-Hans" href="https://funradar.app/zh/cities/seattle"')
-    expect(page.html).toContain('hreflang="x-default" href="https://funradar.app/cities/seattle"')
+    expect(page.html).toContain('hreflang="zh-Hans" href="https://frolicmap.app/zh/cities/seattle"')
+    expect(page.html).toContain('hreflang="x-default" href="https://frolicmap.app/cities/seattle"')
   })
 })
 
@@ -106,7 +106,7 @@ describe('/zh/cities index', () => {
   it('is self-canonical with Chinese chrome and zh-Hans lang', () => {
     expect(zhIndex.path).toBe('/zh/cities')
     expect(zhIndex.html).toContain('<html lang="zh-Hans">')
-    expect(zhIndex.html).toContain('<link rel="canonical" href="https://funradar.app/zh/cities">')
+    expect(zhIndex.html).toContain('<link rel="canonical" href="https://frolicmap.app/zh/cities">')
     expect(zhIndex.html).toContain('<h1>按城市浏览亲子活动</h1>')
     expect(zhIndex.html).toContain('href="/zh/cities/seattle"')
     expect(zhIndex.html).toContain('4k+ 个地点')
@@ -114,9 +114,9 @@ describe('/zh/cities index', () => {
 
   it('both locales cross-reference each other', () => {
     for (const html of [zhIndex.html, enIndex.html]) {
-      expect(html).toContain('hreflang="en" href="https://funradar.app/cities"')
-      expect(html).toContain('hreflang="zh-Hans" href="https://funradar.app/zh/cities"')
-      expect(html).toContain('hreflang="x-default" href="https://funradar.app/cities"')
+      expect(html).toContain('hreflang="en" href="https://frolicmap.app/cities"')
+      expect(html).toContain('hreflang="zh-Hans" href="https://frolicmap.app/zh/cities"')
+      expect(html).toContain('hreflang="x-default" href="https://frolicmap.app/cities"')
     }
     expect(enIndex.html).toContain('<html lang="en">')
     expect(enIndex.path).toBe('/cities')
@@ -135,6 +135,6 @@ describe('sitemap', () => {
   })
   it('lists zh entries', () => {
     const xml = renderSitemap(['/cities/seattle', '/zh/cities/seattle'])
-    expect(xml).toContain('<loc>https://funradar.app/zh/cities/seattle</loc>')
+    expect(xml).toContain('<loc>https://frolicmap.app/zh/cities/seattle</loc>')
   })
 })

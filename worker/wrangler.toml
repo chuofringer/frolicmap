@@ -17,6 +17,12 @@ zone_name = "frolicmap.app"
 
 [vars]
 FRONTEND_URL = "https://frolicmap.app"
+# Cron-failure alert email (utils/email.ts). Both are no-ops until set:
+# ALERT_EMAIL is the operator inbox (empty = log only), RESEND_FROM_EMAIL the
+# verified Resend sender. RESEND_API_KEY is a secret, NOT a var:
+#   wrangler secret put RESEND_API_KEY
+RESEND_FROM_EMAIL = "alerts@frolicmap.app"
+ALERT_EMAIL = ""
 # DEV_ADMIN_BYPASS is intentionally unset in prod. Set to "yes" only via
 # `wrangler dev` overrides or a .dev.vars file to unlock the x-dev-admin header.
 

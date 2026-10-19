@@ -57,12 +57,10 @@ describe('shared/osm — bbox parameterization', () => {
     }
   })
 
-  it('leaves the non-OSM categories with no clauses', () => {
-    // waterplay left this list in #435 — it now has a real OSM leg.
-    for (const c of ['event', 'upick'] as const) {
-      expect(CATEGORY_QUERY[c]).toEqual([])
-      expect(OSM_CATEGORIES).not.toContain(c)
-    }
+  it('has no query table entries beyond OSM_CATEGORIES', () => {
+    // The retired event / upick / birthday_party / restaurant categories must
+    // not linger as keys in the query table.
+    expect(Object.keys(CATEGORY_QUERY).sort()).toEqual([...OSM_CATEGORIES].sort())
   })
 })
 
