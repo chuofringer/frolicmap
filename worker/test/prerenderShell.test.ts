@@ -105,7 +105,7 @@ describe('renderCityShell', () => {
     expect(page.html).not.toContain('<div id="root"></div>')
     expect(page.html).toContain('Kids activities in Seattle')
     // The overview thumbnail the old static hub carried.
-    expect(page.html).toContain('basemaps.cartocdn.com')
+    expect(page.html).toContain('basemap.nationalmap.gov')
     expect(page.html).toContain('loading="lazy"')
     // Internal linking: the page must not be a dead end.
     expect(page.html).toContain('href="/cities"')

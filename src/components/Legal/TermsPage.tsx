@@ -47,7 +47,7 @@ export default function TermsPage() {
         <li>National park records come from the National Park Service (NPS); that data is in the public domain.</li>
         <li>Park records may also come from the Trust for Public Land's ParkServe dataset, used under its own terms.</li>
         <li>Photographs, where shown, come from Wikimedia Commons and are credited to their authors under their individual Creative Commons or other licences, as stated in the credit shown with each photograph.</li>
-        <li>Basemap imagery is provided by third parties (such as CARTO, OpenFreeMap and Esri) under their own terms and attributions, shown in the corner of the map.</li>
+        <li>Basemap imagery is provided by third parties (such as OpenFreeMap and the U.S. Geological Survey) under their own terms and attributions, shown in the corner of the map.</li>
       </UL>
       <P>
         If you reuse any data you obtain from the Service, you are responsible for

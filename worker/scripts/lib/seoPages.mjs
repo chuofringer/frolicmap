@@ -163,20 +163,20 @@ export function tileXY(lat, lng, z) {
 }
 
 /**
- * Thumbnail for a city card: a single CARTO basemap raster tile centred on
- * the metro.
+ * Thumbnail for a city card: a single USGS Topo (The National Map, US public
+ * domain, keyless) raster tile centred on the metro.
  *
  * Chosen over photography deliberately. We hold no photo rights for city
  * imagery, and licensing 50 city photos is a real cost
  * and a real legal risk. A map tile is free, needs no rights clearance, is
- * visually distinct per city, and is honest about what the product is. CARTO
- * attribution is already in every footer.
+ * visually distinct per city, and is honest about what the product is. The
+ * tiles are public domain; the OSM credit in every footer covers the data.
  *
- * z=10 puts roughly a metro in one 256px tile; @2x keeps it sharp.
+ * z=10 puts roughly a metro in one 256px tile.
  */
 export function cityThumbUrl(metro, z = 10) {
   const { x, y } = tileXY(metro.initialView.latitude, metro.initialView.longitude, z)
-  return `https://basemaps.cartocdn.com/light_all/${z}/${x}/${y}@2x.png`
+  return `https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/${z}/${y}/${x}`
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ export function cityThumbUrl(metro, z = 10) {
  *
  * The single-tile `cityThumbUrl` above lands the metro wherever it falls
  * inside one slippy tile's grid — off-center by construction. The card image
- * is instead a CSS composite: a fixed-aspect container with the 4–9 CARTO
+ * is instead a CSS composite: a fixed-aspect container with the 4–9 USGS Topo
  * tiles that cover it absolutely positioned so the metro center sits dead
  * center, plus approved-place pins projected on top. Pure web-mercator
  * arithmetic — no canvas, no server-side raster.
@@ -284,7 +284,7 @@ export function tileLayout(center, zoom, cardW = CARD_W, cardH = CARD_H) {
 const pctFmt = (n) => Number(n.toFixed(3)).toString()
 
 /**
- * Centered CARTO-tile composite for one metro, with approved-place pins as
+ * Centered USGS-Topo-tile composite for one metro, with approved-place pins as
  * category-coloured dots. Self-contained: aspect-ratio + inline-positioned
  * children, so it renders identically inside the CSS-classed index grid and the
  * inline-styled `/cities/{slug}` fallback shell.
@@ -309,7 +309,7 @@ export function renderMapCard({
 
   const tiles = tileLayout(center, zoom, cardW, cardH)
     .map((t) =>
-      `<img src="https://basemaps.cartocdn.com/light_all/${t.z}/${t.x}/${t.y}@2x.png" alt="" ` +
+      `<img src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/${t.z}/${t.y}/${t.x}" alt="" ` +
       `aria-hidden="true" loading="lazy" style="position:absolute;` +
       `left:${pctFmt(t.leftPct)}%;top:${pctFmt(t.topPct)}%;` +
       `width:${pctFmt(t.wPct)}%;height:${pctFmt(t.hPct)}%">`)

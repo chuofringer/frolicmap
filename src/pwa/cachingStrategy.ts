@@ -31,8 +31,8 @@
  *    avoid. Its filename is content-hashed by Vite, so cache-first is safe:
  *    a new build ships a new URL, never a stale hit.
  *
- * 4. Third-party basemap tiles/styles/glyphs/sprites (CARTO, OpenFreeMap,
- *    Esri — see `src/config/mapStyle.ts`) are cache-first, opportunistic.
+ * 4. Third-party basemap tiles/styles/glyphs/sprites (OpenFreeMap, USGS
+ *    The National Map — see `src/config/mapStyle.ts`) are cache-first, opportunistic.
  *    They're public, unauthenticated, and slow-changing; a cache miss just
  *    falls through to the network, so this is purely a win for the "on cell
  *    data in a park" case the issue is about.
@@ -77,7 +77,7 @@ const MAPLIBRE_CHUNK_RE = /^\/assets\/maplibre-gl-.*\.js$/
  * host or subdomain so a vendor's tile/sprite/glyph subdomains (which their
  * style.json — not our code — decides) are covered too.
  */
-const BASEMAP_CDN_HOSTS = ['cartocdn.com', 'openfreemap.org', 'arcgisonline.com']
+const BASEMAP_CDN_HOSTS = ['openfreemap.org', 'nationalmap.gov']
 
 function matchesCdnHost(hostname: string): boolean {
   return BASEMAP_CDN_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`))

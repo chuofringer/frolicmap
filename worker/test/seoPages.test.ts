@@ -81,8 +81,8 @@ describe('/cities index (the welcome page)', () => {
   it('renders one card per metro with a composite map thumbnail', () => {
     expect((index.html.match(/class="city"/g) ?? []).length).toBe(2)
     // The single-tile <img> thumbnail is replaced by a centered CSS composite
-    // of CARTO tiles inside an aspect-ratio container.
-    expect(index.html).toContain('basemaps.cartocdn.com')
+    // of USGS Topo tiles inside an aspect-ratio container.
+    expect(index.html).toContain('basemap.nationalmap.gov')
     expect((index.html.match(/class="citymap"/g) ?? []).length).toBe(2)
   })
 
@@ -178,9 +178,9 @@ describe('centered map-card composite', () => {
     }
   })
 
-  it('emits 4–9 lazy CARTO tiles for a metro card', () => {
+  it('emits 4–9 lazy USGS Topo tiles for a metro card', () => {
     const html = renderMapCard({ metro: bay })
-    const tiles = html.match(/basemaps\.cartocdn\.com/g) ?? []
+    const tiles = html.match(/basemap\.nationalmap\.gov/g) ?? []
     expect(tiles.length).toBeGreaterThanOrEqual(4)
     expect(tiles.length).toBeLessThanOrEqual(9)
     expect(html).toContain('loading="lazy"')
@@ -250,7 +250,7 @@ describe('city thumbnails', () => {
   it('computes the slippy tile containing the metro centre', () => {
     // Seattle sits in tile 10/164/357 — spot-checked against the standard
     // slippy formula.
-    expect(cityThumbUrl(SEATTLE)).toBe('https://basemaps.cartocdn.com/light_all/10/164/357@2x.png')
+    expect(cityThumbUrl(SEATTLE)).toBe('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/10/357/164')
   })
 
   it('gives visually distinct tiles to different metros', () => {
