@@ -66,7 +66,7 @@ describe('/cities index (the welcome page)', () => {
     // whether or not we have the data yet.
     for (const term of [
       'playgrounds', 'parks', 'libraries', 'museums', 'aquariums', 'beaches',
-      'water play', 'hiking', 'campgrounds', 'u-pick', 'events',
+      'water play', 'hiking', 'campgrounds',
     ]) {
       expect(index.html.toLowerCase(), term).toContain(term)
     }

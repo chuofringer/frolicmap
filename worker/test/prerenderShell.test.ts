@@ -43,7 +43,7 @@ describe('renderCityShell', () => {
     metro: SEATTLE,
     categoryCounts: { playground: 89, park: 2534, library: 115, beach: 4 },
     categoryPlural: CATEGORY_PLURAL,
-    allCategories: ['playground', 'park', 'library', 'beach', 'waterplay', 'upick'],
+    allCategories: ['playground', 'park', 'library', 'beach', 'waterplay'],
     nearbyMetros: [{ slug: 'portland', label: 'Portland' }],
   })
 
@@ -52,8 +52,7 @@ describe('renderCityShell', () => {
   })
 
   const LEGEND_LIST =
-    'Playground, Park, Library, Museum, Aquarium/Zoo, Beach, Water Play, Hiking, ' +
-    'Campground, Birthday Party, Restaurant, U-Pick Farm &amp; Event'
+    'Playground, Park, Library, Museum, Aquarium/Zoo, Beach, Water Play, Hiking &amp; Campground'
 
   it('replaces the Bay-Area head with the metro’s own title carrying the full legend list', () => {
     // The bug this fixes: one index.html served every SPA route, so a metro
@@ -129,7 +128,6 @@ describe('renderCityShell', () => {
     expect(page.html).toContain('(coming soon)')
     expect(page.html).toContain('Water Play')
     expect(page.html).not.toContain('cat=waterplay')
-    expect(page.html).not.toContain('cat=upick')
   })
 
   it('renders the nearby-metros footer with /cities links', () => {
