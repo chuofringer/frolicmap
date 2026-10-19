@@ -107,8 +107,7 @@ export const CATEGORY_QUERY: Record<Category, string[]> = {
   // object is usually ALSO `leisure=playground`, so it matches BOTH this leg
   // and the playground leg; the national bootstrap resolves that collision to
   // `waterplay` by ordering waterplay BEFORE playground in OSM_CATEGORIES (see
-  // below). Colon-keys are quoted so Overpass parses them literally. The Bay
-  // Area is skipped by the national script unless `--include-bay` is passed.
+  // below). Colon-keys are quoted so Overpass parses them literally.
   waterplay:  [`node[leisure=water_park]`, `way[leisure=water_park]`,
                `node[playground=splash_pad]`, `way[playground=splash_pad]`,
                `node["playground:water"=yes]`, `way["playground:water"=yes]`,
@@ -284,7 +283,7 @@ export function inBbox(bbox: Bbox, lat: number, lng: number): boolean {
  * first-match) names a different metro, this returns null and the walk emits
  * nothing: the canonical metro's bbox contains the point by definition, so
  * its own walk is the sole emitter. Reassigning instead of ceding let a
- * sacramento walk emit `region='bay'` rows, bypassing the bay skip.
+ * sacramento walk emit `region='bay'` rows.
  *
  * `metroFor` is injected (same pattern as the IMLS importers' `metroFor`) so
  * this module keeps zero runtime imports — the constraint that lets plain

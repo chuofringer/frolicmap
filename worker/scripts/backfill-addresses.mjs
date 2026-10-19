@@ -27,7 +27,6 @@
  *   - Only `address` and `updated_at` are ever written. No other column.
  *   - Every UPDATE is guarded `AND (address IS NULL OR address='')`, so an
  *     apply can never clobber a curated address and re-applies are no-ops.
- *   - region='bay' rows are asserted out of the input and never emitted.
  *   - Rows whose reverse-geocode has no street/road are SKIPPED, never faked.
  *   - This script NEVER applies SQL and NEVER runs wrangler writes. It only
  *     reads (optionally, via --fetch-remote) and writes local files.
@@ -45,8 +44,7 @@
  * 1. Export the rows to backfill (reviewer runs this — wrangler writes nothing):
  *
  *      cd worker && npx wrangler d1 execute frolicmap-prod --remote --json \
- *        --command "SELECT id, lat, lng FROM items WHERE region!='bay' \
- *          AND source_type='osm' AND status='approved' \
+ *        --command "SELECT id, lat, lng FROM items WHERE source_type='osm' AND status='approved' \
  *          AND (address IS NULL OR address='')" \
  *        | node -e "process.stdin.on('data',d=>0);let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.stringify(JSON.parse(s)[0].results)))" \
  *        > ../data/backfill/rows.json
@@ -141,8 +139,8 @@ function printHelp() {
  */
 function fetchRemoteRows(metros) {
   let sql =
-    "SELECT id, lat, lng, region FROM items WHERE region!='bay' " +
-    "AND source_type='osm' AND status='approved' " +
+    "SELECT id, lat, lng, region FROM items WHERE " +
+    "source_type='osm' AND status='approved' " +
     "AND (address IS NULL OR address='')"
   if (metros && metros.length) {
     const inList = metros.map((m) => `'${m.replace(/'/g, "''")}'`).join(',')
@@ -168,7 +166,7 @@ function loadRows(args) {
     const set = new Set(args.metros)
     rows = rows.filter((r) => set.has(r.region))
   }
-  assertInputRows(rows) // rejects region='bay' and malformed rows
+  assertInputRows(rows) // rejects malformed rows
   if (args.limit !== null) rows = rows.slice(0, args.limit)
   return rows
 }

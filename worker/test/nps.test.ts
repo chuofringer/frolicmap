@@ -19,8 +19,7 @@ const park = (code: string): Park => {
   if (!p) throw new Error(`fixture missing parkCode ${code}`)
   return p
 }
-// Skip Bay by default, matching every other importer.
-const DEFAULT = { ...TIER, skipRegions: new Set(['bay']) }
+const DEFAULT = { ...TIER }
 
 describe('NPS field mapping', () => {
   it('maps a park unit into an Item with a deterministic nps-<parkCode> id', () => {
@@ -63,7 +62,7 @@ describe('NPS field mapping', () => {
   })
 
   it('keeps a description and truncates long ones at a word boundary', () => {
-    const short = npsParkToItem(park('goga'), metroForCoords, { ...TIER, skipRegions: new Set() }).row
+    const short = npsParkToItem(park('goga'), metroForCoords, TIER).row
     expect(short.description).toContain('Golden Gate')
 
     const long = npsParkToItem(park('gate'), metroForCoords, { ...DEFAULT, descMaxLen: 40 }).row
@@ -128,12 +127,8 @@ describe('NPS bbox filtering + contested-coord ceding', () => {
     expect(row.region).toBe('washington')
   })
 
-  it('skips the Bay region by default so the curated Bay park layer is not double-pinned', () => {
-    expect(npsParkToItem(park('goga'), metroForCoords, DEFAULT).skipped).toBe('bay region (skipped unless --include-bay)')
-  })
-
-  it('emits Bay rows when the skip set is cleared (--include-bay)', () => {
-    const { row } = npsParkToItem(park('goga'), metroForCoords, { ...TIER, skipRegions: new Set() })
+  it('treats the Bay Area like any other metro', () => {
+    const { row } = npsParkToItem(park('goga'), metroForCoords, DEFAULT)
     expect(row).toMatchObject({ id: 'nps-goga', region: 'bay', category: 'park' })
   })
 
@@ -160,9 +155,9 @@ describe('NPS end-to-end over the fixture', () => {
     PARKS.map((p) => npsParkToItem(p, metroForCoords, DEFAULT)),
   )
 
-  it('emits exactly the park/trail units inside a non-Bay metro bbox', () => {
+  it('emits exactly the park/trail units inside a metro bbox', () => {
     expect(rows.map((r: { id: string }) => r.id).sort())
-      .toEqual(['nps-appa', 'nps-cont', 'nps-fiis', 'nps-gate'])
+      .toEqual(['nps-appa', 'nps-cont', 'nps-fiis', 'nps-gate', 'nps-goga'])
   })
 
   it('tallies skips by reason, including per-designation counts', () => {
@@ -172,7 +167,6 @@ describe('NPS end-to-end over the fixture', () => {
       'designation: National Historic Trail': 1,
       'outside every metro bbox': 1,
       'no coordinates': 1,
-      'bay region (skipped unless --include-bay)': 1,
     })
   })
 })

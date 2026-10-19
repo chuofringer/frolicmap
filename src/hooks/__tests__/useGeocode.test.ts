@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { metroViewbox, withinMetro } from '../useGeocode'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { renderHook, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createElement, type ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+import { metroViewbox, withinMetro, useGeocodeQuery } from '../useGeocode'
 import { getMetro } from '@shared/metros'
 
 const bay = getMetro('bay')!
@@ -29,5 +33,33 @@ describe('geocode scoping follows the current metro', () => {
     // Old post-filter required address.state === 'California'; every Seattle
     // result failed it regardless of coordinates.
     expect(withinMetro(seattle, 47.61, -122.20)).toBe(true)
+  })
+})
+
+describe('Nominatim request shape', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(
+      QueryClientProvider,
+      { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) },
+      createElement(MemoryRouter, { initialEntries: ['/'] }, children),
+    )
+
+  it('sends limit=5 and the contact email, and nothing for a too-short query', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderHook(() => useGeocodeQuery('ab'), { wrapper })
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    renderHook(() => useGeocodeQuery('123 Main St'), { wrapper })
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    const url = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(url.hostname).toBe('nominatim.openstreetmap.org')
+    expect(url.searchParams.get('limit')).toBe('5')
+    expect(url.searchParams.get('email')).toBe('frolicmap.official@gmail.com')
+    expect(url.searchParams.get('q')).toBe('123 Main St')
+    expect(url.searchParams.get('viewbox')).toBeTruthy()
   })
 })

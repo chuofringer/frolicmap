@@ -45,7 +45,7 @@ if (!process.features.typescript && !process.env.__IMLS_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { metroForCoords, DEFAULT_REGION } = await import('../../shared/metros.ts')
+const { metroForCoords } = await import('../../shared/metros.ts')
 
 const VALID_STATUS = ['pending', 'approved', 'rejected', 'archived']
 const VALID_CONFIDENCE = ['high', 'medium', 'low']
@@ -67,7 +67,7 @@ function validateTier(args) {
 function parseArgs(argv) {
   const args = {
     csv: null, out: path.join(REPO_ROOT, 'data/imls/libraries.sql'),
-    status: 'approved', confidence: 'medium', dryRun: false, limit: null, includeBay: false,
+    status: 'approved', confidence: 'medium', dryRun: false, limit: null,
   }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
@@ -77,7 +77,6 @@ function parseArgs(argv) {
     else if (a === '--status') args.status = next()
     else if (a === '--confidence') args.confidence = next()
     else if (a === '--dry-run') args.dryRun = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--limit') args.limit = Number(next())
     else if (a === '--help' || a === '-h') {
       console.log(`
@@ -88,9 +87,6 @@ seed-imls-libraries.mjs — IMLS Public Libraries Survey outlet importer (#353)
   --status <s>        Row status (default approved — trusted source, Tier C)
   --confidence <c>    Row confidence (default medium — Tier C, plan §1.6)
   --dry-run           Report only; write nothing
-  --include-bay       Emit Bay Area rows too. Off by default (the Bay Area was a separate
-                      curated layer in the project this repo came from); pass it to
-                      load the Bay Area from this source
   --limit <n>         Process only the first n records (smoke tests)
 
 Emits SQL. Applying to any database is a separate, explicit step.
@@ -114,7 +110,6 @@ const { rows: items, skipped } = collect(
   source.map((rec) => libraryRowToItem(rec, metroForCoords, {
     status: args.status,
     confidence: args.confidence,
-    skipRegions: args.includeBay ? new Set() : new Set([DEFAULT_REGION]),
   })),
 )
 

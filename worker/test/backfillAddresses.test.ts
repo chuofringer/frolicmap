@@ -120,9 +120,9 @@ describe('assertInputRows', () => {
     expect(assertInputRows(rows)).toBe(rows)
   })
 
-  it("rejects any region='bay' row — the national job must never touch the Bay metro", () => {
-    expect(() => assertInputRows([{ id: 'osm-1', lat: 37, lng: -122, region: 'bay' }]))
-      .toThrow(/bay/)
+  it("accepts a region='bay' row like any other metro", () => {
+    const rows = [{ id: 'osm-2', lat: 37.7, lng: -122.4, region: 'bay' }]
+    expect(assertInputRows(rows)).toBe(rows)
   })
 
   it('rejects rows missing an id', () => {

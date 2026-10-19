@@ -49,7 +49,7 @@ if (!process.features.typescript && !process.env.__PARKSERVE_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { METROS, DEFAULT_REGION, getMetro, metroForCoords } = await import('../../shared/metros.ts')
+const { METROS, getMetro, metroForCoords } = await import('../../shared/metros.ts')
 
 const SERVICE =
   'https://services9.arcgis.com/90v9hhDSTUTen7c9/arcgis/rest/services/Parks_Project_web/FeatureServer/0/query'
@@ -61,7 +61,7 @@ const VALID_CONFIDENCE = ['high', 'medium', 'low']
 
 function parseArgs(argv) {
   const args = {
-    metros: null, wave: false, dryRun: false, includeBay: false,
+    metros: null, wave: false, dryRun: false,
     status: 'approved', confidence: 'medium', throttleMs: 500,
     outDir: path.join(REPO_ROOT, 'data/parkserve'),
   }
@@ -75,7 +75,6 @@ function parseArgs(argv) {
     if (a === '--metro' || a === '--metros') args.metros = next().split(',').map((s) => s.trim()).filter(Boolean)
     else if (a === '--wave') args.wave = true
     else if (a === '--dry-run') args.dryRun = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--status') args.status = next()
     else if (a === '--confidence') args.confidence = next()
     else if (a === '--throttle-ms') args.throttleMs = Number(next())
@@ -99,9 +98,6 @@ seed-parkserve.mjs — TPL ParkServe park importer (#354)
   --metro <ids>      Comma-separated metro ids (default: every metro).
   --wave             Only the 12 September wave metros.
   --dry-run          Fetch + report, write nothing.
-  --include-bay      Emit Bay Area rows too. Off by default (the Bay Area was a separate
-                     curated layer in the project this repo came from); pass it to
-                     load the Bay Area from this source.
   --status <s>       Row status (default approved — trusted source, Tier C).
   --confidence <c>   Row confidence (default medium — Tier C, plan §1.6).
   --throttle-ms <n>  Delay between paged requests (default 500).
@@ -126,7 +122,6 @@ function selectMetros() {
     const wanted = new Set(args.metros)
     list = list.filter((m) => wanted.has(m.id))
   }
-  if (!args.includeBay) list = list.filter((m) => m.id !== DEFAULT_REGION)
   return list
 }
 
@@ -202,7 +197,6 @@ async function main() {
       const r = parkserveFeatureToItem(f, metroForCoords, {
         status: args.status,
         confidence: args.confidence,
-        skipRegions: args.includeBay ? new Set() : new Set([DEFAULT_REGION]),
       })
       if (r.skipped) { skipped[r.skipped] = (skipped[r.skipped] ?? 0) + 1; continue }
       byId.set(r.row.id, r.row)

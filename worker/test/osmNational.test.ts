@@ -244,8 +244,8 @@ describe('shared/osm — cross-metro cede (resolveNationalRegion)', () => {
 
   it("a sacramento walk cedes the contested element — it never emits region='bay'", () => {
     // Reassigning instead of ceding let a sacramento walk write region='bay'
-    // rows at approved/medium into sacramento.sql, bypassing --include-bay
-    // and demoting the earlier high-confidence rows on apply.
+    // rows at approved/medium into sacramento.sql, demoting the earlier
+    // high-confidence rows on apply.
     expect(resolveNationalRegion('sacramento', LAT, LNG, metroForCoords)).toBeNull()
   })
 

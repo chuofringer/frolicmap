@@ -53,7 +53,7 @@ if (!process.features.typescript && !process.env.__OSM_NATIONAL_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { METROS, DEFAULT_REGION, getMetro, metroForCoords } = await import('../../shared/metros.ts')
+const { METROS, getMetro, metroForCoords } = await import('../../shared/metros.ts')
 const { OSM_CATEGORIES, CATEGORY_QUERY, buildOverpassQueryForBbox, overpassElementToItem, quadrants, bboxString, resolveNationalRegion } =
   await import('../../shared/osm.ts')
 
@@ -62,7 +62,7 @@ const { OSM_CATEGORIES, CATEGORY_QUERY, buildOverpassQueryForBbox, overpassEleme
 function parseArgs(argv) {
   const args = {
     metros: null, categories: null, dryRun: false, applyLocal: false,
-    force: false, includeBay: false, wave: false, throttleMs: 3000, cooldownMs: 30000,
+    force: false, wave: false, throttleMs: 3000, cooldownMs: 30000,
     timeoutSec: 90, maxDepth: 2, outDir: path.join(REPO_ROOT, 'data/osm-national'),
   }
   for (let i = 0; i < argv.length; i++) {
@@ -77,7 +77,6 @@ function parseArgs(argv) {
     else if (a === '--dry-run') args.dryRun = true
     else if (a === '--apply-local') args.applyLocal = true
     else if (a === '--force') args.force = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--wave') args.wave = true
     else if (a === '--throttle-ms') args.throttleMs = Number(next())
     else if (a === '--cooldown-ms') args.cooldownMs = Number(next())
@@ -100,10 +99,6 @@ ingest-osm-national.mjs — per-metro OSM bootstrap (#352)
   --dry-run          Fetch + transform + report, but write NO files and touch NO database.
   --apply-local      Apply the generated SQL to the LOCAL D1 via wrangler. Never remote.
   --force            Re-run (metro, category) pairs already recorded in the checkpoint.
-  --include-bay      Also run the 'bay' region (skipped by default). Needed to load the
-                     Bay Area: it is the default region, so a fresh database has no Bay
-                     data until this flag is used. Rows land at confidence='medium',
-                     status='approved' like every other metro.
   --throttle-ms <n>  Delay between Overpass queries (default 3000). Be polite.
   --cooldown-ms <n>  Pause before retrying a 504 at the same size (default 30000).
   --timeout-sec <n>  Overpass [timeout:] value (default 90).
@@ -147,16 +142,6 @@ function selectMetros() {
     }
     const wanted = new Set(args.metros)
     list = list.filter((m) => wanted.has(m.id))
-  }
-  if (!args.includeBay) {
-    const before = list.length
-    list = list.filter((m) => m.id !== DEFAULT_REGION)
-    if (before !== list.length) {
-      console.log(
-        `note: skipping '${DEFAULT_REGION}' (the Bay Area) by default. ` +
-        `Pass --include-bay to load it.`,
-      )
-    }
   }
   return list
 }
@@ -457,8 +442,7 @@ async function main() {
           // Contested elements (inside a neighbouring metro's bbox too) are
           // CEDED, not reassigned — see resolveNationalRegion's doc comment.
           // Reassigning let this walk emit rows for regions it was never
-          // asked to touch, most damagingly `bay`: a sacramento walk wrote
-          // region='bay' rows, bypassing --include-bay.
+          // asked to touch: a sacramento walk wrote region='bay' rows.
           // Ceding is lossless: the canonical metro's own walk fetches the
           // same element from its own bbox.
           if (resolveNationalRegion(metro.id, item.lat, item.lng, metroForCoords) === null) {

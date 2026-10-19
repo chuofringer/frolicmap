@@ -62,7 +62,7 @@ if (!process.features.typescript && !process.env.__IMLS_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { metroForCoords, DEFAULT_REGION } = await import('../../shared/metros.ts')
+const { metroForCoords } = await import('../../shared/metros.ts')
 
 const VALID_STATUS = ['pending', 'approved', 'rejected', 'archived']
 const VALID_CONFIDENCE = ['high', 'medium', 'low']
@@ -85,7 +85,7 @@ function parseArgs(argv) {
   const args = {
     csv: [], out: path.join(REPO_ROOT, 'data/imls/museums.sql'),
     // Deliberately NOT 'approved' — see the vintage warning above.
-    status: 'pending', confidence: 'low', dryRun: false, limit: null, includeBay: false,
+    status: 'pending', confidence: 'low', dryRun: false, limit: null,
   }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
@@ -95,7 +95,6 @@ function parseArgs(argv) {
     else if (a === '--status') args.status = next()
     else if (a === '--confidence') args.confidence = next()
     else if (a === '--dry-run') args.dryRun = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--limit') args.limit = Number(next())
     else if (a === '--help' || a === '-h') {
       console.log(`
@@ -107,9 +106,6 @@ seed-imls-museums.mjs — IMLS Museum Data Files importer (#353)
                       see the vintage warning at the top of this file)
   --confidence <c>    Row confidence (default low — 8-year-old snapshot)
   --dry-run           Report only; write nothing
-  --include-bay       Emit Bay Area rows too. Off by default (the Bay Area was a separate
-                      curated layer in the project this repo came from); pass it to
-                      load the Bay Area from this source
   --limit <n>         Process only the first n records per file
 
 Kept disciplines: ${Object.entries(MDF_CATEGORY_BY_DISCIPLINE).map(([d, c]) => `${d}→${c}`).join(', ')}
@@ -136,7 +132,6 @@ for (const file of args.csv) {
       status: args.status,
       confidence: args.confidence,
       vintageNote: VINTAGE_NOTE,
-      skipRegions: args.includeBay ? new Set() : new Set([DEFAULT_REGION]),
     }))
   }
 }

@@ -20,7 +20,6 @@
 
 import { buildImportSql } from './seedSql.mjs'
 
-const EMPTY_SET = new Set()
 
 // ── Libraries: PLS FY2023 outlet file ────────────────────────────────────
 
@@ -202,7 +201,6 @@ function formatPhone(raw) {
 function buildRow(
   { id, name, category, lat, lng, address, city, phone, website, sourceUrl, description, status, confidence },
   metroFor,
-  skipRegions = EMPTY_SET,
 ) {
   if (!name) return { skipped: 'no name' }
   if (lat === null || lng === null) return { skipped: 'no coordinates' }
@@ -211,11 +209,6 @@ function buildRow(
   // Plan §1.1: rows outside every metro bbox are deferred, not ingested.
   // Roughly two-thirds of the national IMLS corpus is rural and lands here.
   if (!metro) return { skipped: 'outside every metro bbox' }
-
-  // The Bay Area is skipped unless the caller opts in with --include-bay
-  // (it was a separately curated layer in the project this repo was carved
-  // from). Mirrors the OSM bootstrap's skip-bay-by-default (#352).
-  if (skipRegions.has(metro.id)) return { skipped: `${metro.id} region (skipped unless --include-bay)` }
 
   const now = new Date().toISOString()
   return {
@@ -251,7 +244,7 @@ function buildRow(
   }
 }
 
-export function libraryRowToItem(rec, metroFor, { status, confidence, skipRegions }) {
+export function libraryRowToItem(rec, metroFor, { status, confidence }) {
   const C = PLS_COLUMNS
   const outletType = (rec[C.outletType] ?? '').trim().toUpperCase()
   if (!PLS_VISITABLE_OUTLET_TYPES.has(outletType)) {
@@ -276,10 +269,10 @@ export function libraryRowToItem(rec, metroFor, { status, confidence, skipRegion
     sourceUrl: 'https://www.imls.gov/research-evaluation/surveys/public-libraries-survey-pls',
     status,
     confidence,
-  }, metroFor, skipRegions)
+  }, metroFor)
 }
 
-export function museumRowToItem(rec, metroFor, { status, confidence, vintageNote, skipRegions }) {
+export function museumRowToItem(rec, metroFor, { status, confidence, vintageNote }) {
   const C = MDF_COLUMNS
   const disciplineRaw = C.discipline.map((h) => rec[h]).find((v) => v != null) ?? ''
   const discipline = disciplineRaw.trim().toUpperCase()
@@ -309,7 +302,7 @@ export function museumRowToItem(rec, metroFor, { status, confidence, vintageNote
     description: vintageNote ?? null,
     status,
     confidence,
-  }, metroFor, skipRegions)
+  }, metroFor)
 }
 
 // ── SQL emission ─────────────────────────────────────────────────────────

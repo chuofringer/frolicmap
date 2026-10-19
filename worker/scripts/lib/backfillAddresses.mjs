@@ -77,22 +77,14 @@ export function chunk(arr, size) {
 }
 
 /**
- * Guard against ever emitting a write for a Bay Area row.
- *
- * `region='bay'` was the original, separately curated metro — its rows are out
- * of scope for this national backfill and must never be touched by it. The remote SELECT
- * already filters `region!='bay'`, but an `--input` file is operator-supplied
- * and could include anything, so we assert on the input and refuse to run
- * rather than trust the export was scoped correctly. Also validates that every
- * row carries an id and numeric coords.
+ * Validate the backfill input. An `--input` file is operator-supplied and could
+ * include anything, so we assert on it and refuse to run rather than trust the
+ * export was scoped correctly: every row must carry an id and numeric coords.
  */
 export function assertInputRows(rows) {
   if (!Array.isArray(rows)) throw new Error('input must be an array of rows')
   for (const row of rows) {
     if (!row || typeof row !== 'object') throw new Error(`invalid row: ${JSON.stringify(row)}`)
-    if (row.region === 'bay') {
-      throw new Error(`refusing to backfill a region='bay' row (id=${row.id}); this job is national-only`)
-    }
     if (row.id === undefined || row.id === null || row.id === '') {
       throw new Error(`row missing id: ${JSON.stringify(row)}`)
     }
