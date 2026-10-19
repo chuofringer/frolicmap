@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   detectLocale,
-  isAdminPath,
   redirectToStoredLocale,
   localeFromPath,
   localeBasename,
@@ -111,12 +110,6 @@ describe('detectLocale', () => {
     storeLocale('en')
     expect(detectLocale('/zh/')).toBe('zh')   // prefix beats the stored 'en'
   })
-
-  it('pins /admin to English regardless of stored preference', () => {
-    storeLocale('zh')
-    expect(detectLocale('/admin')).toBe('en')
-    expect(detectLocale('/admin/reports')).toBe('en')
-  })
 })
 
 describe('storedLocale', () => {
@@ -148,7 +141,7 @@ describe('basename / URL agreement (the blank-page class of bug)', () => {
     localeBasename(localeFromPath(pathname) ?? 'en')
 
   it('never yields a basename the path does not start with', () => {
-    for (const path of ['/', '/privacy', '/cities/bay-area', '/admin', '/zh/', '/zh/privacy']) {
+    for (const path of ['/', '/privacy', '/cities/bay-area', '/zh/', '/zh/privacy']) {
       const base = basenameFor(path)
       if (base) expect(path.startsWith(base)).toBe(true)
     }
@@ -199,34 +192,6 @@ describe('redirectToStoredLocale', () => {
 
   it('does not fire with no stored preference — crawlers and first visits are untouched', () => {
     expect(redirectToStoredLocale(replace)).toBe(false)
-  })
-
-  it('never redirects admin, prefixed or not', () => {
-    storeLocale('zh')
-    for (const path of ['/admin', '/admin/reports']) {
-      window.history.pushState({}, '', path)
-      expect(redirectToStoredLocale(replace)).toBe(false)
-    }
-    expect(replace).not.toHaveBeenCalled()
-  })
-})
-
-describe('isAdminPath', () => {
-  it('recognises admin behind a locale prefix', () => {
-    expect(isAdminPath('/admin')).toBe(true)
-    expect(isAdminPath('/admin/reports')).toBe(true)
-    expect(isAdminPath('/zh/admin')).toBe(true)
-    expect(isAdminPath('/zh/admin/reports')).toBe(true)
-  })
-
-  it('leaves the public map alone', () => {
-    expect(isAdminPath('/')).toBe(false)
-    expect(isAdminPath('/zh/')).toBe(false)
-    expect(isAdminPath('/administrator-park')).toBe(false)
-  })
-
-  it('pins /zh/admin to English', () => {
-    expect(detectLocale('/zh/admin')).toBe('en')
   })
 })
 

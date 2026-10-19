@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     VitePWA({
       // `injectManifest`, not `generateSW`: the caching rules for #521 (never
-      // cache /api, exclude the generated /cities* and /admin* surfaces from
+      // cache /api, exclude the generated /cities* surface from
       // navigation handling, cache-first only the MapLibre chunk + basemap
       // CDN hosts) are real branching logic, not declarative route configs —
       // `src/sw.ts` implements them by importing the pure, unit-tested
@@ -39,13 +39,10 @@ export default defineConfig(({ mode }) => ({
       manifest: false, // public/site.webmanifest already exists and is linked from index.html
       devOptions: { enabled: false }, // sw.ts only runs against a real `vite build`; see main.tsx's PROD guard
       injectManifest: {
-        // AdminApp is Access-gated and lazy; never precache it — an
-        // unauthenticated visitor's SW should never hold a copy of it.
         // MapLibre gets its own cache-first runtime route (src/sw.ts) instead
         // of being precached, per the issue's sizing note (~1MB chunk).
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
         globIgnores: [
-          '**/AdminApp-*.js',
           '**/maplibre-gl-*.js',
           // Not part of the app shell — `og-image.png`/`logo.png` are only
           // fetched by social-media link scrapers and design assets, never

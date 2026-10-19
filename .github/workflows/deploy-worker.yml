@@ -11,8 +11,6 @@ on:
       - 'worker/package-lock.json'
       - 'worker/migrations/**'
       - 'shared/**'
-      # Bundled into the admin approve quality gate.
-      - 'data/quality/source-accuracy.json'
 
 # Serialize deploys: two merges landing close together would otherwise run
 # `d1 migrations apply --remote` concurrently. Shares its group with

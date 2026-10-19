@@ -38,7 +38,7 @@ export const faq = {
     q7: 'How accurate are the map pins?',
     a7: "Most pins land within ~50m of the actual entrance, but some can be off by a block or two — especially for venues with multiple buildings, side entrances, or addresses that geocoding services don't pin precisely (small lanes, rural roads, large parks). Always cross-check with the address shown in the details before driving over. The address is the source of truth; the pin is a visual approximation. If a pin is clearly wrong, tap Report.",
     q8: 'Something is wrong with a place — how do I report it?',
-    a8: "Tap the pin to open its details, then Report an issue. We'll review and update or remove it.",
+    a8: "Tap the pin to open its details, then Report an issue. That opens an email to us with the place's id, name and link already filled in; we'll review and update or remove it.",
     q9: 'What is frolicmap built with?',
     a9: 'A modern web stack: a React + TypeScript single-page app with an interactive vector map, a lightweight edge API, a managed SQL database, and standard open mapping services for basemaps and geocoding.',
     q10: 'Privacy',

@@ -25,7 +25,7 @@
  * Pure string manipulation; the caller does the IO.
  */
 
-import { renderMapCard, CATEGORY_MIN_PLACES } from './seoPages.mjs'
+import { renderMapCard, CATEGORY_MIN_PLACES, DATA_ATTRIBUTION_HTML } from './seoPages.mjs'
 import { escapeHtml as esc } from './htmlEscape.mjs'
 import { hreflangLinks } from './localeCopy.mjs'
 
@@ -35,7 +35,7 @@ const SITE = 'https://frolicmap.app'
  * The category list for title and og:image:alt — hardcoded to the SPA legend
  * (`src/config/categories.ts`), verbatim and in legend order, identical for
  * every metro. Deliberately NOT derived from per-metro data: the user wants
- * one list everywhere, coming-soon categories included.
+ * one list everywhere.
  */
 const LEGEND_CATEGORIES = [
   'Playground', 'Park', 'Library', 'Museum', 'Aquarium/Zoo', 'Beach',
@@ -94,7 +94,7 @@ function truncate(s, max = 158) {
 }
 
 /**
- * Live categories eligible to appear as an on-page `?cat=` deep link, sorted
+ * Categories eligible to appear as an on-page `?cat=` deep link, sorted
  * by size — the ones with enough places that a pre-filtered map isn't nearly
  * empty. Returned as `{ category, count }` in DB-value terms.
  */
@@ -112,19 +112,16 @@ function eligibleCategories(categoryCounts) {
  * fraction of a second before the bundle boots. It carries what the deleted
  * static hub carried — heading, blurb, an overview thumbnail, the category
  * breakdown and a nearby-metros footer — but the category links are `?cat=`
- * deep links into THIS same page (the map, pre-filtered), and coming-soon
- * categories are plain text, never links: filtering an empty layer would show
- * an empty map.
+ * deep links into THIS same page (the map, pre-filtered). A category with no
+ * rows in the metro is omitted, never linked: filtering an empty layer would
+ * show an empty map.
  */
-export function cityFallbackHtml({ metro, categoryLinks = [], comingSoon = [], nearbyMetros = [], loc = null }) {
+export function cityFallbackHtml({ metro, categoryLinks = [], nearbyMetros = [], loc = null }) {
   const prefix = loc ? loc.prefix : ''
   const name = loc ? loc.metroName(metro) : metro.label
   const tx = loc ? loc.t : null
   const links = categoryLinks
     .map((c) => `<li><a href="${esc(c.href)}">${esc(c.label)}</a></li>`)
-    .join('\n')
-  const soon = comingSoon
-    .map((label) => `<li class="soon">${esc(label)} <span>${tx ? esc(tx('comingSoonTag')) : '(coming soon)'}</span></li>`)
     .join('\n')
   const nearby = nearbyMetros
     .map((m) => `<li><a href="${prefix}/cities/${esc(m.slug)}">${esc(loc ? loc.metroName(m) : m.label)}</a></li>`)
@@ -146,11 +143,12 @@ export function cityFallbackHtml({ metro, categoryLinks = [], comingSoon = [], n
   <p style="color:#6b7280;margin:0 0 1rem">${tx ? esc(tx('loadingMap')) : 'Loading the interactive map…'}</p>
   ${links ? `<h2 style="font-size:1.25rem;margin:1.5rem 0 .5rem">${tx ? esc(tx('browseCity', { city: name })) : `Browse ${esc(name)}`}</h2>
   <ul style="list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem">${links}</ul>` : ''}
-  ${soon ? `<h2 style="font-size:1.25rem;margin:1.5rem 0 .5rem">${tx ? esc(tx('comingSoonHeading', { city: name })) : `Coming soon to ${esc(name)}`}</h2>
-  <ul style="list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem;color:#6b7280">${soon}</ul>` : ''}
   ${nearby ? `<h2 style="font-size:1.25rem;margin:1.5rem 0 .5rem">${tx ? esc(tx('nearbyHeading')) : 'Nearby cities'}</h2>
   <ul style="list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem">${nearby}</ul>` : ''}
   <p><a href="${prefix}/cities" style="color:#0369a1">${tx ? esc(tx('browseAll')) : 'Browse all cities →'}</a></p>
+  <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid #e5e7eb;font-size:.8125rem;color:#6b7280">
+    <p>${DATA_ATTRIBUTION_HTML}</p>
+  </footer>
 </div>`
 }
 
@@ -158,12 +156,11 @@ export function cityFallbackHtml({ metro, categoryLinks = [], comingSoon = [], n
  * Rewrite the built SPA shell for one metro's `/cities/{slug}` page.
  * Returns `{ path, html }` in the same shape as the static page renderers.
  *
- * `categoryCounts` is DB-value → count for the metro's LIVE categories;
- * `comingSoon` is the DB values (rendered via `categoryPlural`) with no data
- * yet; `nearbyMetros` is a pre-filtered list of published `{ slug, label }`.
+ * `categoryCounts` is DB-value → count for the categories that have rows in
+ * the metro (zero-row categories are simply absent); `nearbyMetros` is a pre-filtered list of published `{ slug, label }`.
  */
 export function renderCityShell({
-  shell, metro, categoryCounts = {}, categoryPlural = {}, allCategories = [], nearbyMetros = [],
+  shell, metro, categoryCounts = {}, categoryPlural = {}, nearbyMetros = [],
   loc = null,
 }) {
   // `loc` (see localeCopy.mjs::makeZhContext) switches the page to a
@@ -183,14 +180,8 @@ export function renderCityShell({
     label: `${loc ? loc.categoryLabel(category) : (categoryPlural[category] ?? category)} (${count.toLocaleString()})`,
   }))
 
-  const liveSet = new Set(Object.keys(categoryCounts))
-  const comingSoon = allCategories
-    .filter((c) => !liveSet.has(c))
-    .map((c) => (loc ? loc.categoryLabel(c) : (categoryPlural[c] ?? c)))
-
-  // One fixed title for every metro, enumerating the full legend list
-  // (coming-soon included), never "& More" — flood.live-style descriptive
-  // titles, per the user's explicit preference. Google truncates the
+  // One fixed title for every metro, enumerating the full legend list,
+  // never "& More" (descriptive titles, per the owner's explicit preference). Google truncates the
   // *display* around ~60 chars but indexes the full title; the metro name
   // is front-loaded.
   const legendList = loc ? loc.legendList : LEGEND_LIST
@@ -258,7 +249,7 @@ export function renderCityShell({
   )
   html = html.replace(
     '<div id="root"></div>',
-    `<div id="root">${cityFallbackHtml({ metro, categoryLinks, comingSoon, nearbyMetros, loc })}</div>`,
+    `<div id="root">${cityFallbackHtml({ metro, categoryLinks, nearbyMetros, loc })}</div>`,
   )
   return { path, html }
 }

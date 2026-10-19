@@ -32,15 +32,4 @@ export const detail: Translation['detail'] = {
     picnicTables: '有野餐桌',
     shade: '有遮荫',
   },
-  report: {
-    title: '反馈问题',
-    thanks: '谢谢，我们会尽快核实。',
-    reasonClosed: '已关闭 / 不存在了',
-    reasonWrongInfo: '信息有误（时间、地址等）',
-    reasonNotKidFriendly: '其实不太适合儿童',
-    reasonOther: '其他',
-    detailsPlaceholder: '补充说明（选填）',
-    cancel: '取消',
-    send: '发送',
-  },
 }

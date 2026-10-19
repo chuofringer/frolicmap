@@ -18,7 +18,6 @@ export default defineConfig({
         d1Databases: ['DB'],
         compatibilityFlags: ['nodejs_compat'],
         bindings: {
-          DEV_ADMIN_BYPASS: 'yes',
           // Phase 2a: enables `POST /api/session` in integration tests. Any
           // random string works — signing key is only used to mint + verify,
           // not to authenticate. Production secret is set via

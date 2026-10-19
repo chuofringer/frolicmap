@@ -118,8 +118,9 @@ seed-nps.mjs — National Park Service park/trail importer (#383)
   --api-key <key>    NPS API key (default: NPS_API_KEY env var).
   --metro <ids>      Comma-separated metro ids — restrict emitted rows.
   --dry-run          Fetch + report per-metro counts, write nothing.
-  --include-bay      Emit Bay Area rows too. Off by default — the Bay park layer
-                     is already curated and these would double-pin the flagship map.
+  --include-bay      Emit Bay Area rows too. Off by default (the Bay Area was a separate
+                     curated layer in the project this repo came from); pass it to
+                     load the Bay Area from this source.
   --status <s>       Row status (default approved — trusted source, Tier C).
   --confidence <c>   Row confidence (default medium — Tier C, plan §1.6).
   --throttle-ms <n>  Delay between paged API requests (default 500).

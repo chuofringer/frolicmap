@@ -49,9 +49,8 @@ export const CATEGORY_ORDER = [
 /**
  * Chip/legend render order — CATEGORY_ORDER minus folded categories. `zoo` has no row of its own: the aquarium chip
  * renders as "Aquarium/Zoo" and speaks for both. Legend, filter chips and
- * the /cities vocabulary list iterate THIS; admin surfaces (PendingQueue)
- * keep the full CATEGORY_ORDER because curators triage the real DB
- * categories.
+ * the /cities vocabulary list iterate THIS; code that needs the real DB
+ * categories (including the folded `zoo`) uses the full CATEGORY_ORDER.
  */
 export const CHIP_ORDER: readonly Category[] = CATEGORY_ORDER.filter(
   (c) => !(c in CATEGORY_FOLD),
@@ -76,7 +75,7 @@ export function chipCategories(cat: Category): readonly Category[] {
 // Category. `Record<Category, CategoryMeta>` already forces CATEGORIES
 // above to be exhaustive, but a plain `Category[]` annotation lets an
 // omission compile — and a category missing here has no filter chip, no
-// legend entry, and no admin pending-queue group. Same AssertEqual trick
+// legend entry. Same AssertEqual trick
 // as LIST_ITEM_FIELDS in shared/types.ts.
 type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
 const _categoryOrderExhaustive: AssertEqual<(typeof CATEGORY_ORDER)[number], Category> = true

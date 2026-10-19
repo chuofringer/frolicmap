@@ -115,7 +115,7 @@ describe('library outlet mapping (PLS FY2023)', () => {
       indoor: 1,
       city: 'Austin',
     })
-    // FSCSKEY alone is the administrative entity — the outlet suffix is what
+    // FSCSKEY alone is the parent entity — the outlet suffix is what
     // makes branches distinct.
     expect(row.id).toContain('002')
     expect(row.address).toBe('800 Guadalupe St, Austin, TX, 78701')
@@ -189,7 +189,7 @@ describe('museum mapping (MDF 2018)', () => {
   })
 
   it('stamps the retired-dataset vintage onto the row itself', () => {
-    // Whoever reviews this in the admin queue needs to know the record is an
+    // Whoever reads this row later needs to know the record is an
     // 8-year-old snapshot — not just whoever read the PR that created it.
     const r = museumRowToItem(musRec(), metroForCoords, { ...TIER, vintageNote: 'Source: 2018 retired dataset.' })
     expect(r.row.description).toBe('Source: 2018 retired dataset.')
@@ -217,12 +217,12 @@ describe('Bay Area guard', () => {
   const skipBay = { ...TIER, skipRegions: new Set(['bay']) }
 
   it('skips Bay Area library rows by default', () => {
-    expect(libraryRowToItem(libRec(SF), metroForCoords, skipBay).skipped).toBe('bay region (curated separately)')
+    expect(libraryRowToItem(libRec(SF), metroForCoords, skipBay).skipped).toBe('bay region (skipped unless --include-bay)')
   })
 
   it('skips Bay Area museum rows by default', () => {
     const sf = musRec({ [MDF_COLUMNS.lat]: '37.7955', [MDF_COLUMNS.lng]: '-122.3937' })
-    expect(museumRowToItem(sf, metroForCoords, skipBay).skipped).toBe('bay region (curated separately)')
+    expect(museumRowToItem(sf, metroForCoords, skipBay).skipped).toBe('bay region (skipped unless --include-bay)')
   })
 
   it('emits them when the caller opts in', () => {

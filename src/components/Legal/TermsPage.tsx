@@ -60,13 +60,13 @@ export default function TermsPage() {
       <UL>
         <li>bypass or interfere with the Service's session tokens, rate limits or other protective measures;</li>
         <li>send automated or excessive requests that place an unreasonable load on the Service (if you need bulk data, obtain it from the original sources listed above or from the open-source repository);</li>
-        <li>introduce malicious code or attempt to gain unauthorized access to the Service or its administrative interface; or</li>
+        <li>introduce malicious code or attempt to gain unauthorized access to the Service or its infrastructure; or</li>
         <li>use the Service in violation of any applicable law.</li>
       </UL>
 
       <H2>5. Reports and feedback</H2>
       <P>
-        The Service lets you report a problem with a listing. By sending a report or
+        The Service lets you report a problem with a listing by email. By sending a report or
         writing to us, you allow us to use what you send to correct or remove the listing
         and to improve the Service, without obligation to you. Please do not include
         personal information about yourself or others in a report.

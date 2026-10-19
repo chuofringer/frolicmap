@@ -69,9 +69,9 @@ dedup-national.mjs — cross-source dedup + Tier-B (#355)
   --metro <ids>   Comma-separated metro ids.
   --wave          The 12 September wave metros.
   --all           Every metro in the registry.
-  --include-bay   Also dedup the 'bay' region. Off by default — the Bay layer
-                  is curated, and archiving rows out of it violates the
-                  "Bay Area depth stack stays untouched" invariant.
+  --include-bay   Also dedup the 'bay' region. Off by default (the Bay Area was a
+                  separate curated layer in the project this repo came from);
+                  pass it once the Bay Area has been loaded.
   --local         Read from the LOCAL D1 (default).
   --remote        Read from the REMOTE D1. Read-only; this script never writes.
   --dry-run       Report only, write no SQL file.
@@ -101,16 +101,13 @@ function selectMetros() {
     if (unknown.length) { console.error(`unknown metro id(s): ${unknown.join(', ')}`); process.exit(1) }
     list = METROS.filter((m) => args.metros.includes(m.id))
   }
-  // Bay guard (deep-review finding M3): every importer skips the Bay Area by
-  // default, but this script didn't — `--all` (or an explicit `--metro bay`)
-  // would dedup the curated Bay layer and archive rows out of it, violating
-  // the "Bay Area depth stack stays untouched" invariant. Same opt-in flag
-  // as the importers.
+  // Bay guard: every importer skips the Bay Area by default, so this script
+  // does too. Same opt-in flag as the importers.
   if (!args.includeBay) {
     const before = list.length
     list = list.filter((m) => m.id !== DEFAULT_REGION)
     if (before !== list.length) {
-      console.log(`note: skipping '${DEFAULT_REGION}' — curated layer, not deduped by default. Pass --include-bay to override.`)
+      console.log(`note: skipping '${DEFAULT_REGION}' — not deduped by default. Pass --include-bay to override.`)
     }
   }
   return list

@@ -145,8 +145,6 @@ const SOURCE_RANK = {
 
 export function sourceRank(sourceType) {
   if (SOURCE_RANK[sourceType] != null) return SOURCE_RANK[sourceType]
-  // Legacy hand-reviewed rows from retired source types rank with `manual`.
-  if (typeof sourceType === 'string' && sourceType.startsWith('aggregator-')) return 90
   return 50
 }
 

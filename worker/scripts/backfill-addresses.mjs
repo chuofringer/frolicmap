@@ -1,5 +1,15 @@
 #!/usr/bin/env node
 /**
+ * NOTE ON BULK GEOCODING: the public Nominatim instance's usage policy
+ * (https://operations.osmfoundation.org/policies/nominatim/) forbids bulk
+ * geocoding. This script keeps the policy's 1 req/s throttle (1.1 s between
+ * requests) and an identifying User-Agent, which is only acceptable for small
+ * pilots (the `--limit 100` run below). A bulk run (thousands of rows) MUST
+ * point `NOMINATIM_URL` at a self-hosted Nominatim or Photon instance, or at
+ * a paid geocoder with a Nominatim-compatible `/reverse` endpoint, e.g.
+ *
+ *   NOMINATIM_URL=http://localhost:8080/reverse node worker/scripts/backfill-addresses.mjs ...
+ *
  * One-off reverse-geocode address backfill (issue #399, option 1).
  *
  * The problem: of 51,273 approved national rows, ~11,879 OSM parks/playgrounds
@@ -26,7 +36,8 @@
  *   - single-threaded, >= 1.1s between requests
  *   - a descriptive User-Agent identifying this app + a contact address
  *   - retry once on 429/5xx after a 10s backoff, then skip the row
- * Be a good citizen: ~12k rows at 1.1s is ~3.7h. Run it once.
+ * Be a good citizen: ~12k rows at 1.1s is ~3.7h, which the public instance does
+ * not allow (see the note at the top): use a self-hosted instance for that.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * RUNBOOK
@@ -84,7 +95,8 @@ const WORKER_DIR = path.join(REPO_ROOT, 'worker')
 const OUT_DIR = path.join(REPO_ROOT, 'data', 'backfill')
 const CACHE_PATH = path.join(OUT_DIR, 'geocode-cache.jsonl')
 
-const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
+// Override with NOMINATIM_URL for any bulk run (see the note at the top).
+const NOMINATIM_URL = process.env.NOMINATIM_URL || 'https://nominatim.openstreetmap.org/reverse'
 const USER_AGENT = 'frolicmap.app-address-backfill/1.0 (contact: frolicmap.official@gmail.com)'
 const MIN_INTERVAL_MS = 1100 // >= 1.1s between requests, single-threaded.
 const RETRY_BACKOFF_MS = 10_000

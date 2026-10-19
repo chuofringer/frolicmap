@@ -25,10 +25,10 @@ export default function PrivacyPage() {
           visits or devices.
         </li>
         <li>
-          <strong>Reports you submit.</strong> If you use "Report an issue" on a place,
-          we store the place's identifier, the reason you chose, the optional note you
-          typed, and the time. No account, name or email address is attached. Please do
-          not put personal information in the note.
+          <strong>Reports you send.</strong> "Report an issue" on a place opens your own
+          email app with a pre-filled message (the place's identifier, name and link).
+          Nothing is sent to the Service itself; if you send the email, it reaches us as
+          ordinary email (see below). Please do not put personal information in it.
         </li>
         <li>
           <strong>Request data for security.</strong> Our hosting provider, Cloudflare,
@@ -111,8 +111,8 @@ export default function PrivacyPage() {
 
       <H2>8. Retention</H2>
       <P>
-        Reports are kept while they are being reviewed and may be kept afterwards as an
-        editorial record of corrections. Hashed IP lookup counters are kept only as long
+        Report emails are kept while they are being reviewed and may be kept afterwards as
+        an editorial record of corrections. Hashed IP lookup counters are kept only as long
         as needed for abuse protection. Session tokens are never stored on our side.
         Email correspondence is kept for as long as needed to answer you.
       </P>
@@ -130,8 +130,9 @@ export default function PrivacyPage() {
 
       <H2>10. Security and transfers</H2>
       <P>
-        Traffic between your browser and the Service uses HTTPS. The administrative
-        interface is restricted to authorized personnel. The Service is operated from the
+        Traffic between your browser and the Service uses HTTPS. The Service has no
+        accounts, no sign-in and no back end that accepts input from
+        visitors; its data is loaded offline. The Service is operated from the
         United States, and information it processes may be handled in the United States
         or wherever our service providers operate.
       </P>

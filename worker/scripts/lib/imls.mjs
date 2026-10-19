@@ -144,7 +144,7 @@ export function parseCoord(value) {
 
 function titleCase(s) {
   // IMLS ships institution names in ALL CAPS in some vintages. Rendering
-  // "SAN JOSE PUBLIC LIBRARY" on a map card shouts; title-casing reads as a
+  // "DALLAS PUBLIC LIBRARY" on a map card shouts; title-casing reads as a
   // name. Left alone when the source already has mixed case.
   if (!s || s !== s.toUpperCase()) return s
   return s
@@ -212,13 +212,10 @@ function buildRow(
   // Roughly two-thirds of the national IMLS corpus is rural and lands here.
   if (!metro) return { skipped: 'outside every metro bbox' }
 
-  // The Bay Area already has a curated library/museum layer (OSM rows and
-  // hand curation). Emitting IMLS rows into `bay` at
-  // `approved` double-pins every SFPL/Oakland/SCCL branch on the flagship map
-  // the moment the SQL is applied — before #355's dedup exists to merge them,
-  // and against the plan's "Bay Area depth stack stays untouched" invariant.
-  // Mirrors the OSM bootstrap's skip-bay-by-default (#352).
-  if (skipRegions.has(metro.id)) return { skipped: `${metro.id} region (curated separately)` }
+  // The Bay Area is skipped unless the caller opts in with --include-bay
+  // (it was a separately curated layer in the project this repo was carved
+  // from). Mirrors the OSM bootstrap's skip-bay-by-default (#352).
+  if (skipRegions.has(metro.id)) return { skipped: `${metro.id} region (skipped unless --include-bay)` }
 
   const now = new Date().toISOString()
   return {
@@ -266,7 +263,7 @@ export function libraryRowToItem(rec, metroFor, { status, confidence, skipRegion
 
   return buildRow({
     // Stable source-native id per plan §2.2 — FSCSKEY alone is the
-    // administrative entity, so the outlet suffix is required for uniqueness.
+    // parent entity, so the outlet suffix is required for uniqueness.
     id: `imls-lib-${fscskey}-${seq}`.toLowerCase(),
     name: titleCase(cleanSentinel(rec[C.name])),
     category: 'library',
@@ -307,7 +304,7 @@ export function museumRowToItem(rec, metroFor, { status, confidence, vintageNote
     website: normalizeWebsite(website),
     sourceUrl: 'https://www.imls.gov/research-evaluation/data/museum-data-files',
     // The staleness is recorded on the row itself, not just in the PR that
-    // created it — whoever reviews this in the admin queue needs to know the
+    // created it — whoever reads this row later needs to know the
     // record is from a retired dataset.
     description: vintageNote ?? null,
     status,

@@ -1,4 +1,3 @@
-import type { Category } from './types'
 
 /**
  * Metro registry — the single source of truth for geographic scope.
@@ -81,15 +80,6 @@ export interface Metro {
    */
   wave: boolean
   /**
-   * Categories with real data in this metro. Everything else renders as a
-   * disabled "coming soon" chip wired to the metro-tagged waitlist (#359) —
-   * the demand signal that picks the next depth metro (plan §4B).
-   *
-   * Every metro gets the automated static-place baseline
-   * (STATIC_PLACE_CATEGORIES). Bay Area additionally has zoo live.
-   */
-  liveCategories: readonly Category[]
-  /**
    * IANA timezone of the metro (e.g. 'America/New_York'). Event times are
    * VENUE-local everywhere in the product: the frontend formats and
    * time-window-filters each item in its metro's zone (not the viewer's
@@ -122,7 +112,7 @@ export interface Metro {
 
 /**
  * Top-level paths a metro slug must never collide with — a metro named
- * `admin` would shadow the admin SPA at the edge, where a static file always
+ * `terms` would shadow the legal page at the edge, where a static file always
  * beats the SPA catch-all (plan §3.2). Enforced by a unit test so a bad slug
  * fails CI rather than production. Filenames in `public/` are checked by the
  * same test, read from disk so the list can't drift.
@@ -132,34 +122,13 @@ export const RESERVED_SLUGS = [
   // `/cities` is the metro namespace root (2026-07-19). A metro slugged
   // `cities` would shadow its own index page.
   'cities',
-  'admin',
   'map',
   'place',
   'sitemaps',
-  'signup',
   'terms',
   'privacy',
   'assets',
 ] as const
-
-/** The automated static-places baseline every metro gets on day one (plan §2). */
-const STATIC_PLACE_CATEGORIES = [
-  'playground',
-  'park',
-  'library',
-  'museum',
-  'aquarium',
-  'beach',
-  'hiking',
-  'campground',
-  // waterplay went national 2026-07-21 (#435): the OSM bootstrap gained a
-  // splash-pad/water-park leg and 727 rows shipped across the 12 wave metros.
-  // Fast-follow metros inherit the category too — their October bootstrap
-  // includes the leg, and an unpublished metro's liveCategories is unreachable
-  // until promote-metro flips it anyway. Bay stays on its hand-curated seed
-  // (the OSM leg excludes bay).
-  'waterplay',
-] as const satisfies readonly Category[]
 
 /**
  * Pad a content bbox into pannable viewport bounds. Half a degree is roughly
@@ -479,7 +448,7 @@ function metro(
   label: string,
   state: string,
   contentBbox: Bbox,
-  opts: { wave?: boolean; zoom?: number; published?: boolean; liveCategories?: readonly Category[] } = {},
+  opts: { wave?: boolean; zoom?: number; published?: boolean } = {},
 ): Metro {
   return {
     id,
@@ -494,7 +463,6 @@ function metro(
     // is why it's an option here rather than a hardcoded false.
     published: opts.published ?? false,
     wave: opts.wave ?? false,
-    liveCategories: opts.liveCategories ?? STATIC_PLACE_CATEGORIES,
     timezone: requireTimezone(id),
     blurb: requireBlurb(id),
   }
@@ -535,11 +503,6 @@ const BAY_AREA: Metro = {
   initialView: { longitude: -122.33, latitude: 37.55, zoom: 10 },
   published: true,
   wave: false,
-  // Zoo is live for the depth metro only: the quarterly cron's tourism=zoo /
-  // zoo=petting_zoo leg ran Bay-first. No chip of its own anywhere: zoo folds
-  // into the aquarium display (shared/categorySlugs.ts CATEGORY_FOLD), so
-  // liveness here only feeds the SEO count fold, not a legend row.
-  liveCategories: [...STATIC_PLACE_CATEGORIES, 'zoo'],
   timezone: 'America/Los_Angeles',
   blurb:
     'From foggy coastal beaches to redwood trails and the bay shoreline, the Bay Area packs a '
@@ -599,8 +562,8 @@ export const METROS: readonly Metro[] = [
   // Widened 2026-07-21 from the launch box (s 47.25 / w -122.5 / n 47.85 /
   // e -122.05, ~2,245 km²) to the real family-activity metro (~6,700 km²):
   // the old box excluded Everett (47.98) and all of Tacoma/Puyallup (< 47.25),
-  // silently bbox-rejecting Imagine Children's Museum, the Tacoma museum
-  // cluster, and the Snohomish farm belt from the aggregator routine. Now
+  // silently bbox-rejecting Imagine Children's Museum and the Tacoma museum
+  // cluster. Now
   // spans Everett/Monroe (N), Tacoma/Puyallup (S), Carnation/Fall City (E),
   // Bainbridge/Bremerton (W). Bay comparison: 21,325 km².
   metro('seattle', 'Seattle', 'WA', { south: 47.05, west: -122.65, north: 48.05, east: -121.85 }, {
@@ -747,8 +710,7 @@ export function metroForCoords(lat: number, lng: number): Metro | undefined {
 /**
  * IANA timezone for a region id, or undefined for unknown regions. The
  * merge scripts use this to normalize LLM-emitted timestamps to the
- * metro's offset; admin surfaces use it to show curators venue-local
- * times.
+ * metro's offset.
  */
 export function timezoneForRegion(id: string): string | undefined {
   return BY_ID.get(id)?.timezone

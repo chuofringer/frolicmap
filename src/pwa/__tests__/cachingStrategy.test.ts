@@ -61,20 +61,6 @@ describe('decideCachingStrategy — navigations', () => {
     )
   })
 
-  it('excludes /admin', () => {
-    expect(decideCachingStrategy(req('https://frolicmap.app/admin', { isNavigation: true }))).toBe('network-only')
-  })
-
-  it('excludes a nested /admin/* route', () => {
-    expect(decideCachingStrategy(req('https://frolicmap.app/admin/reports', { isNavigation: true }))).toBe(
-      'network-only',
-    )
-  })
-
-  it('excludes /admin under the locale-prefixed form', () => {
-    expect(decideCachingStrategy(req('https://frolicmap.app/zh/admin', { isNavigation: true }))).toBe('network-only')
-  })
-
   it('excludes /cities under the locale-prefixed form', () => {
     expect(decideCachingStrategy(req('https://frolicmap.app/zh/cities', { isNavigation: true }))).toBe(
       'network-only',
@@ -139,9 +125,8 @@ describe('decideCachingStrategy — basemap CDN hosts', () => {
 })
 
 describe('isDenylistedNavigation', () => {
-  it('treats bare /cities and /admin as denylisted', () => {
+  it('treats bare /cities as denylisted', () => {
     expect(isDenylistedNavigation('/cities')).toBe(true)
-    expect(isDenylistedNavigation('/admin')).toBe(true)
   })
 
   it('does not denylist the map root', () => {

@@ -8,9 +8,9 @@
  * the script produces SQL, and applying it is a separate, explicit step
  * (`--apply-local`, or the wrangler command printed at the end).
  *
- * Why a local script rather than widening the Worker cron (plan §2.1): 400
- * Overpass queries against a rate-limited public endpoint don't fit a Worker
- * execution budget, and Overpass wants a polite serial client.
+ * Why a local script rather than a Worker (plan §2.1): 400 Overpass queries
+ * against a rate-limited public endpoint don't fit a Worker execution budget,
+ * and Overpass wants a polite serial client.
  *
  *   node worker/scripts/ingest-osm-national.mjs --metro austin --dry-run
  *   node worker/scripts/ingest-osm-national.mjs --metro austin --apply-local
@@ -100,10 +100,10 @@ ingest-osm-national.mjs — per-metro OSM bootstrap (#352)
   --dry-run          Fetch + transform + report, but write NO files and touch NO database.
   --apply-local      Apply the generated SQL to the LOCAL D1 via wrangler. Never remote.
   --force            Re-run (metro, category) pairs already recorded in the checkpoint.
-  --include-bay      Also run the 'bay' region. Off by default and rarely right: besides
-                     re-tiering Bay rows to confidence='medium', it PUBLISHES any pending
-                     Bay OSM rows (the status CASE only shields rejected/archived/approved),
-                     pushing unreviewed rows straight onto the flagship map.
+  --include-bay      Also run the 'bay' region (skipped by default). Needed to load the
+                     Bay Area: it is the default region, so a fresh database has no Bay
+                     data until this flag is used. Rows land at confidence='medium',
+                     status='approved' like every other metro.
   --throttle-ms <n>  Delay between Overpass queries (default 3000). Be polite.
   --cooldown-ms <n>  Pause before retrying a 504 at the same size (default 30000).
   --timeout-sec <n>  Overpass [timeout:] value (default 90).
@@ -119,7 +119,7 @@ const args = parseArgs(process.argv.slice(2))
 
 // ── Tier semantics (plan §1.6) ───────────────────────────────────────────
 // Raw single-source OSM is Tier C: confidence 'medium', NOT the 'high' the
-// pre-national Bay cron hardcodes. Getting this wrong silently promotes
+// some earlier loaders hardcoded. Getting this wrong silently promotes
 // every raw row to Tier B and corrupts the multi-source-confirmation signal
 // the dedup pass (#355) computes.
 const NATIONAL_CONFIDENCE = 'medium'
@@ -153,8 +153,8 @@ function selectMetros() {
     list = list.filter((m) => m.id !== DEFAULT_REGION)
     if (before !== list.length) {
       console.log(
-        `note: skipping '${DEFAULT_REGION}' — it's owned by the quarterly Worker cron ` +
-        `(Tier B / pending semantics). Pass --include-bay to override.`,
+        `note: skipping '${DEFAULT_REGION}' (the Bay Area) by default. ` +
+        `Pass --include-bay to load it.`,
       )
     }
   }
@@ -458,10 +458,9 @@ async function main() {
           // CEDED, not reassigned — see resolveNationalRegion's doc comment.
           // Reassigning let this walk emit rows for regions it was never
           // asked to touch, most damagingly `bay`: a sacramento walk wrote
-          // region='bay' rows at approved/medium, bypassing --include-bay
-          // and demoting the quarterly cron's high-confidence rows on apply.
-          // Ceding is lossless: the canonical metro's own walk (or the Bay
-          // cron) fetches the same element from its own bbox.
+          // region='bay' rows, bypassing --include-bay.
+          // Ceding is lossless: the canonical metro's own walk fetches the
+          // same element from its own bbox.
           if (resolveNationalRegion(metro.id, item.lat, item.lng, metroForCoords) === null) {
             stats.ceded++
             continue

@@ -42,7 +42,7 @@ export async function upsertEnumerationWatch(
     .bind(ipHash, state.lastId, state.streak, state.direction, now.toISOString(), blockedUntil ? blockedUntil.toISOString() : null)
     .run()
 
-  // Opportunistic sweep, no cron needed: the vast majority of visitors write
+  // Opportunistic sweep, no background job needed: the vast majority of visitors write
   // this table once per session and never return, so `updated_at` ages out
   // almost every row within a day. ~1% of writes pay the sweep cost so the
   // table doesn't grow unbounded under sustained traffic.

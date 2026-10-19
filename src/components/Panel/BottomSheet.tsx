@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMapStore } from '@/stores/useMapStore'
 import { useDetailData } from './useDetailData'
-import { ReportModal } from './ReportModal'
+import { reportMailto } from './detailHelpers'
 import { trackGoal } from '@/utils/analytics'
 import { displayTitle } from '@/utils/displayTitle'
 
@@ -39,7 +39,6 @@ export function BottomSheet() {
   // state there is short by the last move delta (missed dismiss / wrong
   // snap). Same pattern as useDragToDismiss's offsetRef.
   const dragTranslateRef = useRef<number | null>(null)
-  const [showReport, setShowReport] = useState(false)
   const [copied, setCopied] = useState(false)
   const dragStart = useRef<{ y: number; translate: number } | null>(null)
 
@@ -83,17 +82,14 @@ export function BottomSheet() {
     return () => { map.off('movestart', onMoveStart) }
   }, [mapRef])
 
-  // ESC closes the Report modal first (don't discard a half-typed note), else
-  // the sheet.
+  // ESC closes the sheet.
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (showReport) { setShowReport(false); return }
-      setId(null)
+      if (e.key === 'Escape') setId(null)
     }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [showReport, setId])
+  }, [setId])
 
   const sheetH = Math.round(vh * SHEET_FRACTION)
   const visibleFor = useCallback((s: Snap): number => {
@@ -306,7 +302,7 @@ export function BottomSheet() {
                 {' · '}
               </>
             )}
-            <button type="button" onClick={() => setShowReport(true)} className="text-amber-600 dark:text-amber-400">{t('detail.reportAnIssue')}</button>
+            <a href={reportMailto(d.id, d.listItem.name, d.shareUrl)} className="text-amber-600 dark:text-amber-400">{t('detail.reportAnIssue')}</a>
           </div>
 
           <div className="h-2" />
@@ -355,8 +351,6 @@ export function BottomSheet() {
           )}
         </div>
       </div>
-
-      {showReport && <ReportModal itemId={d.id} onClose={() => setShowReport(false)} />}
     </>
   )
 }

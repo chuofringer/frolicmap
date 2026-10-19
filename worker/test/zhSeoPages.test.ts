@@ -28,7 +28,6 @@ const cityPage = (loc: unknown) =>
     metro: SEATTLE,
     categoryCounts: { playground: 89, park: 2534, beach: 4 },
     categoryPlural: CATEGORY_PLURAL,
-    allCategories: ['playground', 'park', 'beach', 'waterplay'],
     nearbyMetros: [{ slug: 'portland', label: 'Portland' }],
     loc,
   })
@@ -79,6 +78,11 @@ describe('zh city page', () => {
     expect(page.html).toContain('hreflang="x-default" href="https://frolicmap.app/cities/seattle"')
   })
 
+  it('carries the (English, proper-noun) data attribution footer', () => {
+    expect(page.html).toContain('<a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL)')
+    expect(page.html).toContain('Trust for Public Land ParkServe')
+  })
+
   it('still boots the SPA shell (script tag + root div survive)', () => {
     expect(page.html).toMatch(/<script type="module"[^>]*src="[^"]+"/)
     expect(page.html).toContain('<div id="root">')
@@ -110,6 +114,13 @@ describe('/zh/cities index', () => {
     expect(zhIndex.html).toContain('<h1>按城市浏览亲子活动</h1>')
     expect(zhIndex.html).toContain('href="/zh/cities/seattle"')
     expect(zhIndex.html).toContain('4k+ 个地点')
+  })
+
+  it('both locales carry the data attribution footer', () => {
+    for (const html of [zhIndex.html, enIndex.html]) {
+      expect(html).toContain('<a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL)')
+      expect(html).toContain('Institute of Museum and Library Services · National Park Service · Trust for Public Land ParkServe')
+    }
   })
 
   it('both locales cross-reference each other', () => {

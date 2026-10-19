@@ -13,9 +13,8 @@ import { useSessionStore } from '@/stores/useSessionStore'
 //
 // `retry` is 404-specific (`useItemDetail` mirrors it, plus the events-gate
 // 401): a 404
-// here means a stale share link (the item aged out — e.g. the daily
-// archive-expired cron retired a one-off event, or the row was never
-// approved), which `useUrlItem` treats as a real, immediate signal to drop
+// here means a stale share link (the item aged out — e.g. a row was
+// removed in a data reload, or was never approved), which `useUrlItem` treats as a real, immediate signal to drop
 // the `?item=` param — retrying can't change that outcome, so don't delay
 // it. Any OTHER failure (a 401 from a token that's mid-refresh, a 429 from
 // the shared 60/min detail+coords rate budget, a 5xx, a network blip) is

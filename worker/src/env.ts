@@ -9,8 +9,6 @@ export interface Env {
    *  endpoint's budget. */
   ITEMS_DETAIL_RATE_LIMITER: RateLimit
   FRONTEND_URL: string
-  CF_ACCESS_AUD?: string
-  CF_ACCESS_TEAM?: string
   /** HMAC-SHA256 key used to sign session tokens minted by `POST /api/session`
    *  and verified on gated data endpoints.
    *  MUST be set via `wrangler secret put SESSION_SIGNING_KEY` before the mint
@@ -28,19 +26,4 @@ export interface Env {
    *  degrades to "only the per-isolate limiter applies", never a 500 — see
    *  `globalRateLimit.ts`'s no-op posture. See `src/do/RateLimiterDO.ts`. */
   RATE_LIMITER_DO?: DurableObjectNamespace
-  /** Explicit opt-in for the `x-dev-admin: yes` header bypass. Must be set to
-   *  "yes" in `wrangler.toml` [vars] for local dev, never set in prod. */
-  DEV_ADMIN_BYPASS?: string
-  /** Resend API key for the cron-failure alert email. When unset,
-   *  `sendCronFailureAlert` no-ops with a console.log, which keeps tests and
-   *  bare `wrangler dev` working without a secret. Set via
-   *  `wrangler secret put RESEND_API_KEY` for prod. */
-  RESEND_API_KEY?: string
-  /** From-address for the alert email. Defaults to `alerts@frolicmap.app`
-   *  when unset. Non-secret, set in `wrangler.toml` [vars]. */
-  RESEND_FROM_EMAIL?: string
-  /** Operator email for cron-failure alerts. When empty/unset,
-   *  `sendCronFailureAlert` no-ops with a console.log (same cold-deploy
-   *  posture as RESEND_API_KEY). Set in `wrangler.toml` [vars]. */
-  ALERT_EMAIL?: string
 }

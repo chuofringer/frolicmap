@@ -100,7 +100,7 @@ describe('0001_init schema (national columns)', () => {
     const { results: tables } = await env.DB
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name != 'd1_migrations' ORDER BY name")
       .all<{ name: string }>()
-    expect(tables.map((t) => t.name)).toEqual(['id_fetch_watch', 'ingestion_log', 'items', 'reports'])
+    expect(tables.map((t) => t.name)).toEqual(['id_fetch_watch', 'items'])
   })
 
   it('still accepts a row for EVERY category (CHECK survived the rebuild)', async () => {
@@ -301,85 +301,5 @@ describe('/api/items.json ?region=', () => {
     const body = await res.json<{ items: { id: string }[]; region: string }>()
     expect(body.region).toBe('new-york')
     expect(body.items.map((i) => i.id)).toEqual(['ny-row'])
-  })
-})
-
-describe('admin slug escape hatch', () => {
-  beforeAll(async () => {
-    await applyD1Migrations(env.DB, d1Migrations)
-  })
-
-  beforeEach(async () => {
-    await env.DB.exec('DELETE FROM items;')
-  })
-
-  it('lets an admin PUT change a slug that upsert alone would refuse to touch', async () => {
-    // upsert's COALESCE keeps published URLs stable against importer re-runs.
-    // Without the explicit setSlug call in the admin route, that protection
-    // would make a curator's slug fix silently vanish.
-    await seedLegacyItem('slug-row')
-    await env.DB.prepare("UPDATE items SET slug = 'typoed-slug' WHERE id = 'slug-row'").run()
-
-    const res = await SELF.fetch('https://example.com/api/admin/items/slug-row', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json', 'x-dev-admin': 'yes' },
-      body: JSON.stringify({ slug: 'corrected-slug' }),
-    })
-    expect(res.status).toBe(200)
-    const row = await env.DB
-      .prepare("SELECT slug FROM items WHERE id = 'slug-row'")
-      .first<{ slug: string | null }>()
-    expect(row?.slug).toBe('corrected-slug')
-  })
-
-  it('allows clearing a slug back to null', async () => {
-    await seedLegacyItem('slug-row-2')
-    await env.DB.prepare("UPDATE items SET slug = 'x' WHERE id = 'slug-row-2'").run()
-    await SELF.fetch('https://example.com/api/admin/items/slug-row-2', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json', 'x-dev-admin': 'yes' },
-      body: JSON.stringify({ slug: null }),
-    })
-    const row = await env.DB
-      .prepare("SELECT slug FROM items WHERE id = 'slug-row-2'")
-      .first<{ slug: string | null }>()
-    expect(row?.slug).toBeNull()
-  })
-
-  it("409s naming the holder when a slug change collides with another row's slug", async () => {
-    // Without the pre-check, the partial unique index rejects setSlug with a
-    // raw constraint error — a 500 to the admin UI, after the rest of the
-    // edit had already been applied.
-    await seedLegacyItem('slug-holder')
-    await seedLegacyItem('slug-wanter')
-    await env.DB.prepare("UPDATE items SET slug = 'taken' WHERE id = 'slug-holder'").run()
-
-    const res = await SELF.fetch('https://example.com/api/admin/items/slug-wanter', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json', 'x-dev-admin': 'yes' },
-      body: JSON.stringify({ slug: 'taken', name: 'Should Not Apply' }),
-    })
-    expect(res.status).toBe(409)
-    const body = (await res.json()) as { error: string; conflicting_id: string }
-    expect(body.conflicting_id).toBe('slug-holder')
-    // The whole edit is rejected, not just the slug — nothing was applied.
-    const row = await env.DB
-      .prepare("SELECT slug, name FROM items WHERE id = 'slug-wanter'")
-      .first<{ slug: string | null; name: string }>()
-    expect(row).toEqual({ slug: null, name: 'Legacy Row' })
-  })
-
-  it('leaves the slug alone when the patch does not mention it', async () => {
-    await seedLegacyItem('slug-row-3')
-    await env.DB.prepare("UPDATE items SET slug = 'keep-me' WHERE id = 'slug-row-3'").run()
-    await SELF.fetch('https://example.com/api/admin/items/slug-row-3', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json', 'x-dev-admin': 'yes' },
-      body: JSON.stringify({ name: 'Renamed' }),
-    })
-    const row = await env.DB
-      .prepare("SELECT slug, name FROM items WHERE id = 'slug-row-3'")
-      .first<{ slug: string | null; name: string }>()
-    expect(row).toEqual({ slug: 'keep-me', name: 'Renamed' })
   })
 })

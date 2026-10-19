@@ -130,7 +130,7 @@ describe('name_zh (#692) — public payloads', () => {
   })
 })
 
-describe('name_zh (#692) — curator escape hatch', () => {
+describe('name_zh (#692) — rename on re-import', () => {
   beforeAll(async () => {
     await applyD1Migrations(env.DB, d1Migrations)
   })
@@ -139,65 +139,17 @@ describe('name_zh (#692) — curator escape hatch', () => {
     await env.DB.exec('DELETE FROM items;')
   })
 
-  const edit = (body: Record<string, unknown>) =>
-    SELF.fetch('https://example.com/api/admin/items/zh-1', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json', 'x-dev-admin': 'yes' },
-      body: JSON.stringify(body),
-    })
-
-  it('sets a translation, and trims it', async () => {
-    await upsert(env.DB, makeItem())
-    expect((await edit({ name_zh: '  金门公园  ' })).status).toBe(200)
-    expect((await getById(env.DB, 'zh-1'))?.name_zh).toBe('金门公园')
-  })
-
-  // `upsert` preserves a stored translation against importers, which would
-  // also silently swallow a curator's correction if the PUT relied on it.
-  it('overwrites an existing translation', async () => {
-    await upsert(env.DB, makeItem({ name_zh: '错误的名字' }))
-    await edit({ name_zh: '金门公园' })
-    expect((await getById(env.DB, 'zh-1'))?.name_zh).toBe('金门公园')
-  })
-
-  it('clears back to null on a blank value, so the row falls back to English', async () => {
+  it('drops the stale translation when an importer changes the English name', async () => {
     await upsert(env.DB, makeItem({ name_zh: '金门公园' }))
-    await edit({ name_zh: '   ' })
-    expect((await getById(env.DB, 'zh-1'))?.name_zh).toBeNull()
-  })
-
-  it('rejects an over-long paste', async () => {
-    await upsert(env.DB, makeItem())
-    const res = await edit({ name_zh: '金'.repeat(301) })
-    expect(res.status).toBe(400)
-    expect((await getById(env.DB, 'zh-1'))?.name_zh).toBeNull()
-  })
-
-  it('rejects a non-string value instead of throwing a 500', async () => {
-    await upsert(env.DB, makeItem())
-    const res = await edit({ name_zh: 123 })
-    expect(res.status).toBe(400)
-    expect((await getById(env.DB, 'zh-1'))?.name_zh).toBeNull()
-  })
-
-  it('drops the stale translation when a curator renames an item', async () => {
-    await upsert(env.DB, makeItem({ name_zh: '金门公园' }))
-    const res = await edit({ name: 'Golden Gate Park & Botanical Garden' })
-    expect(res.status).toBe(200)
+    await upsert(env.DB, makeItem({ name: 'Golden Gate Park & Botanical Garden', name_zh: null }))
     const row = await getById(env.DB, 'zh-1')
     expect(row?.name).toBe('Golden Gate Park & Botanical Garden')
     expect(row?.name_zh).toBeNull()
   })
 
-  it('keeps a fresh translation supplied with a curator rename', async () => {
+  it('keeps the stored translation when the name is unchanged', async () => {
     await upsert(env.DB, makeItem({ name_zh: '金门公园' }))
-    const res = await edit({
-      name: 'Golden Gate Park & Botanical Garden',
-      name_zh: '金门公园及植物园',
-    })
-    expect(res.status).toBe(200)
-    const row = await getById(env.DB, 'zh-1')
-    expect(row?.name).toBe('Golden Gate Park & Botanical Garden')
-    expect(row?.name_zh).toBe('金门公园及植物园')
+    await upsert(env.DB, makeItem({ name_zh: null }))
+    expect((await getById(env.DB, 'zh-1'))?.name_zh).toBe('金门公园')
   })
 })

@@ -129,7 +129,7 @@ describe('NPS bbox filtering + contested-coord ceding', () => {
   })
 
   it('skips the Bay region by default so the curated Bay park layer is not double-pinned', () => {
-    expect(npsParkToItem(park('goga'), metroForCoords, DEFAULT).skipped).toBe('bay region (curated separately)')
+    expect(npsParkToItem(park('goga'), metroForCoords, DEFAULT).skipped).toBe('bay region (skipped unless --include-bay)')
   })
 
   it('emits Bay rows when the skip set is cleared (--include-bay)', () => {
@@ -172,7 +172,7 @@ describe('NPS end-to-end over the fixture', () => {
       'designation: National Historic Trail': 1,
       'outside every metro bbox': 1,
       'no coordinates': 1,
-      'bay region (curated separately)': 1,
+      'bay region (skipped unless --include-bay)': 1,
     })
   })
 })

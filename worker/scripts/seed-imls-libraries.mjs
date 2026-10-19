@@ -10,8 +10,8 @@
  *   #    and unzip. The outlet file is PLS_FY23_Outlet_pud23i.csv.
  *   node worker/scripts/seed-imls-libraries.mjs --csv ~/Downloads/PLS_FY23_Outlet_pud23i.csv
  *
- * Uses the OUTLET file, not the administrative-entity file: a library system
- * is one administrative entity with many branches, and families go to
+ * Uses the OUTLET file, not the parent-entity file: a library system
+ * is one parent entity with many branches, and families go to
  * branches. Only CE (central) and BR (branch) outlets become pins —
  * bookmobiles and books-by-mail have no visitable address.
  *
@@ -88,8 +88,9 @@ seed-imls-libraries.mjs — IMLS Public Libraries Survey outlet importer (#353)
   --status <s>        Row status (default approved — trusted source, Tier C)
   --confidence <c>    Row confidence (default medium — Tier C, plan §1.6)
   --dry-run           Report only; write nothing
-  --include-bay       Emit Bay Area rows too. Off by default: the Bay library layer is
-                      already curated, so these would double-pin the flagship map
+  --include-bay       Emit Bay Area rows too. Off by default (the Bay Area was a separate
+                      curated layer in the project this repo came from); pass it to
+                      load the Bay Area from this source
   --limit <n>         Process only the first n records (smoke tests)
 
 Emits SQL. Applying to any database is a separate, explicit step.

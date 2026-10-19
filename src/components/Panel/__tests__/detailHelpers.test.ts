@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveGoodToKnow, parseOpenUntil, formatDistanceMi, websiteFor, venueWallNow } from '../detailHelpers'
+import { deriveGoodToKnow, parseOpenUntil, formatDistanceMi, websiteFor, venueWallNow, reportMailto } from '../detailHelpers'
 
 describe('deriveGoodToKnow', () => {
   it('returns nothing for null/empty attributes (never invents facts)', () => {
@@ -105,5 +105,23 @@ describe('venueWallNow', () => {
   it('falls back to the viewer clock outside every metro', () => {
     const instant = new Date('2026-07-01T20:00:00Z')
     expect(venueWallNow(0, 0, instant).getTime()).toBe(instant.getTime())
+  })
+})
+
+describe('reportMailto', () => {
+  it('builds a mailto with the item id in the subject and name + URL in the body', () => {
+    const href = reportMailto('osm-node-1', "Koret Children's Playground", 'https://frolicmap.app/?item=osm-node-1')
+    expect(href.startsWith('mailto:frolicmap.official@gmail.com?')).toBe(true)
+    const params = new URLSearchParams(href.slice(href.indexOf('?') + 1))
+    expect(params.get('subject')).toBe('frolicmap report: osm-node-1')
+    const body = params.get('body') ?? ''
+    expect(body).toContain("Koret Children's Playground")
+    expect(body).toContain('https://frolicmap.app/?item=osm-node-1')
+  })
+
+  it('percent-encodes characters that would break the query string', () => {
+    const href = reportMailto('a&b', 'Fish & Chips #1', 'https://frolicmap.app/?item=a&b')
+    expect(href).not.toContain(' ')
+    expect(new URLSearchParams(href.slice(href.indexOf('?') + 1)).get('subject')).toBe('frolicmap report: a&b')
   })
 })

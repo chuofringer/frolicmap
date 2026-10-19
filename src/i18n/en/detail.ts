@@ -1,5 +1,5 @@
 /**
- * Detail surfaces: DetailPanel, BottomSheet, StackedFeatureList, ReportModal, useDetailData.
+ * Detail surfaces: DetailPanel, BottomSheet, StackedFeatureList, useDetailData.
  *
  * Owned by one workstream — keep additions inside this file so parallel
  * extraction work never collides. Values are the exact English text that was
@@ -45,16 +45,5 @@ export const detail = {
     strollerFriendly: 'Stroller friendly',
     picnicTables: 'Picnic tables',
     shade: 'Shade',
-  },
-  report: {
-    title: 'Report a problem',
-    thanks: "Thanks — we'll review it.",
-    reasonClosed: 'Closed / no longer here',
-    reasonWrongInfo: 'Wrong info (hours, address, etc.)',
-    reasonNotKidFriendly: 'Not actually kid-friendly',
-    reasonOther: 'Other',
-    detailsPlaceholder: 'Details (optional)',
-    cancel: 'Cancel',
-    send: 'Send',
   },
 } as const

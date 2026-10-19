@@ -28,21 +28,19 @@ declare const self: ServiceWorkerGlobalScope
 self.skipWaiting()
 clientsClaim()
 
-// The manifest vite-plugin-pwa injects here already excludes the MapLibre and
-// AdminApp chunks (see `injectManifest.globIgnores` in `vite.config.ts`) —
-// MapLibre gets its own cache-first route below, AdminApp is never
-// precached or SW-cached at all (network only, same as any other same-origin
-// asset that isn't in this manifest).
+// The manifest vite-plugin-pwa injects here already excludes the MapLibre
+// chunk (see `injectManifest.globIgnores` in `vite.config.ts`); MapLibre gets
+// its own cache-first route below.
 precacheAndRoute(self.__WB_MANIFEST)
 
 const NAV_CACHE = 'frolicmap-app-shell'
 const MAPLIBRE_CACHE = 'frolicmap-maplibre-chunk'
 const BASEMAP_CACHE = 'frolicmap-basemap-cdn'
 
-// Rule 2/3 — network-first navigations, EXCLUDING /cities* and /admin*
+// Rule 2 — network-first navigations, EXCLUDING /cities*
 // (`decideCachingStrategy` returns 'network-only' for those; returning false
 // here means "don't intercept," so the browser's normal request continues to
-// Pages' static-file-wins resolution / the CF Access edge check untouched).
+// Pages' static-file-wins resolution untouched).
 registerRoute(
   ({ url, request }) => {
     if (request.mode !== 'navigate') return false

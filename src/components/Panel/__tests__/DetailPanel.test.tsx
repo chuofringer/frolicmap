@@ -76,7 +76,7 @@ describe('DetailPanel', () => {
     expect(screen.getByRole('link', { name: 'Apple Maps' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Website' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Report an issue' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Report an issue' })).toBeInTheDocument()
     // The ⋯ overflow menu is gone.
     expect(screen.queryByRole('button', { name: 'More options' })).toBeNull()
   })
@@ -103,13 +103,16 @@ describe('DetailPanel', () => {
     expect(useMapStore.getState().selectedId).toBeNull()
   })
 
-  it('ESC closes the Report modal first without discarding the panel', () => {
+  it('Report an issue is a mailto link carrying the item id, name and URL', () => {
     render(<DetailPanel />)
-    fireEvent.click(screen.getByRole('button', { name: 'Report an issue' }))
-    expect(screen.getByRole('heading', { name: 'Report a problem' })).toBeInTheDocument()
-
-    fireEvent.keyDown(document, { key: 'Escape' })
-    // Report closed, panel (and selection) still open.
+    const link = screen.getByRole('link', { name: 'Report an issue' })
+    const href = link.getAttribute('href') ?? ''
+    expect(href.startsWith('mailto:frolicmap.official@gmail.com?')).toBe(true)
+    const params = new URLSearchParams(href.slice(href.indexOf('?') + 1))
+    expect(params.get('subject')).toBe('frolicmap report: pg-1')
+    const body = params.get('body') ?? ''
+    expect(body).toContain('?item=pg-1')
+    // Opening the link must not close the panel or open any form.
     expect(screen.queryByRole('heading', { name: 'Report a problem' })).toBeNull()
     expect(useMapStore.getState().selectedId).toBe('pg-1')
   })
@@ -139,7 +142,7 @@ describe('DetailPanel', () => {
     // Directions, share and report are always available.
     expect(screen.getByRole('link', { name: 'Google Maps' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Report an issue' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Report an issue' })).toBeInTheDocument()
   })
 
   it('shows a try-again button for transient detail failures and retries on click', () => {

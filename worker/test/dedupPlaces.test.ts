@@ -41,8 +41,9 @@ describe('source precedence (plan §2.2)', () => {
     expect(sourceRank('parkserve')).toBe(sourceRank('nps'))
   })
 
-  it('treats hand-reviewed aggregator rows as curated', () => {
-    expect(sourceRank('aggregator-bakf')).toBeGreaterThan(sourceRank('parkserve'))
+  it('ranks an unknown source type between osm and the structured datasets', () => {
+    expect(sourceRank('something-else')).toBeGreaterThan(sourceRank('osm'))
+    expect(sourceRank('something-else')).toBeLessThan(sourceRank('imls'))
   })
 })
 

@@ -32,7 +32,7 @@ export const CATEGORY_SLUG: Record<Category, string> = {
  * Display folding (#323): categories with no legend row / filter chip / page
  * of their own. `zoo` renders under `aquarium` — the chip reads "Aquarium/Zoo"
  * and toggling it filters both DB values. The DB vocabulary stays split (a zoo
- * is not an aquarium; `indoor`, ingest legs and admin grouping differ) — only
+ * is not an aquarium; `indoor`, ingest legs differ) — only
  * the user-facing affordance is combined.
  *
  * Lives here (not `src/config/categories.ts`) because the plain-Node page

@@ -89,8 +89,8 @@ export interface Item {
   // "parks have playgrounds but aren't separately findable via the
   // playground filter" — most neighborhood parks with a playground are never
   // OSM-tagged `leisure=playground` themselves. Set by the OSM ingester from
-  // a park feature's `playground=yes` tag, curator-overridable in the admin
-  // editor. Always null for non-park categories.
+  // a park feature's `playground=yes` tag, overridable with a hand-written
+  // UPDATE. Always null for non-park categories.
   has_playground: 0 | 1 | null
   // Simplified-Chinese title (#692). Null on most of the
   // catalog, and null is a first-class state: `displayTitle` falls back to
