@@ -208,29 +208,21 @@ describe('museum mapping (MDF 2018)', () => {
   })
 })
 
-describe('Bay Area guard', () => {
-  // The Bay library/museum layer is already curated (OSM + hand curation +
-  // BiblioCommons). Emitting IMLS rows into `bay` at `approved` would
-  // double-pin every SFPL branch on the flagship map the moment the SQL is
-  // applied — before #355's dedup exists to merge them.
+describe('Bay Area rows', () => {
+  // The Bay Area is an ordinary metro: IMLS rows inside its bbox are emitted.
   const SF = { [PLS_COLUMNS.lat]: '37.7955', [PLS_COLUMNS.lng]: '-122.3937' }
-  const skipBay = { ...TIER, skipRegions: new Set(['bay']) }
 
-  it('skips Bay Area library rows by default', () => {
-    expect(libraryRowToItem(libRec(SF), metroForCoords, skipBay).skipped).toBe('bay region (skipped unless --include-bay)')
-  })
-
-  it('skips Bay Area museum rows by default', () => {
-    const sf = musRec({ [MDF_COLUMNS.lat]: '37.7955', [MDF_COLUMNS.lng]: '-122.3937' })
-    expect(museumRowToItem(sf, metroForCoords, skipBay).skipped).toBe('bay region (skipped unless --include-bay)')
-  })
-
-  it('emits them when the caller opts in', () => {
+  it('emits Bay Area library rows', () => {
     expect(libraryRowToItem(libRec(SF), metroForCoords, TIER).row.region).toBe('bay')
   })
 
-  it('leaves non-Bay metros untouched by the guard', () => {
-    expect(libraryRowToItem(libRec(), metroForCoords, skipBay).row.region).toBe('austin')
+  it('emits Bay Area museum rows', () => {
+    const sf = musRec({ [MDF_COLUMNS.lat]: '37.7955', [MDF_COLUMNS.lng]: '-122.3937' })
+    expect(museumRowToItem(sf, metroForCoords, TIER).row.region).toBe('bay')
+  })
+
+  it('still assigns non-Bay metros to their own region', () => {
+    expect(libraryRowToItem(libRec(), metroForCoords, TIER).row.region).toBe('austin')
   })
 })
 

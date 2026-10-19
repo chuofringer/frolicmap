@@ -5,7 +5,6 @@ import { CATEGORIES, categoryLabel, getCategoryEmoji } from '@/config/categories
 import { useItems } from '@/hooks/useItems'
 import { matchesActivity } from '@/utils/searchMatch'
 import { useGeocodeQuery } from '@/hooks/useGeocode'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useIsDesktop, useMediaQuery } from '@/hooks/useMediaQuery'
 import { useActiveFilterCount } from '@/hooks/useActiveFilterCount'
 import { useMapStore } from '@/stores/useMapStore'
@@ -56,8 +55,11 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
   // the query changes so a stale index never survives into a new result set.
   const [activeIndex, setActiveIndex] = useState(-1)
   const { data: itemsData } = useItems()
-  const debouncedQ = useDebouncedValue(q, 400)
-  const { data: geo } = useGeocodeQuery(debouncedQ)
+  // The address (Nominatim) lookup runs only for a query the user SUBMITTED
+  // with Enter: the public Nominatim policy forbids auto-complete, so the live
+  // text never reaches it. Place/activity matching below stays live per key.
+  const [submittedQ, setSubmittedQ] = useState('')
+  const { data: geo } = useGeocodeQuery(submittedQ)
   const { setFlyTo, setSearchMarker } = useMapStore()
   const setNearby = useFiltersStore((s) => s.setNearby)
   const listboxId = useId()
@@ -80,7 +82,9 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
   const activityMatches = items
     .filter((i) => q.length >= 2 && !itemMatchIds.has(i.id) && matchesActivity(i, q, categoryLabel))
     .slice(0, 3)
-  const geoMatches = (geo ?? []).slice(0, 3)
+  // Address results belong to the submitted text; once the user edits the
+  // field they no longer describe it, so hide them until Enter is pressed again.
+  const geoMatches = submittedQ === q.trim() ? (geo ?? []).slice(0, 3) : []
   // One flat navigable list in visual order — Activities, then Places, then
   // Addresses — the combobox pattern moves aria-activedescendant through all
   // three groups as a single sequence. Group headers below are NOT options
@@ -146,9 +150,16 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
       return
     }
     if (e.key === 'Enter') {
-      if (!open || activeIndex < 0 || activeIndex >= optionCount) return
+      if (open && activeIndex >= 0 && activeIndex < optionCount) {
+        e.preventDefault()
+        selectIndex(activeIndex)
+        return
+      }
+      // No option highlighted: Enter is the explicit "search this address"
+      // action (too-short text is ignored by the geocode hook's min length).
       e.preventDefault()
-      selectIndex(activeIndex)
+      setSubmittedQ(q.trim())
+      setOpen(true)
     }
   }
 
@@ -168,6 +179,7 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
           aria-autocomplete="list"
           aria-activedescendant={activeIndex >= 0 && activeIndex < optionCount ? optionId(activeIndex) : undefined}
           className={`min-w-0 flex-1 bg-transparent outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 ${desktop ? 'text-sm w-[290px]' : 'text-base'}`}
+          enterKeyHint="search"
           placeholder={t('bar.searchPlaceholder')}
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true) }}

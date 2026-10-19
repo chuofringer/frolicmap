@@ -43,12 +43,11 @@ if (!process.features.typescript && !process.env.__DEDUP_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { METROS, DEFAULT_REGION, getMetro } = await import('../../shared/metros.ts')
+const { METROS, getMetro } = await import('../../shared/metros.ts')
 
 function parseArgs(argv) {
   const args = {
     metros: null, wave: false, all: false, dryRun: false, remote: false,
-    includeBay: false,
     outDir: path.join(REPO_ROOT, 'data/dedup'),
   }
   for (let i = 0; i < argv.length; i++) {
@@ -58,7 +57,6 @@ function parseArgs(argv) {
     else if (a === '--wave') args.wave = true
     else if (a === '--all') args.all = true
     else if (a === '--dry-run') args.dryRun = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--remote') args.remote = true
     else if (a === '--local') args.remote = false
     else if (a === '--out') args.outDir = path.resolve(next())
@@ -69,9 +67,6 @@ dedup-national.mjs — cross-source dedup + Tier-B (#355)
   --metro <ids>   Comma-separated metro ids.
   --wave          The 12 September wave metros.
   --all           Every metro in the registry.
-  --include-bay   Also dedup the 'bay' region. Off by default (the Bay Area was a
-                  separate curated layer in the project this repo came from);
-                  pass it once the Bay Area has been loaded.
   --local         Read from the LOCAL D1 (default).
   --remote        Read from the REMOTE D1. Read-only; this script never writes.
   --dry-run       Report only, write no SQL file.
@@ -100,15 +95,6 @@ function selectMetros() {
     const unknown = args.metros.filter((id) => !getMetro(id))
     if (unknown.length) { console.error(`unknown metro id(s): ${unknown.join(', ')}`); process.exit(1) }
     list = METROS.filter((m) => args.metros.includes(m.id))
-  }
-  // Bay guard: every importer skips the Bay Area by default, so this script
-  // does too. Same opt-in flag as the importers.
-  if (!args.includeBay) {
-    const before = list.length
-    list = list.filter((m) => m.id !== DEFAULT_REGION)
-    if (before !== list.length) {
-      console.log(`note: skipping '${DEFAULT_REGION}' — not deduped by default. Pass --include-bay to override.`)
-    }
   }
   return list
 }

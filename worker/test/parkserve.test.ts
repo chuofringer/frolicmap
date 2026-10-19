@@ -109,10 +109,8 @@ describe('ParkServe filtering', () => {
     expect(r.skipped).toBe('outside every metro bbox')
   })
 
-  it('skips the Bay region by default so the curated Bay park layer is not double-pinned', () => {
+  it('treats the Bay Area like any other metro', () => {
     const sf = feature({}, { x: -122.4194, y: 37.7749 })
-    expect(parkserveFeatureToItem(sf, metroForCoords, { ...TIER, skipRegions: new Set(['bay']) }).skipped)
-      .toBe('bay region (skipped unless --include-bay)')
     expect(parkserveFeatureToItem(sf, metroForCoords, TIER).row.region).toBe('bay')
   })
 })

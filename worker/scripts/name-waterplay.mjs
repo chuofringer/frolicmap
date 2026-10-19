@@ -44,7 +44,7 @@ if (!process.features.typescript && !process.env.__NAMEWP_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { METROS, DEFAULT_REGION, getMetro } = await import('../../shared/metros.ts')
+const { METROS, getMetro } = await import('../../shared/metros.ts')
 
 // Default donor radius. Donors are park CENTROIDS, so in a large park the
 // splash pad legitimately sits several hundred meters from the donor point —
@@ -55,7 +55,7 @@ const DEFAULT_MAX_DISTANCE_M = 250
 function parseArgs(argv) {
   const args = {
     metros: null, wave: false, all: false, dryRun: false, remote: false,
-    includeBay: false, maxDistanceM: DEFAULT_MAX_DISTANCE_M, revisit: false,
+    maxDistanceM: DEFAULT_MAX_DISTANCE_M, revisit: false,
     outDir: path.join(REPO_ROOT, 'data/waterplay-names'),
   }
   for (let i = 0; i < argv.length; i++) {
@@ -67,7 +67,6 @@ function parseArgs(argv) {
     else if (a === '--wave') args.wave = true
     else if (a === '--all') args.all = true
     else if (a === '--dry-run') args.dryRun = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--remote') args.remote = true
     else if (a === '--local') args.remote = false
     else if (a === '--out') args.outDir = path.resolve(next())
@@ -78,9 +77,6 @@ name-waterplay.mjs — name generic OSM waterplay rows from nearby parks (#435)
   --metro <ids>   Comma-separated metro ids.
   --wave          The 12 September wave metros.
   --all           Every metro in the registry.
-  --include-bay   Accepted for symmetry with the other scripts, but the 'bay'
-                  region is always skipped: this pass has never been run
-                  against it. Passing this prints a warning and still skips.
   --local         Read from the LOCAL D1 (default).
   --remote        Read from the REMOTE D1. Read-only; this script never writes.
   --dry-run       Report only, write no SQL file.
@@ -114,15 +110,6 @@ function selectMetros() {
     const unknown = args.metros.filter((id) => !getMetro(id))
     if (unknown.length) { console.error(`unknown metro id(s): ${unknown.join(', ')}`); process.exit(1) }
     list = METROS.filter((m) => args.metros.includes(m.id))
-  }
-  // Bay guard: the Bay Area waterplay layer came from a hand-curated seed
-  // with real names in the project this repo was carved from, so this
-  // write-producing pass hard-excludes it even when explicitly named, and
-  // never honours --include-bay.
-  const before = list.length
-  list = list.filter((m) => m.id !== DEFAULT_REGION)
-  if (before !== list.length) {
-    console.log(`warning: skipping '${DEFAULT_REGION}' — never renamed by this pass.`)
   }
   return list
 }

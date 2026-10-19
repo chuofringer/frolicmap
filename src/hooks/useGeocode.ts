@@ -36,6 +36,17 @@ export function withinMetro(metro: Metro, lat: number, lng: number, padDeg = 0.1
   return lat >= s - padDeg && lat <= n + padDeg && lng >= w - padDeg && lng <= e + padDeg
 }
 
+// Contact address the Nominatim usage policy asks for when the Referer alone
+// is not enough to identify the application.
+const NOMINATIM_EMAIL = 'frolicmap.official@gmail.com'
+
+/**
+ * Address lookup against the public Nominatim instance.
+ *
+ * The usage policy (operations.osmfoundation.org/policies/nominatim/) forbids
+ * auto-complete, so callers must pass a query the user has explicitly
+ * SUBMITTED (Enter), never the live text of a search field.
+ */
 export function useGeocodeQuery(q: string) {
   const metro = useMetro()
   return useQuery({
@@ -46,13 +57,14 @@ export function useGeocodeQuery(q: string) {
       if (q.length < 3) return []
       const params = new URLSearchParams({
         format: 'json',
-        limit: '8',
+        limit: '5',
         viewbox: metroViewbox(metro),
         // Keep results inside the box: without this a name match anywhere on
         // earth ("Four Seasons") outranks the local street.
         bounded: '1',
         countrycodes: 'us',
         addressdetails: '1',
+        email: NOMINATIM_EMAIL,
         q,
       })
       const url = `https://nominatim.openstreetmap.org/search?${params}`

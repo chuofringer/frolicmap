@@ -1,5 +1,5 @@
-// Shared origin/referer guard used by the public router's write path
-// (`/api/report`) and, with a wider predicate, its read-only endpoints.
+// Shared origin/referer guard for the public router's read-only endpoints
+// (session, list, detail, coords, tiles). The Worker has no write path.
 
 // Exact prod/dev allowlist. Read-only endpoints in public.ts additionally
 // accept Cloudflare Pages preview origins (`https://<label>.frolicmap.pages.dev`,

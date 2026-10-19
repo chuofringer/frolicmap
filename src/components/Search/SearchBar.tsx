@@ -4,7 +4,6 @@ import { categoryLabel } from '@/config/categories'
 import { useItems } from '@/hooks/useItems'
 import { matchesActivity } from '@/utils/searchMatch'
 import { useGeocodeQuery } from '@/hooks/useGeocode'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useMapStore } from '@/stores/useMapStore'
 import { useFiltersStore } from '@/stores/useFiltersStore'
 
@@ -15,9 +14,9 @@ export function SearchBar() {
   const { data: itemsData } = useItems()
   // Item-name matches filter the in-memory list and can track every
   // keystroke; the geocode query hits Nominatim, whose usage policy
-  // prohibits per-keystroke autocomplete traffic — debounce it.
-  const debouncedQ = useDebouncedValue(q, 400)
-  const { data: geo } = useGeocodeQuery(debouncedQ)
+  // prohibits autocomplete — it runs only for a query submitted with Enter.
+  const [submittedQ, setSubmittedQ] = useState('')
+  const { data: geo } = useGeocodeQuery(submittedQ)
   const { setFlyTo, setSelectedId, setSearchMarker } = useMapStore()
   const setNearby = useFiltersStore((s) => s.setNearby)
 
@@ -26,6 +25,8 @@ export function SearchBar() {
   const itemMatches = (itemsData?.items ?? [])
     .filter((i) => q.length >= 2 && (i.name.toLowerCase().includes(q.toLowerCase()) || matchesActivity(i, q, categoryLabel)))
     .slice(0, 5)
+
+  const geoShown = submittedQ === q.trim() ? (geo ?? []) : []
 
   return (
     <div className="w-44">
@@ -40,8 +41,9 @@ export function SearchBar() {
           onChange={(e) => { setQ(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) setSubmittedQ(q.trim()) }}
         />
-        {open && q.length >= 2 && (itemMatches.length || (geo?.length ?? 0) > 0) && (
+        {open && q.length >= 2 && (itemMatches.length || geoShown.length > 0) && (
           <div className="absolute bottom-full mb-1 w-64 max-w-[calc(100vw-24px)] bg-white dark:bg-gray-900 rounded-lg shadow-lg ring-1 ring-black/20 dark:ring-white/10 max-h-72 overflow-auto text-sm">
             {itemMatches.map((i) => (
               <button
@@ -55,7 +57,7 @@ export function SearchBar() {
                 }}
               >📍 {i.name}</button>
             ))}
-            {(geo ?? []).map((g, idx) => (
+            {geoShown.map((g, idx) => (
               <button
                 key={idx}
                 className="block w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"

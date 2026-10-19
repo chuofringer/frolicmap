@@ -11,7 +11,7 @@
  *      then export it:  export NPS_API_KEY=xxxxxxxx
  *   2. Dry-run one metro to sanity-check counts (writes nothing):
  *        node worker/scripts/seed-nps.mjs --metro new-york --dry-run
- *   3. Emit the SQL (all metros, Bay skipped by default):
+ *   3. Emit the SQL (all metros):
  *        node worker/scripts/seed-nps.mjs
  *      → data/nps/nps.sql
  *   4. Apply it (review first — these rows land approved):
@@ -55,7 +55,7 @@ if (!process.features.typescript && !process.env.__NPS_REEXEC) {
   process.exit(res.status ?? 1)
 }
 
-const { METROS, DEFAULT_REGION, getMetro, metroForCoords } = await import('../../shared/metros.ts')
+const { METROS, getMetro, metroForCoords } = await import('../../shared/metros.ts')
 
 const API = 'https://developer.nps.gov/api/v1'
 // The API caps a page at 500 records; the whole park system is well under 1000,
@@ -70,7 +70,7 @@ const VALID_CONFIDENCE = ['high', 'medium', 'low']
 function parseArgs(argv) {
   const args = {
     json: null, apiKey: process.env.NPS_API_KEY ?? null,
-    metros: null, dryRun: false, includeBay: false,
+    metros: null, dryRun: false,
     status: 'approved', confidence: 'medium', throttleMs: 500, descMax: 500,
     out: path.join(REPO_ROOT, 'data/nps/nps.sql'),
   }
@@ -85,7 +85,6 @@ function parseArgs(argv) {
     else if (a === '--api-key') args.apiKey = next()
     else if (a === '--metro' || a === '--metros') args.metros = next().split(',').map((s) => s.trim()).filter(Boolean)
     else if (a === '--dry-run') args.dryRun = true
-    else if (a === '--include-bay') args.includeBay = true
     else if (a === '--status') args.status = next()
     else if (a === '--confidence') args.confidence = next()
     else if (a === '--throttle-ms') args.throttleMs = Number(next())
@@ -118,9 +117,6 @@ seed-nps.mjs — National Park Service park/trail importer (#383)
   --api-key <key>    NPS API key (default: NPS_API_KEY env var).
   --metro <ids>      Comma-separated metro ids — restrict emitted rows.
   --dry-run          Fetch + report per-metro counts, write nothing.
-  --include-bay      Emit Bay Area rows too. Off by default (the Bay Area was a separate
-                     curated layer in the project this repo came from); pass it to
-                     load the Bay Area from this source.
   --status <s>       Row status (default approved — trusted source, Tier C).
   --confidence <c>   Row confidence (default medium — Tier C, plan §1.6).
   --throttle-ms <n>  Delay between paged API requests (default 500).
@@ -185,10 +181,9 @@ async function main() {
     process.exit(1)
   }
 
-  const skipRegions = args.includeBay ? new Set() : new Set([DEFAULT_REGION])
   const { rows: mapped, skipped } = collect(
     parks.map((p) => npsParkToItem(p, metroForCoords, {
-      status: args.status, confidence: args.confidence, skipRegions, descMaxLen: args.descMax,
+      status: args.status, confidence: args.confidence, descMaxLen: args.descMax,
     })),
   )
 

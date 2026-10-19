@@ -176,10 +176,6 @@ metro, run `node worker/scripts/promote-metro.mjs --metro <id> --remote --yes`
 Finally rebuild the city pages from the new data: Actions > *Deploy Pages* >
 Run workflow (or `gh workflow run "Deploy Pages"`).
 
-The Bay Area (`bay`) is skipped by the import scripts unless you pass
-`--include-bay`; use it for the OSM step above (`--metro bay --include-bay`) to
-load it.
-
 ## 9. Smoke checks
 
 ```bash

@@ -102,7 +102,7 @@ function buildAttributes(a) {
  * `feature` is the raw `{attributes, centroid}` shape the REST API returns
  * with `returnCentroid=true&returnGeometry=false`.
  */
-export function parkserveFeatureToItem(feature, metroFor, { status, confidence, skipRegions = new Set() }) {
+export function parkserveFeatureToItem(feature, metroFor, { status, confidence }) {
   const a = feature?.attributes ?? {}
   const name = titleCase(clean(a[PS_FIELDS.name]))
   if (!name) return { skipped: 'no name' }
@@ -131,7 +131,6 @@ export function parkserveFeatureToItem(feature, metroFor, { status, confidence, 
 
   const metro = metroFor(lat, lng)
   if (!metro) return { skipped: 'outside every metro bbox' }
-  if (skipRegions.has(metro.id)) return { skipped: `${metro.id} region (skipped unless --include-bay)` }
 
   const city = titleCase(clean(a[PS_FIELDS.city]))
   const addressParts = [clean(a[PS_FIELDS.address]), city, clean(a[PS_FIELDS.zip])].filter(Boolean)

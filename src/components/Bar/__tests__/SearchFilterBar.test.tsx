@@ -7,7 +7,8 @@ import { useFiltersStore } from '@/stores/useFiltersStore'
 import { useMapStore } from '@/stores/useMapStore'
 
 // Fixed items catalog for the search-suggestion tests (chip tests don't read
-// item data). Geocode is stubbed empty so no debounce/network is in play.
+// item data). Geocode is stubbed (no network); the stub records the query it
+// was called with so the tests can assert Nominatim only sees SUBMITTED text.
 const mkItem = (over: Partial<ListItem> & Pick<ListItem, 'id' | 'name' | 'category' | 'lat' | 'lng'>): ListItem => ({
   type: 'place', age_min: null, age_max: null, cost: 'free', indoor: 0,
   status: 'approved', city: null, has_playground: null, name_zh: null, ...over,
@@ -27,9 +28,17 @@ vi.mock('@/hooks/useItems', () => ({
   }),
 }))
 // Mutable so the keyboard-navigation tests can opt into geocode results
-// without a per-test debounce/network round trip; reset in beforeEach below.
+// without a network round trip; reset in beforeEach below. `geoQueries`
+// collects every query string the component passes to the geocode hook.
 const geoResults = vi.hoisted(() => ({ current: [] as { lat: number; lng: number; label: string }[] }))
-vi.mock('@/hooks/useGeocode', () => ({ useGeocodeQuery: () => ({ data: geoResults.current }) }))
+const geoQueries = vi.hoisted(() => ({ current: [] as string[] }))
+vi.mock('@/hooks/useGeocode', () => ({
+  useGeocodeQuery: (q: string) => {
+    geoQueries.current.push(q)
+    // Mirror the real hook: nothing is fetched for an unsubmitted/short query.
+    return { data: q.length >= 3 ? geoResults.current : undefined }
+  },
+}))
 
 import { SearchFilterBar } from '../SearchFilterBar'
 
@@ -68,6 +77,7 @@ beforeEach(() => {
   useFiltersStore.getState().reset()
   useMapStore.setState({ selectedId: null, viewMode: 'map', overlay: null })
   geoResults.current = []
+  geoQueries.current = []
 })
 afterEach(() => cleanup())
 
@@ -79,6 +89,9 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
     fireEvent.change(input, { target: { value: q } })
     return input
   }
+
+  // Address results only appear after the user submits with Enter (no option active).
+  const submit = (input: HTMLElement) => fireEvent.keyDown(input, { key: 'Enter' })
 
   it('exposes combobox/listbox roles and tracks aria-activedescendant as the active option', () => {
     renderAt('/')
@@ -100,6 +113,7 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
     geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
     renderAt('/')
     const input = type('first')
+    submit(input)
     const options = screen.getAllByRole('option')
     expect(options.map((o) => o.textContent)).toEqual([
       expect.stringContaining('First Branch Library'),
@@ -125,6 +139,7 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
     geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
     renderAt('/')
     const input = type('first')
+    submit(input)
     const options = screen.getAllByRole('option')
     expect(options).toHaveLength(3)
     fireEvent.keyDown(input, { key: 'ArrowUp' })
@@ -156,12 +171,45 @@ describe('SearchField combobox keyboard navigation (#482)', () => {
     geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
     renderAt('/')
     const input = type('first')
+    submit(input)
     fireEvent.keyDown(input, { key: 'ArrowDown' }) // → First Branch Library (item)
     fireEvent.keyDown(input, { key: 'ArrowDown' }) // → First Street Park (item)
     fireEvent.keyDown(input, { key: 'ArrowDown' }) // → 123 Main St (geocode)
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(useMapStore.getState().searchMarker).toEqual([-122.4, 37.6])
     expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
+  it('does not query Nominatim while typing; only the submitted text reaches it', () => {
+    geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
+    renderAt('/')
+    const input = screen.getByPlaceholderText(/Search playgrounds/)
+    for (const v of ['1', '12', '123', '123 M', '123 Ma', '123 Main']) {
+      fireEvent.change(input, { target: { value: v } })
+    }
+    // Every call so far carried the empty (unsubmitted) query: no fetch possible.
+    expect(new Set(geoQueries.current)).toEqual(new Set(['']))
+    expect(screen.queryByText(/123 Main St/)).toBeNull()
+
+    submit(input)
+    expect(geoQueries.current.at(-1)).toBe('123 Main')
+  })
+
+  it('place matches stay live while typing, without any address lookup', () => {
+    renderAt('/')
+    type('first')
+    expect(screen.getByRole('option', { name: /First Branch Library/ })).toBeInTheDocument()
+    expect(geoQueries.current.every((q) => q === '')).toBe(true)
+  })
+
+  it('hides address results once the text is edited after submitting', () => {
+    geoResults.current = [{ lat: 37.6, lng: -122.4, label: '123 Main St' }]
+    renderAt('/')
+    const input = type('first')
+    submit(input)
+    expect(screen.getByRole('option', { name: /123 Main St/ })).toBeInTheDocument()
+    fireEvent.change(input, { target: { value: 'firstx' } })
+    expect(screen.queryByRole('option', { name: /123 Main St/ })).toBeNull()
   })
 
   it('Escape still closes the dropdown without selecting', () => {

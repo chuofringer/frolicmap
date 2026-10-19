@@ -5,11 +5,9 @@ import { useEffect, useState } from 'react'
  * restarts the timer, so rapid updates (keystrokes) collapse to the final
  * value.
  *
- * Added for the SearchBar → Nominatim path: the OSM Nominatim usage policy
- * caps clients at 1 request/second and prohibits autocomplete-style
- * per-keystroke traffic — violators get IP-blocked, which would silently
- * kill address search for everyone. Debouncing the query string means the
- * geocode fetch fires only once typing settles.
+ * Generic helper. (It once fronted the Nominatim address lookup, but the OSM
+ * usage policy forbids auto-complete even when debounced, so the geocode
+ * query now fires only on an explicit Enter — see `useGeocodeQuery`.)
  */
 export function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value)
