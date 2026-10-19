@@ -16,7 +16,7 @@ describe('category slugs are search terms, not DB values (plan §3.2)', () => {
     // "waterplay" and "aquarium" are our words; nobody types them.
     expect(CATEGORY_SLUG.waterplay).toBe('splash-pads')
     expect(CATEGORY_SLUG.aquarium).toBe('zoos-aquariums')
-    expect(CATEGORY_SLUG.upick).toBe('u-pick-farms')
+    expect(CATEGORY_SLUG.hiking).toBe('hiking-trails')
   })
 
   it('round-trips slug back to category', () => {
@@ -58,7 +58,7 @@ describe('/cities index (the welcome page)', () => {
 
   it('lives at /cities and is self-canonical', () => {
     expect(index.path).toBe('/cities')
-    expect(index.html).toContain('<link rel="canonical" href="https://funradar.app/cities">')
+    expect(index.html).toContain('<link rel="canonical" href="https://frolicmap.app/cities">')
   })
 
   it('names every category in the title and description, including unbuilt ones', () => {
@@ -107,7 +107,7 @@ describe('/cities index (the welcome page)', () => {
     expect(index.html).not.toContain('OpenStreetMap')
     expect(index.html).not.toContain('ParkServe')
     expect(index.html).not.toContain('IMLS')
-    expect(index.html).toContain('funradar.app</a> — a map of kids activities.')
+    expect(index.html).toContain('frolicmap.app</a> — a map of kids activities.')
   })
 
   it('carries no newsletter CTA (surface retired 2026-08-09)', () => {
@@ -280,13 +280,13 @@ describe('nearestMetros (nearby-metros footer, #387)', () => {
 
 describe('sitemaps', () => {
   it('emits absolute URLs', () => {
-    expect(renderSitemap(['/cities/seattle'])).toContain('<loc>https://funradar.app/cities/seattle</loc>')
+    expect(renderSitemap(['/cities/seattle'])).toContain('<loc>https://frolicmap.app/cities/seattle</loc>')
   })
 
   it('stitches per-metro sitemaps into an index', () => {
     const idx = renderSitemapIndex(['/sitemaps/seattle.xml'])
     expect(idx).toContain('<sitemapindex')
-    expect(idx).toContain('https://funradar.app/sitemaps/seattle.xml')
+    expect(idx).toContain('https://frolicmap.app/sitemaps/seattle.xml')
   })
 
   it('classifies /cities as the index tier and /cities/{slug} as the city tier', () => {
@@ -303,7 +303,7 @@ describe('homepage stays in the sitemap', () => {
     // map is the site's highest-equity URL and must stay declared.
     expect(pageKindFor('/')).toBe('home')
     const xml = renderSitemap(['/', '/cities'])
-    expect(xml).toContain('<loc>https://funradar.app/</loc>')
+    expect(xml).toContain('<loc>https://frolicmap.app/</loc>')
     expect(xml).toContain('<changefreq>daily</changefreq><priority>1.0</priority>')
   })
 })

@@ -1,26 +1,16 @@
-// Cron health card classification (issue #197, extended #273). Pulled out
-// of routes/admin.ts into a pure module so the seasonal-pause branch (upick
-// only runs Apr–Oct) can be unit-tested with an injected `nowMs` instead of
-// mocking Date inside a Miniflare-dispatched request — `vi.setSystemTime`
-// mocks the vitest process's Date, not the separate isolate `SELF.fetch`
-// runs the Worker in, so date-dependent branches here must take `now` as a
-// parameter to be testable at all.
+// Cron health card classification (issue #197). Kept as a pure module so
+// date-dependent branches take `now` as a parameter and are unit-testable:
+// `vi.setSystemTime` mocks the vitest process's Date, not the separate
+// isolate `SELF.fetch` runs the Worker in.
 //
-// Covers 3 Worker crons + 2 Claude Code Desktop routines (aggregators,
-// upick) — all 5 log to `ingestion_log`. (The triage routine, formerly a
-// 6th leg, was retired 2026-07-18 — PR #364 — before it ever wrote to D1, so
-// it's out of scope.) The routines' `logRun`-equivalent rows are emitted as
-// an `INSERT INTO ingestion_log` statement inside the SQL the GH Action
-// merge workflow applies to D1 (`worker/scripts/merge-aggregators.mjs` /
-// `worker/scripts/merge-upick.mjs`) — there's no live Worker code path for a
-// routine run, so the merge script is the only place that knows the run
-// happened.
+// The only cron is the quarterly OSM ingest, which logs to `ingestion_log`
+// under source id `osm`.
 //
 // Status chip rules:
 //   🟢 healthy  — last run within expected cadence × 1 + no errors
 //   🟡 late     — past cadence × 1 but within × 2, no errors
 //   🔴 failed   — last run has errors, OR past cadence × 2
-//   ⚪ unknown  — never run, OR (routines only) currently out of season
+//   ⚪ unknown  — never run, OR currently out of season (`seasonalMonths`)
 export interface CadenceConfig {
   schedule: string
   cadence: string
@@ -33,33 +23,6 @@ export const CRON_CADENCES: Record<string, CadenceConfig> = {
     schedule: '0 3 1 */3 *',
     cadence: 'quarterly',
     cadenceDays: 91, // ~3 months
-  },
-  'structured-feeds': {
-    schedule: '0 4 * * MON',
-    cadence: 'weekly',
-    cadenceDays: 7,
-  },
-  'archive-expired': {
-    schedule: '0 8 * * *',
-    cadence: 'daily',
-    cadenceDays: 1,
-  },
-  // Claude Code Desktop routines (not Worker crons — see CLAUDE.md "Claude
-  // Code routine pattern"). Both PR-merge-triggered via a GH Action; no
-  // `/api/admin/run/*` manual-trigger handler exists for either.
-  aggregators: {
-    schedule: 'Tue 21:00 PT (weekly Claude Code routine)',
-    cadence: 'weekly',
-    cadenceDays: 7,
-  },
-  upick: {
-    schedule: 'Mon 21:00 PT (weekly Apr–Oct Claude Code routine)',
-    cadence: 'weekly, Apr–Oct',
-    cadenceDays: 7,
-    // U-Pick pauses Nov–Mar (no farms in season, so no routine run is
-    // expected). Outside these months the card shows 'unknown' instead of
-    // flagging a real cron as late/failed for an intentional pause.
-    seasonalMonths: [4, 5, 6, 7, 8, 9, 10],
   },
 }
 
@@ -114,9 +77,9 @@ export function classifyCron(
     }
   }
   const hasErrors = (errorList?.length ?? 0) > 0
-  // Off-season check (upick only): the routine isn't expected to run
-  // outside Apr–Oct, so an overdue-looking last run there is not a real
-  // signal — surface 'unknown' instead of a false late/failed.
+  // Off-season check (only for a cadence that sets `seasonalMonths`): a run
+  // isn't expected outside those months, so an overdue-looking last run is
+  // not a real signal. Surface 'unknown' instead of a false late/failed.
   const nowMonth = new Date(nowMs).getUTCMonth() + 1 // 1-12
   const inSeason = !cadence.seasonalMonths || cadence.seasonalMonths.includes(nowMonth)
   let status: CronHealth['status'] = 'healthy'

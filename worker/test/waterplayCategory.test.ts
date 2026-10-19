@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 import { ALL_CATEGORIES } from '@shared/types'
 import { d1Migrations } from './helpers/migrations'
 
-describe('migration 0015 (waterplay category + aggregator-waterplay source_type)', () => {
+describe('single schema (every category in ALL_CATEGORIES is insertable)', () => {
   beforeAll(async () => {
     await applyD1Migrations(env.DB, d1Migrations)
   })
@@ -36,26 +36,6 @@ describe('migration 0015 (waterplay category + aggregator-waterplay source_type)
       .prepare('SELECT category FROM items ORDER BY category')
       .all<{ category: string }>()
     expect(results.map((r) => r.category)).toEqual([...ALL_CATEGORIES].sort())
-  })
-
-  it('accepts the aggregator-waterplay source_type (unused vestige kept in the CHECK — spec §9: static seed, no routine)', async () => {
-    const now = new Date().toISOString()
-    await env.DB
-      .prepare(
-        `INSERT INTO items (
-          id, type, name, category, lat, lng, source_url,
-          source_type, confidence, status, last_verified, created_at, updated_at,
-          indoor, cost
-        ) VALUES
-          ('waterplay-test-splash-pad','place','Test Splash Pad','waterplay',37.7,-122.4,
-            'https://example.com/splash','aggregator-waterplay','high','pending',?,?,?,0,'free')`,
-      )
-      .bind(now, now, now)
-      .run()
-    const { results } = await env.DB
-      .prepare("SELECT source_type FROM items WHERE id = 'waterplay-test-splash-pad'")
-      .all<{ source_type: string }>()
-    expect(results).toEqual([{ source_type: 'aggregator-waterplay' }])
   })
 
   it('rejects an unknown category (CHECK constraint still bites)', async () => {

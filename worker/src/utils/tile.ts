@@ -17,15 +17,10 @@
 //   (ItemSource.tsx) since by then a tile's bbox query returns well under
 //   the cap for our data density, so deeper tiles buy nothing.
 // - Properties: `{id, name, category, type}` plus, when present on the row,
-//   the filter-relevant fields (age_min/max, cost, indoor, start_time,
-//   end_time, rrule, exdates) — widened in #250 Phase 2d2 step (a) so a
-//   future client-side filter refactor can read straight off the rendered
-//   tile feature. Current frontend still filters via /api/items.json; these
-//   properties are additive and unconsumed as of this change.
+//   the filter-relevant fields (age_min/max, cost, indoor) so a client-side
+//   filter can read straight off the rendered tile feature.
 // - Single MVT layer named "items" so the client binds one layer to render
 //   all pins (matches the current `ItemSource.tsx` structure).
-
-import { cropEmoji } from '@shared/seasonalEmoji'
 
 // @types/geojson-vt + @types/vt-pbf don't match the real runtime API:
 // - geojson-vt's default export is a factory function, not a constructor
@@ -69,26 +64,17 @@ export interface TilePoint {
   id: string
   name: string
   category: string
-  type: 'place' | 'event'
+  type: 'place'
   lat: number
   lng: number
-  primary_crop_emoji?: string
-  // Filter-relevant fields (#250 Phase 2d2 step (a)). Widened onto the tile
-  // payload so client-side filter logic (age band, free/paid, indoor/outdoor,
-  // date/time) can eventually read straight off the rendered tile feature
-  // instead of the separate `/api/items.json` catalog fetch — see
-  // docs/data-protection-plan.md Phase 2d2. Optional/nullable to match the
-  // underlying D1 columns; not yet consumed by the frontend as of this
-  // change (still additive — `applyFilters` keeps reading `/api/items.json`
-  // until the frontend migration lands).
+  // Filter-relevant fields. Widened onto the tile payload so client-side
+  // filter logic (age band, free/paid, indoor/outdoor) can read straight off
+  // the rendered tile feature. Optional/nullable to match the underlying D1
+  // columns.
   age_min?: number | null
   age_max?: number | null
   cost?: string | null
   indoor?: number | null
-  start_time?: string | null
-  end_time?: string | null
-  rrule?: string | null
-  exdates?: string | null
 }
 
 /**
@@ -115,7 +101,7 @@ export function warnIfTileCapped(z: number, x: number, y: number, rowCount: numb
  * correct (see the comment in `public.ts`'s tile route), but a flat
  * `LIMIT` over that ordering amputates the alphabetic tail: once the cap
  * binds, every category after the cutoff point (e.g. `playground`,
- * `upick`, `waterplay`) disappears wholesale instead of every category
+ * `waterplay`) disappears wholesale instead of every category
  * losing an even share.
  *
  * This walks the input round-robin — one row from each category present,
@@ -160,55 +146,16 @@ export function fairCapByCategory<T extends { category: string }>(
 }
 
 /**
- * Resolve the pin emoji for one U-Pick feature: first ripe crop in
- * `crops[]` order → its emoji; else first crop where state is 'next';
- * else `crops[0]` fallback. Returns `undefined` when the inputs are
- * unusable (missing, malformed JSON, empty crops array) so the caller
- * can omit the property from the tile feature — MapLibre then falls
- * through to the static category emoji.
- *
- * The v1-medium spec originally concatenated up to 2 ripe emojis (e.g.
- * "🍓🍒") to signal dual-ripe farms, but two glyphs at pin size render
- * as a squished blob on mobile. Per-crop ripeness still shows in the
- * popup's ripeness row, so no information is lost.
- *
- * Accepts `crops` / `crops_state` as EITHER the D1 JSON-string form (what
- * the tile route reads straight from SELECT) or the parsed object form
- * (what callers may already have).
- */
-export function resolvePrimaryCropEmoji(
-  crops: unknown,
-  cropsState: unknown,
-): string | undefined {
-  let cropArr: unknown
-  let state: unknown
-  try {
-    cropArr = typeof crops === 'string' ? JSON.parse(crops) : crops
-    state = typeof cropsState === 'string' ? JSON.parse(cropsState) : cropsState
-  } catch {
-    return undefined
-  }
-  if (!Array.isArray(cropArr) || cropArr.length === 0) return undefined
-  const s = (state && typeof state === 'object') ? state as Record<string, string> : {}
-  const ripe = cropArr.find((c): c is string => typeof c === 'string' && s[c] === 'ripe')
-  if (ripe) return cropEmoji(ripe)
-  const next = cropArr.find((c): c is string => typeof c === 'string' && s[c] === 'next')
-  const fallback = typeof cropArr[0] === 'string' ? cropArr[0] : undefined
-  return cropEmoji(next ?? fallback)
-}
-
-/**
  * Build one tile feature's MVT properties from a `TilePoint`.
  *
  * Exported (rather than kept inline in `buildTile`) so the field-widening
- * logic (#250 Phase 2d2 step (a)) can be unit-tested directly against plain
+ * logic can be unit-tested directly against plain
  * objects, without decoding an actual MVT protobuf back out.
  *
  * MVT properties can't carry `null`/`undefined` (protobuf value types are
  * string/number/boolean), so absent/null fields are simply omitted rather
- * than written as a sentinel — matches how `primary_crop_emoji` was already
- * handled, and lets a future MapLibre filter expression use `has`/`!has` to
- * distinguish "field absent" the same way.
+ * than written as a sentinel, which lets a MapLibre filter expression use
+ * `has`/`!has` to distinguish "field absent".
  */
 export function tileFeatureProperties(p: TilePoint): Record<string, string | number> {
   const properties: Record<string, string | number> = {
@@ -217,15 +164,10 @@ export function tileFeatureProperties(p: TilePoint): Record<string, string | num
     category: p.category,
     type: p.type,
   }
-  if (p.primary_crop_emoji) properties.primary_crop_emoji = p.primary_crop_emoji
   if (p.age_min != null) properties.age_min = p.age_min
   if (p.age_max != null) properties.age_max = p.age_max
   if (p.cost != null) properties.cost = p.cost
   if (p.indoor != null) properties.indoor = p.indoor
-  if (p.start_time != null) properties.start_time = p.start_time
-  if (p.end_time != null) properties.end_time = p.end_time
-  if (p.rrule != null) properties.rrule = p.rrule
-  if (p.exdates != null) properties.exdates = p.exdates
   return properties
 }
 

@@ -62,7 +62,7 @@ describe('OSM ingestion', () => {
       lng: -122.42,
       source_type: 'osm',
       status: 'pending',
-      confidence: 'high',
+      confidence: 'medium',
     })
     expect(item!.id).toMatch(/^osm-node-12345$/)
     expect(item!.source_url).toBe('https://www.openstreetmap.org/node/12345')
@@ -109,113 +109,6 @@ describe('OSM ingestion', () => {
       source_type: 'osm',
     })
     expect(item!.id).toBe('osm-node-2869144130')
-  })
-
-  it('queries the union of birthday-party leisure tags, and excludes water_park (#199)', () => {
-    const q = buildOverpassQuery('birthday_party')
-    expect(q).toContain('leisure=bowling_alley')
-    expect(q).toContain('leisure=trampoline_park')
-    expect(q).toContain('leisure=amusement_arcade')
-    expect(q).toContain('leisure=ice_rink')
-    expect(q).toContain('leisure=escape_game')
-    expect(q).toContain('leisure=miniature_golf')
-    expect(q).toContain('leisure=climbing')
-    expect(q).toContain('leisure=adult_gaming_centre')
-    expect(q).toContain('amenity=events_venue')
-    // water_park is deliberately owned by the `waterplay` category's own OSM
-    // leg — claiming it here too would make the two categories fight over
-    // the same element in the cross-category dedup pass.
-    expect(q).not.toContain('leisure=water_park')
-  })
-
-  it('restricts the climbing leg to bouldering/roped gyms via the climbing subtag', () => {
-    const q = buildOverpassQuery('birthday_party')
-    expect(q).toContain('leisure=climbing]["climbing"~"^(boulder|sport)$"]')
-  })
-
-  it('parses a trampoline park as an indoor birthday_party Item with age defaults (#199)', () => {
-    const element = {
-      type: 'node' as const,
-      id: 42,
-      lat: 37.5,
-      lon: -122.2,
-      tags: { name: 'Rockin\' Jump', leisure: 'trampoline_park' },
-    }
-    const item = overpassElementToItem(element, 'birthday_party')
-    expect(item).toMatchObject({
-      category: 'birthday_party',
-      indoor: 1,
-      age_min: 3,
-      age_max: 12,
-      status: 'pending',
-      source_type: 'osm',
-    })
-  })
-
-  it('defaults a miniature golf birthday_party venue to outdoor', () => {
-    const element = {
-      type: 'node' as const,
-      id: 43,
-      lat: 37.5,
-      lon: -122.2,
-      tags: { name: 'Golfland', leisure: 'miniature_golf' },
-    }
-    const item = overpassElementToItem(element, 'birthday_party')
-    expect(item?.indoor).toBe(0)
-  })
-
-  it('leaves indoor unknown (null) for a bare events_venue', () => {
-    const element = {
-      type: 'node' as const,
-      id: 44,
-      lat: 37.5,
-      lon: -122.2,
-      tags: { name: 'Party Hall', amenity: 'events_venue' },
-    }
-    const item = overpassElementToItem(element, 'birthday_party')
-    expect(item?.indoor).toBeNull()
-  })
-
-  it('queries the narrow high-precision restaurant leg, and skips the plain amenity=restaurant fire-hose (#200)', () => {
-    const q = buildOverpassQuery('restaurant')
-    expect(q).toContain('amenity=restaurant][kids_area=yes')
-    expect(q).toContain('amenity=restaurant]["diet:kids_menu"=yes')
-    expect(q).toContain('amenity=fast_food][playground=yes')
-    // A generic amenity=restaurant clause with no kid-signal subtag would
-    // fire-hose ~5k+ Bay Area restaurants (issue #200) — every clause in
-    // this leg must carry a kid-relevance subtag.
-    expect(q).not.toMatch(/node\[amenity=restaurant\]\(/)
-  })
-
-  it('parses a kids_area restaurant as indoor + paid by default (#200)', () => {
-    const element = {
-      type: 'node' as const,
-      id: 77,
-      lat: 37.5,
-      lon: -122.2,
-      tags: { name: 'Kid-Friendly Diner', amenity: 'restaurant', kids_area: 'yes' },
-    }
-    const item = overpassElementToItem(element, 'restaurant')
-    expect(item).toMatchObject({
-      category: 'restaurant',
-      indoor: 1,
-      cost: 'paid',
-      price_usd: null,
-      status: 'pending',
-      source_type: 'osm',
-    })
-  })
-
-  it('parses a fast_food+playground venue on the restaurant leg', () => {
-    const element = {
-      type: 'node' as const,
-      id: 78,
-      lat: 37.5,
-      lon: -122.2,
-      tags: { name: 'Burger Barn', amenity: 'fast_food', playground: 'yes' },
-    }
-    const item = overpassElementToItem(element, 'restaurant')
-    expect(item?.category).toBe('restaurant')
   })
 
   it('rejects elements without a name', () => {

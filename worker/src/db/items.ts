@@ -1,4 +1,4 @@
-import type { Item, ItemStatus, CropState } from '@shared/types'
+import type { Item, ItemStatus } from '@shared/types'
 import { DEFAULT_REGION } from '@shared/metros'
 import { bboxAround, haversineMeters, PARK_PLAYGROUND_OVERLAP_M } from '@shared/osm'
 
@@ -71,10 +71,9 @@ export interface AdminItemQuery {
 /**
  * Filtered, paginated admin listing (#368).
  *
- * `listByStatus` returns every matching row, which was fine for a Bay-only
- * dataset but stops being fine the moment national pending rows land: a few
- * thousand IMLS museums would bury the weekly Bay aggregator review in one
- * unpaginated response. Region and source filters let the curator keep
+ * `listByStatus` returns every matching row, which stops being fine the
+ * moment national pending rows land: a few thousand IMLS museums would bury
+ * every other metro's review in one unpaginated response. Region and source filters let the curator keep
  * working a single queue.
  *
  * Returns the page plus the unpaginated total so the UI can show "1–50 of N"
@@ -111,9 +110,8 @@ export async function listItemsForAdmin(
  * Distinct regions and source_types present at a given status, with counts.
  *
  * The admin filter dropdowns are populated from this rather than a hardcoded
- * list. The `source_type` CHECK constraint carries ~70 values while the
- * TypeScript union carries 12 — any hand-maintained copy would be wrong the
- * day a new aggregator lands, which is the exact drift class that made
+ * list: a hand-maintained copy of the `source_type` CHECK list would be wrong the
+ * day a new importer lands, which is the exact drift class that made
  * `ALL_CATEGORIES` a single source of truth. Reading the facets from the data
  * means the dropdown can only ever offer filters that would return rows.
  */
@@ -153,11 +151,11 @@ export async function upsert(db: D1Database, item: Item): Promise<void> {
       `INSERT INTO items (
         id, type, name, description, category, lat, lng, address,
         age_min, age_max, cost, price_usd, indoor, opening_hours,
-        start_time, end_time, rrule, exdates, photo_url, photo_attribution,
+        photo_url, photo_attribution,
         website, source_url, source_type, confidence, status, last_verified,
-        created_at, updated_at, crops, crops_state, in_season_now,
+        created_at, updated_at,
         region, city, attributes, slug, has_playground, name_zh
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       ON CONFLICT(id) DO UPDATE SET
         name=excluded.name,
         description=excluded.description,
@@ -171,10 +169,6 @@ export async function upsert(db: D1Database, item: Item): Promise<void> {
         price_usd=excluded.price_usd,
         indoor=excluded.indoor,
         opening_hours=excluded.opening_hours,
-        start_time=excluded.start_time,
-        end_time=excluded.end_time,
-        rrule=excluded.rrule,
-        exdates=excluded.exdates,
         -- Once a row has a backfilled photo (worker/scripts/backfill-photos.mjs,
         -- issue #299), a routine ingest re-run must not blank it back out — no
         -- importer today produces photo_url/photo_attribution (they always pass
@@ -190,9 +184,6 @@ export async function upsert(db: D1Database, item: Item): Promise<void> {
         confidence=excluded.confidence,
         last_verified=excluded.last_verified,
         updated_at=excluded.updated_at,
-        crops=excluded.crops,
-        crops_state=excluded.crops_state,
-        in_season_now=excluded.in_season_now,
         region=excluded.region,
         city=excluded.city,
         attributes=excluded.attributes,
@@ -218,12 +209,8 @@ export async function upsert(db: D1Database, item: Item): Promise<void> {
     .bind(
       item.id, item.type, item.name, item.description, item.category, item.lat, item.lng, item.address,
       item.age_min, item.age_max, item.cost, item.price_usd, item.indoor, item.opening_hours,
-      item.start_time, item.end_time, item.rrule, item.exdates ? JSON.stringify(item.exdates) : null,
       item.photo_url, item.photo_attribution, item.website, item.source_url, item.source_type, item.confidence, item.status,
       item.last_verified, item.created_at, item.updated_at,
-      item.crops ? JSON.stringify(item.crops) : null,
-      item.crops_state ? JSON.stringify(item.crops_state) : null,
-      item.in_season_now,
       item.region ?? DEFAULT_REGION,
       item.city ?? null,
       item.attributes ? JSON.stringify(item.attributes) : null,
@@ -293,54 +280,6 @@ export async function setNameZh(db: D1Database, id: string, nameZh: string | nul
     .run()
 }
 
-// The #679 sample measures EVENT date/time/venue accuracy, so the quality gate
-// holds only event rows (same predicate as shared/eventsGate.ts: category OR
-// type 'event'); places from a held source_type still bulk-approve.
-const EVENT_ROW_SQL = "(category = 'event' OR type = 'event')"
-
-/** Pending EVENT row counts per source_type behind the same filter approveAllPending uses. */
-export async function pendingEventCountsBySource(
-  db: D1Database,
-  q: { region?: string; sourceType?: string },
-): Promise<{ source_type: string; n: number }[]> {
-  const where = ["status = 'pending'", EVENT_ROW_SQL]
-  const params: string[] = []
-  if (q.region) { where.push('region = ?'); params.push(q.region) }
-  if (q.sourceType) { where.push('source_type = ?'); params.push(q.sourceType) }
-  const { results } = await db
-    .prepare(`SELECT source_type, COUNT(*) AS n FROM items WHERE ${where.join(' AND ')} GROUP BY source_type`)
-    .bind(...params)
-    .all<{ source_type: string; n: number }>()
-  return results
-}
-
-/**
- * Approve every `pending` row behind an admin-queue filter in ONE statement.
- * Backs `POST /api/admin/items/approve-all` — a 21k-row weekly batch is
- * otherwise 21k sequential per-id approves from the browser (#659). Returns
- * the number of rows flipped so the UI can confirm what actually happened.
- * `holdEventSourceTypes` (quality gate, #679) leaves the EVENT rows of those
- * source_types pending; their place rows still approve.
- */
-export async function approveAllPending(
-  db: D1Database,
-  q: { region?: string; sourceType?: string; holdEventSourceTypes?: string[] },
-): Promise<number> {
-  const where = ["status = 'pending'"]
-  const params: string[] = [new Date().toISOString()]
-  if (q.holdEventSourceTypes && q.holdEventSourceTypes.length > 0) {
-    where.push(`NOT (source_type IN (${q.holdEventSourceTypes.map(() => '?').join(',')}) AND ${EVENT_ROW_SQL})`)
-    params.push(...q.holdEventSourceTypes)
-  }
-  if (q.region) { where.push('region = ?'); params.push(q.region) }
-  if (q.sourceType) { where.push('source_type = ?'); params.push(q.sourceType) }
-  const res = await db
-    .prepare(`UPDATE items SET status = 'approved', updated_at = ? WHERE ${where.join(' AND ')}`)
-    .bind(...params)
-    .run()
-  return res.meta.changes ?? 0
-}
-
 export async function setStatus(db: D1Database, id: string, status: ItemStatus): Promise<void> {
   const now = new Date().toISOString()
   await db
@@ -351,7 +290,6 @@ export async function setStatus(db: D1Database, id: string, status: ItemStatus):
 
 type Row = {
   [K in keyof Item]:
-    Item[K] extends string[] | null ? string | null :
     Item[K] extends Record<string, unknown> | null ? string | null :
     Item[K]
 }
@@ -364,9 +302,6 @@ function safeJsonParse<T>(raw: string | null): T | null {
 function rowToItem(row: Row): Item {
   return {
     ...row,
-    exdates: row.exdates ? (JSON.parse(row.exdates as unknown as string) as string[]) : null,
-    crops: safeJsonParse<string[]>(row.crops as unknown as string | null),
-    crops_state: safeJsonParse<Record<string, CropState>>(row.crops_state as unknown as string | null),
     attributes: safeJsonParse<Record<string, unknown>>(row.attributes as unknown as string | null),
   } as Item
 }

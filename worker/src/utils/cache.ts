@@ -19,7 +19,7 @@ import { publishedMetros } from '@shared/metros'
  */
 export async function purgeItemsCache(frontendUrl: string): Promise<void> {
   const cache = caches.default
-  const bases = [frontendUrl.replace(/\/$/, ''), 'https://api.funradar.app']
+  const bases = [frontendUrl.replace(/\/$/, ''), 'https://api.frolicmap.app']
   const paths = [
     '/api/items.json',
     ...publishedMetros().map((m) => `/api/items.json?region=${encodeURIComponent(m.id)}`),
@@ -39,7 +39,7 @@ export async function purgeItemsCache(frontendUrl: string): Promise<void> {
  */
 export async function purgeItemDetailCache(frontendUrl: string, id: string): Promise<void> {
   const cache = caches.default
-  const bases = [frontendUrl.replace(/\/$/, ''), 'https://api.funradar.app']
+  const bases = [frontendUrl.replace(/\/$/, ''), 'https://api.frolicmap.app']
   const encoded = encodeURIComponent(id)
   await Promise.all(bases.map((base) => cache.delete(`${base}/api/items/${encoded}`)))
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { tileBbox, buildTile, resolvePrimaryCropEmoji, fairCapByCategory, tileFeatureProperties, warnIfTileCapped } from '../src/utils/tile'
+import { tileBbox, buildTile, fairCapByCategory, tileFeatureProperties, warnIfTileCapped } from '../src/utils/tile'
 
 describe('tileBbox', () => {
   it('z=0 single tile covers the whole world', () => {
@@ -61,7 +61,7 @@ describe('buildTile', () => {
   })
 })
 
-describe('tileFeatureProperties (#250 Phase 2d2 step (a))', () => {
+describe('tileFeatureProperties', () => {
   const base = { id: 'a', name: 'Test Park', category: 'park', type: 'place' as const, lat: 37.7, lng: -122.4 }
 
   it('includes only the base fields when the filter fields are absent', () => {
@@ -74,7 +74,6 @@ describe('tileFeatureProperties (#250 Phase 2d2 step (a))', () => {
     expect(tileFeatureProperties({
       ...base,
       age_min: null, age_max: null, cost: null, indoor: null,
-      start_time: null, end_time: null, rrule: null, exdates: null,
     })).toEqual({
       id: 'a', name: 'Test Park', category: 'park', type: 'place',
     })
@@ -84,85 +83,14 @@ describe('tileFeatureProperties (#250 Phase 2d2 step (a))', () => {
     expect(tileFeatureProperties({
       ...base,
       age_min: 0, age_max: 12, cost: 'free', indoor: 0,
-      start_time: '2026-09-01T10:00:00Z', end_time: '2026-09-01T12:00:00Z',
-      rrule: 'FREQ=WEEKLY', exdates: '["2026-09-08"]',
     })).toEqual({
       id: 'a', name: 'Test Park', category: 'park', type: 'place',
       age_min: 0, age_max: 12, cost: 'free', indoor: 0,
-      start_time: '2026-09-01T10:00:00Z', end_time: '2026-09-01T12:00:00Z',
-      rrule: 'FREQ=WEEKLY', exdates: '["2026-09-08"]',
-    })
-  })
-
-  it('still includes primary_crop_emoji alongside the widened fields', () => {
-    expect(tileFeatureProperties({ ...base, primary_crop_emoji: '🍓', cost: 'paid' })).toEqual({
-      id: 'a', name: 'Test Park', category: 'park', type: 'place',
-      primary_crop_emoji: '🍓', cost: 'paid',
     })
   })
 })
 
-describe('resolvePrimaryCropEmoji', () => {
-  it('returns one emoji when a single crop is ripe', () => {
-    expect(
-      resolvePrimaryCropEmoji(
-        JSON.stringify(['strawberry', 'cherry']),
-        JSON.stringify({ strawberry: 'ripe', cherry: 'next' }),
-      ),
-    ).toBe('🍓')
-  })
-
-  it('returns the first ripe crop when several are ripe', () => {
-    // Pin shows a single emoji to stay legible at pin size on mobile —
-    // the popup's ripeness row enumerates all ripe crops.
-    expect(
-      resolvePrimaryCropEmoji(
-        JSON.stringify(['strawberry', 'cherry', 'peach']),
-        JSON.stringify({ strawberry: 'ripe', cherry: 'ripe', peach: 'ripe' }),
-      ),
-    ).toBe('🍓')
-  })
-
-  it('falls back to the first "next" crop when nothing is ripe', () => {
-    expect(
-      resolvePrimaryCropEmoji(
-        JSON.stringify(['peach', 'cherry']),
-        JSON.stringify({ peach: 'future', cherry: 'next' }),
-      ),
-    ).toBe('🍒')
-  })
-
-  it('falls back to crops[0] when nothing is ripe or next', () => {
-    expect(
-      resolvePrimaryCropEmoji(
-        JSON.stringify(['peach', 'apricot']),
-        JSON.stringify({ peach: 'future', apricot: 'future' }),
-      ),
-    ).toBe('🍑')
-  })
-
-  it('returns undefined for malformed JSON', () => {
-    expect(resolvePrimaryCropEmoji('{not-json', '{also-not-json')).toBeUndefined()
-  })
-
-  it('returns undefined for an empty crops array', () => {
-    expect(resolvePrimaryCropEmoji('[]', '{}')).toBeUndefined()
-  })
-
-  it('accepts already-parsed objects (not just strings)', () => {
-    expect(
-      resolvePrimaryCropEmoji(['cherry'], { cherry: 'ripe' }),
-    ).toBe('🍒')
-  })
-
-  it('treats null crops_state as all-unknown and falls back to crops[0]', () => {
-    expect(
-      resolvePrimaryCropEmoji(JSON.stringify(['cherry']), null),
-    ).toBe('🍒')
-  })
-})
-
-describe('warnIfTileCapped (#250 — not one of 2d2\'s lettered steps; an added coverage/tuning signal)', () => {
+describe('warnIfTileCapped', () => {
   it('warns with z/x/y and counts when the row count reaches the cap', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     warnIfTileCapped(10, 163, 395, 10000, 10000)
@@ -205,18 +133,18 @@ describe('fairCapByCategory (#424)', () => {
   it('does not wipe out a small alphabetically-late category when the cap binds', () => {
     // Reproduces the #424 failure mode: `ORDER BY category ... LIMIT N`
     // would keep all of 'museum'/'park' (early alphabetically) and drop
-    // all of 'upick'/'waterplay' (late) once the row count crosses the
+    // all of 'zoo'/'waterplay' (late) once the row count crosses the
     // cap. A fair cap must keep at least one of every category present.
     const rows = [
       ...rowsFor('museum', 400),
       ...rowsFor('park', 400),
-      ...rowsFor('upick', 400),
+      ...rowsFor('zoo', 400),
       ...rowsFor('waterplay', 400),
     ]
     const capped = fairCapByCategory(rows, 200)
     expect(capped.length).toBe(200)
     const seenCategories = new Set(capped.map((r) => r.category))
-    expect(seenCategories).toEqual(new Set(['museum', 'park', 'upick', 'waterplay']))
+    expect(seenCategories).toEqual(new Set(['museum', 'park', 'zoo', 'waterplay']))
   })
 
   it('thins every category by roughly the same share, not by category order', () => {
@@ -245,7 +173,7 @@ describe('fairCapByCategory (#424)', () => {
       { id: 'museum-1', category: 'museum' },
       { id: 'park-1', category: 'park' },
       { id: 'park-2', category: 'park' },
-      { id: 'upick-1', category: 'upick' },
+      { id: 'zoo-1', category: 'zoo' },
     ]
     const capped = fairCapByCategory(rows, 3)
     // Whatever survives must appear in the same relative order it had in

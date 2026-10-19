@@ -31,20 +31,16 @@ export function buildOverpassQuery(category: Category): string {
 }
 
 /**
- * Bay Area element→Item mapping.
+ * Bay Area element->Item mapping.
  *
- * NOTE on `confidence: 'high'` — plan §1.6 classifies raw single-source OSM
- * as Tier C (`'medium'`), and the national bootstrap emits exactly that. This
- * Bay path deliberately keeps `'high'`: flipping it would re-tier thousands
- * of existing approved Bay rows on the next quarterly run, which is a data
- * decision for the curator, not a side effect of the national plumbing. The
- * inconsistency is intentional and tracked — see the #352 PR discussion.
+ * `confidence: 'medium'` is the Tier C classification for raw single-source
+ * OSM data (the national bootstrap emits the same value).
  */
 export function overpassElementToItem(el: OverpassElement, category: Category): Item | null {
   return toItem(el, category, {
     region: DEFAULT_REGION,
     bbox: CONTENT_BBOX,
-    confidence: 'high',
+    confidence: 'medium',
     status: 'pending',
   })
 }
@@ -118,7 +114,7 @@ async function postOverpass(query: string, deps: OverpassDeps = {}) {
         'content-type': 'application/x-www-form-urlencoded',
         // Overpass asks clients to identify themselves so its operators can
         // reach out rather than silently blocking.
-        'user-agent': 'funradar-app/osm-cron (+https://funradar.app)',
+        'user-agent': 'frolicmap/osm-cron (+https://frolicmap.app)',
       },
     })
     const delay = retryDelayMs(res, attempt)

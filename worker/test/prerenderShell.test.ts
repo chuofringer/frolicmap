@@ -72,11 +72,11 @@ describe('renderCityShell', () => {
   })
 
   it('points canonical, og:url and twitter:url at this metro’s /cities page', () => {
-    for (const attr of ['href="https://funradar.app/cities/seattle"', 'content="https://funradar.app/cities/seattle"']) {
+    for (const attr of ['href="https://frolicmap.app/cities/seattle"', 'content="https://frolicmap.app/cities/seattle"']) {
       expect(page.html).toContain(attr)
     }
     // No lingering homepage canonical — the duplicate-content failure mode.
-    expect(page.html).not.toContain('<link rel="canonical" href="https://funradar.app/" />')
+    expect(page.html).not.toContain('<link rel="canonical" href="https://frolicmap.app/" />')
   })
 
   it('rewrites og:image:alt per metro, carrying the same full legend list as the title', () => {
@@ -84,7 +84,7 @@ describe('renderCityShell', () => {
     // the alt describes the product per-city rather than the Bay pixels — and
     // lists all categories rather than trailing off with "and more".
     expect(page.html).toContain(
-      `content="Seattle kids activities map on funradar.app — ${LEGEND_LIST}."`,
+      `content="Seattle kids activities map on frolicmap.app — ${LEGEND_LIST}."`,
     )
     expect(page.html).not.toContain('Map of the SF Bay Area')
   })
@@ -158,8 +158,8 @@ describe('renderCityShell', () => {
 
   it('rewrites JSON-LD to this metro’s URL, not the homepage WebSite + SearchAction', () => {
     expect(page.html).toContain('"@type": "WebPage"')
-    expect(page.html).toContain('"url": "https://funradar.app/cities/seattle"')
-    expect(page.html).not.toContain('https://funradar.app/?q={search_term_string}')
+    expect(page.html).toContain('"url": "https://frolicmap.app/cities/seattle"')
+    expect(page.html).not.toContain('https://frolicmap.app/?q={search_term_string}')
     expect(page.html).not.toContain('across the SF Bay Area')
   })
 })
