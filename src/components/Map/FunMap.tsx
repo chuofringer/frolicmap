@@ -14,6 +14,7 @@ import { applyFilters } from '@/utils/filters'
 import { trackGoal, trackMetroView } from '@/utils/analytics'
 import { openItemDetail } from '@/utils/openItem'
 import { ItemSource } from './ItemSource'
+import { installEmojiIcons } from './emojiIcons'
 import { NearbyOverlay } from './NearbyOverlay'
 import { SearchMarker } from './SearchMarker'
 import { StackedFeatureList } from '@/components/Panel/StackedFeatureList'
@@ -59,6 +60,10 @@ export function FunMap() {
   const onRef = useCallback((node: MapRef | null) => {
     mapRef.current = node
     setMapInstance(node)
+    // Pin glyph images (`emoji-*`) are supplied lazily via `styleimagemissing`;
+    // the listener lives on the MapLibre instance, so it survives basemap
+    // switches and is re-installed on the metro-keyed remount.
+    if (node) installEmojiIcons(node.getMap())
   }, [setMapInstance])
 
   const pendingCloseRef = useRef<number | null>(null)

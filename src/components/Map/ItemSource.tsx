@@ -3,7 +3,8 @@ import { Source, Layer } from 'react-map-gl/maplibre'
 import type { ListItem } from '@shared/types'
 import { API_BASE } from '@/config/constants'
 import { useSessionStore } from '@/stores/useSessionStore'
-import { CATEGORY_COLOR_EXPR, EMOJI_EXPR } from './pinExpressions'
+import { CATEGORY_COLOR_EXPR, EMOJI_ICON_EXPR } from './pinExpressions'
+import { EMOJI_ICON_FONT_PX } from './emojiIcons'
 
 interface Props { items: ListItem[]; selectedId?: string | null }
 
@@ -123,14 +124,17 @@ export function ItemSource({ items, selectedId }: Props) {
         filter={filter}
         minzoom={13}
         layout={{
-          'text-field': EMOJI_EXPR,
-          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9, 18, 14],
-          // Explicit centring: with the U+FE0F stripped (see pinExpressions.ts)
-          // the glyph must sit on the circle centre for every category.
-          'text-anchor': 'center',
-          'text-offset': [0, 0],
-          'text-allow-overlap': true,
-          'text-ignore-placement': true,
+          // Icon images, not text: MapLibre lays an emoji `text-field` out
+          // with Latin line metrics and it lands up-and-left of the circle
+          // centre (see emojiIcons.ts). The `emoji-*` images are rasterised
+          // on demand by `installEmojiIcons` (FunMap) with the glyph's real
+          // ink centred, so `icon-anchor: center` puts it on the circle.
+          'icon-image': EMOJI_ICON_EXPR,
+          // Same on-screen size the old `text-size` 9→14 px ramp gave.
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 9 / EMOJI_ICON_FONT_PX, 18, 14 / EMOJI_ICON_FONT_PX],
+          'icon-anchor': 'center',
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
         }}
       />
     </Source>
