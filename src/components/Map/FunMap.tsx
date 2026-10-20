@@ -45,6 +45,12 @@ export function FunMap() {
   // Viewport comes from the metro registry (#358) rather than the Bay-pinned
   // constants, so /cities/{metro} opens over the right city.
   const metro = useMetro()
+  // react-map-gl 8.1.x types `maxBounds` as the flat [west, south, east, north]
+  // form; MapLibre accepts it and the nested registry shape interchangeably.
+  const maxBounds = useMemo<[number, number, number, number]>(() => {
+    const [[west, south], [east, north]] = metro.viewportBounds
+    return [west, south, east, north]
+  }, [metro.viewportBounds])
   const mapRef = useRef<MapRef | null>(null)
   const hoveredIdRef = useRef<number | string | null>(null)
   const { data } = useItems()
@@ -172,7 +178,7 @@ export function FunMap() {
       key={metro.id}
       initialViewState={metro.initialView}
       mapStyle={getBasemapStyle(basemap)}
-      maxBounds={metro.viewportBounds}
+      maxBounds={maxBounds}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       transformRequest={transformRequest}
