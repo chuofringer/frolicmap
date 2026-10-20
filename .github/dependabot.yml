@@ -7,6 +7,13 @@ updates:
     groups:
       npm-root:
         patterns: ["*"]
+    # maplibre-gl and react-map-gl must be upgraded together: the wrapper reads
+    # the engine's camera API, so majors are done by hand.
+    ignore:
+      - dependency-name: "maplibre-gl"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-map-gl"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: "/worker"
     schedule:
