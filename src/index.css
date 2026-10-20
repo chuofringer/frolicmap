@@ -1,0 +1,62 @@
+@import 'tailwindcss';
+
+/* Dark mode toggled by .dark on the root element */
+@variant dark (.dark &);
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Horizontally-scrollable chip rows (consolidated search/filter bar) hide their
+   scrollbar — the row scrolls on touch/trackpad without a visible track. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* frolicmap popup — compact, rounded, no forced min-height */
+.frolicmap-popup .maplibregl-popup-content {
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05);
+}
+.dark .frolicmap-popup .maplibregl-popup-content {
+  background: #1e293b;
+  color: #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.frolicmap-popup .maplibregl-popup-close-button {
+  display: none;
+}
+.frolicmap-popup .maplibregl-popup-tip {
+  border-top-color: #ffffff;
+}
+.dark .frolicmap-popup .maplibregl-popup-tip {
+  border-top-color: #1e293b !important;
+}
+
+/* Map attribution (OpenStreetMap ODbL credit must stay visible). It sits
+   bottom-left; on phones lift it above the fixed bottom control bar (the bar
+   is 48px tall at ~12px from the bottom edge). */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-bottom-left {
+    margin-bottom: 64px;
+  }
+}

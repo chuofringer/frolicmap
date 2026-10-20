@@ -1,0 +1,236 @@
+{
+  "total": "10",
+  "limit": "50",
+  "start": "0",
+  "data": [
+    {
+      "id": "8747D8A2-8C57-45A3-8A26-4C4A5F6C0B0A",
+      "url": "https://www.nps.gov/gate/index.htm",
+      "fullName": "Gateway National Recreation Area",
+      "name": "Gateway",
+      "parkCode": "gate",
+      "designation": "National Recreation Area",
+      "states": "NJ,NY",
+      "latitude": "40.5755",
+      "longitude": "-73.9707",
+      "latLong": "lat:40.5755, long:-73.9707",
+      "description": "Where can you go to a beach, an airfield, tour a historic fort or visit a wildlife refuge? Where can a New Yorker go to feel a million miles away from the hustle and bustle of city life? Gateway of course, urban parks with wild sides.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "210 New York Avenue",
+          "line2": "",
+          "line3": "",
+          "city": "Staten Island",
+          "stateCode": "NY",
+          "postalCode": "10305"
+        },
+        {
+          "type": "Mailing",
+          "line1": "PO Box 12345",
+          "line2": "",
+          "line3": "",
+          "city": "Staten Island",
+          "stateCode": "NY",
+          "postalCode": "10305"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000002",
+      "url": "https://www.nps.gov/goga/index.htm",
+      "fullName": "Golden Gate National Recreation Area",
+      "name": "Golden Gate",
+      "parkCode": "goga",
+      "designation": "National Recreation Area",
+      "states": "CA",
+      "latitude": "37.8",
+      "longitude": "-122.5",
+      "latLong": "lat:37.8, long:-122.5",
+      "description": "Golden Gate National Recreation Area preserves a stretch of California coast around San Francisco Bay.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "201 Fort Mason",
+          "line2": "",
+          "line3": "",
+          "city": "San Francisco",
+          "stateCode": "CA",
+          "postalCode": "94123"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000003",
+      "url": "https://www.nps.gov/fiis/index.htm",
+      "fullName": "Fire Island National Seashore",
+      "name": "Fire Island",
+      "parkCode": "fiis",
+      "designation": "National Seashore",
+      "states": "NY",
+      "latitude": "40.65",
+      "longitude": "-73.5",
+      "latLong": "lat:40.65, long:-73.5",
+      "description": "Fire Island National Seashore offers barrier-island beaches, a maritime forest and historic lighthouse.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "120 Laurel Street",
+          "line2": "",
+          "line3": "",
+          "city": "Patchogue",
+          "stateCode": "NY",
+          "postalCode": "11772"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000004",
+      "url": "https://www.nps.gov/appa/index.htm",
+      "fullName": "Appalachian National Scenic Trail",
+      "name": "Appalachian",
+      "parkCode": "appa",
+      "designation": "National Scenic Trail",
+      "states": "CT,GA,MA,MD,ME,NC,NH,NJ,NY,PA,TN,VA,VT,WV",
+      "latitude": "42.4",
+      "longitude": "-71.1",
+      "latLong": "lat:42.4, long:-71.1",
+      "description": "The Appalachian Trail is a 2,190+ mile long public footpath that traverses the scenic, wooded, pastoral, wild, and culturally resonant lands of the Appalachian Mountains.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "P.O. Box 50",
+          "line2": "",
+          "line3": "",
+          "city": "Harpers Ferry",
+          "stateCode": "WV",
+          "postalCode": "25425"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000005",
+      "url": "https://www.nps.gov/yell/index.htm",
+      "fullName": "Yellowstone National Park",
+      "name": "Yellowstone",
+      "parkCode": "yell",
+      "designation": "National Park",
+      "states": "ID,MT,WY",
+      "latitude": "44.59824417",
+      "longitude": "-110.5471695",
+      "latLong": "lat:44.59824417, long:-110.5471695",
+      "description": "On March 1, 1872, Yellowstone became the first national park for all to enjoy the unique hydrothermal and geologic features.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "2 Officers Row",
+          "line2": "",
+          "line3": "",
+          "city": "Yellowstone National Park",
+          "stateCode": "WY",
+          "postalCode": "82190"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000006",
+      "url": "https://www.nps.gov/stli/index.htm",
+      "fullName": "Statue Of Liberty National Monument",
+      "name": "Statue Of Liberty",
+      "parkCode": "stli",
+      "designation": "National Monument",
+      "states": "NJ,NY",
+      "latitude": "40.6892",
+      "longitude": "-74.0445",
+      "latLong": "lat:40.6892, long:-74.0445",
+      "description": "Universal symbol of freedom and democracy, the Statue of Liberty was a joint effort between France and the United States.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "Liberty Island",
+          "line2": "",
+          "line3": "",
+          "city": "New York",
+          "stateCode": "NY",
+          "postalCode": "10004"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000007",
+      "url": "https://www.nps.gov/trte/index.htm",
+      "fullName": "Trail Of Tears National Historic Trail",
+      "name": "Trail Of Tears",
+      "parkCode": "trte",
+      "designation": "National Historic Trail",
+      "states": "AL,AR,GA,IL,KY,MO,NC,OK,TN",
+      "latitude": "35.15",
+      "longitude": "-90.05",
+      "latLong": "lat:35.15, long:-90.05",
+      "description": "Remember and commemorate the survival of the Cherokee people, forcefully removed from their homelands in Georgia, Alabama, and Tennessee.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "1100 Ozark Highlands Rd",
+          "line2": "",
+          "line3": "",
+          "city": "Memphis",
+          "stateCode": "TN",
+          "postalCode": "38103"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000008",
+      "url": "https://www.nps.gov/frdo/index.htm",
+      "fullName": "Frederick Douglass National Historic Site",
+      "name": "Frederick Douglass",
+      "parkCode": "frdo",
+      "designation": "National Historic Site",
+      "states": "DC",
+      "latitude": "38.8617",
+      "longitude": "-76.9857",
+      "latLong": "lat:38.8617, long:-76.9857",
+      "description": "Frederick Douglass spent his life fighting for justice and equality. Born into slavery in 1818, he escaped as a young man and became a leading voice in the abolitionist movement.",
+      "addresses": [
+        {
+          "type": "Physical",
+          "line1": "1411 W Street SE",
+          "line2": "",
+          "line3": "",
+          "city": "Washington",
+          "stateCode": "DC",
+          "postalCode": "20020"
+        }
+      ]
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000009",
+      "url": "https://www.nps.gov/cont/index.htm",
+      "fullName": "Contested Corner National Recreation Area",
+      "name": "Contested Corner",
+      "parkCode": "cont",
+      "designation": "National Recreation Area",
+      "states": "MD",
+      "latitude": "39.15",
+      "longitude": "-76.82",
+      "latLong": "lat:39.15, long:-76.82",
+      "description": "A synthetic fixture unit whose coordinate falls inside both the Washington and Baltimore bboxes, exercising the metroForCoords cede-to-larger-metro tie-break.",
+      "addresses": []
+    },
+    {
+      "id": "6DDBA9C6-1234-4321-ABCD-000000000010",
+      "url": "https://www.nps.gov/noco/index.htm",
+      "fullName": "No Coordinates National Park",
+      "name": "No Coordinates",
+      "parkCode": "noco",
+      "designation": "National Park",
+      "states": "XX",
+      "latitude": "",
+      "longitude": "",
+      "latLong": "",
+      "description": "A synthetic fixture unit with no point coordinate, exercising the empty-latitude skip.",
+      "addresses": []
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+name = "frolicmap-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The API is only meant to be reached through the two routes below: no
+# *.workers.dev hostname and no per-version preview URLs.
+workers_dev = false
+preview_urls = false
+
+# Two routes serve the same handler. The apex `frolicmap.app/api/*` keeps the
+# SPA same-origin (corporate web filters often block young subdomains);
+# `api.frolicmap.app/*` serves the same read-only handler on a dedicated host.
+[[routes]]
+pattern = "api.frolicmap.app/*"
+zone_name = "frolicmap.app"
+
+[[routes]]
+pattern = "frolicmap.app/api/*"
+zone_name = "frolicmap.app"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "frolicmap-prod"
+# The production database identifier. It is an identifier, not a secret.
+database_id = "90c0e87b-6485-4004-9f2a-f49008dc1a24"
+migrations_dir = "migrations"
+
+# Four per-IP rate limiters (first layer, per isolate). The list endpoint is a
+# bulk-export surface (one call yields the full ListItem catalog), so it burns
+# aggressively (10/min/IP). Session mints (`POST /api/session`) have their own
+# budget (30/min/IP) so a user who reloads often is not locked out. The detail and
+# coords endpoints are per-click, per-pin, so they get a looser budget
+# (60/min/IP). Tiles get their own, loosest budget (300/min/IP) because one
+# pan or zoom fires 4-10 tile requests at once. Each family spends only its own
+# budget, so tile traffic never eats a power user's detail taps.
+#
+# Uses the Workers Rate Limiting binding, so these do NOT consume Cloudflare
+# dashboard rate-limit rules.
+[[unsafe.bindings]]
+name = "ITEMS_RATE_LIMITER"
+type = "ratelimit"
+# Account-scoped namespace id; keep it project-unique.
+namespace_id = "2026101901"
+simple = { limit = 10, period = 60 }
+
+[[unsafe.bindings]]
+name = "ITEMS_DETAIL_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "2026101902"
+simple = { limit = 60, period = 60 }
+
+[[unsafe.bindings]]
+name = "ITEMS_TILES_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "2026101903"
+simple = { limit = 300, period = 60 }
+
+[[unsafe.bindings]]
+name = "SESSION_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "2026101904"
+simple = { limit = 30, period = 60 }
+
+# A Durable Object backs the SECOND, globally-consistent rate-limit layer that
+# sits behind the four per-isolate `ITEMS_*_RATE_LIMITER` bindings above. See
+# `src/do/RateLimiterDO.ts` (algorithm) and `src/utils/globalRateLimit.ts`
+# (call sites, one DO instance per (scope, subject)). `new_sqlite_classes` is
+# the SQLite-backed storage flavor (free-tier eligible).
+[[durable_objects.bindings]]
+name = "RATE_LIMITER_DO"
+class_name = "RateLimiterDO"
+
+[[migrations]]
+tag = "v1-rate-limiter-do"
+new_sqlite_classes = ["RateLimiterDO"]
