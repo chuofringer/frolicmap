@@ -156,7 +156,6 @@ secrets on `production`).
 | `CLOUDFLARE_ACCOUNT_ID` | The Account ID from `wrangler whoami` (or the dashboard sidebar). |
 | `CLOUDFLARE_API_TOKEN` | A token created in the dashboard (My Profile > API Tokens > Create Token > *Create Custom Token*) with **Account** permissions: *Workers Scripts: Edit*, *D1: Edit*, *Cloudflare Pages: Edit*, *Account Settings: Read*. Scope it to this account. |
 | `VITE_CF_BEAM_TOKEN` | Optional. The Cloudflare Web Analytics beacon token. If unset, the build strips the beacon tag. |
-| `ANTHROPIC_API_KEY` | Optional. Enables the Security Review workflow on pull requests. |
 
 Because `wrangler.toml` declares routes, `wrangler deploy` also calls the zone's
 Workers Routes API. If *Deploy Worker* fails with an authentication error on the
