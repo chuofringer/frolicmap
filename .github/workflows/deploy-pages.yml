@@ -1,0 +1,87 @@
+name: Deploy Pages
+# CI-driven direct upload of the SPA + generated SEO pages to Cloudflare Pages.
+#
+# The Pages build container has NO D1 access, so it can never emit the static
+# SEO pages the generator reads out of D1. This job generates them here, where
+# the CLOUDFLARE_API_TOKEN can reach remote D1, then direct-uploads dist/.
+#
+# ONE MANUAL OPERATOR STEP (cannot be done from the repo): do not connect the
+# Pages project to Git integration in the Cloudflare dashboard. A Git-integration
+# auto-build would race this workflow on every push to main, and its output is
+# missing every SEO page.
+on:
+  push:
+    branches: [main]
+  # After loading data into D1, run this workflow by hand (Actions > Deploy
+  # Pages > Run workflow): the generator reads live D1, so new rows only show
+  # up in the city pages after a rebuild. There is no schedule.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Serialize runs of this workflow: overlapping runs queue instead of racing.
+# cancel-in-progress:false so an in-flight upload always finishes rather than
+# leaving a half-deployed dist/.
+#
+# This group is separate from deploy-worker.yml's, so the two workflows no
+# longer queue against each other. That is acceptable: D1 migrations are
+# additive, and this workflow's `seo:remote` step only reads from D1.
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # workflow_dispatch can be started from any branch; only main may reach
+    # the deploy secrets.
+    if: github.ref == 'refs/heads/main'
+    # Runs in the `production` GitHub environment (deployment branches
+    # restricted to `main`; see docs/setup-cloudflare.md).
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Node 22: build-seo-pages.mjs strips TypeScript from shared/*.ts at
+      # runtime and needs Node >= 22.6 for it (it hard-exits below that).
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            worker/package-lock.json
+      - run: npm ci
+      # wrangler is a devDependency of worker/ (not the root), and the SEO
+      # generator shells out to `npx wrangler d1 execute` with cwd=worker/,
+      # so worker deps must be installed before seo:remote and the deploy.
+      - run: npm ci
+        working-directory: worker
+      # VITE_CF_BEAM_TOKEN is an OPTIONAL secret: the Cloudflare Web Analytics
+      # beacon token index.html embeds via %VITE_CF_BEAM_TOKEN%. If it is
+      # unset, vite.config.ts strips the beacon tag instead of shipping a
+      # broken one, so this step is deploy-safe either way.
+      - run: npm run build
+        env:
+          VITE_CF_BEAM_TOKEN: ${{ secrets.VITE_CF_BEAM_TOKEN }}
+      # Fail loudly if the SPA shell is missing: the generator silently SKIPS
+      # the /cities/{metro} prerender when dist/index.html is absent, which
+      # would ship a site with no interactive map links.
+      - name: Guard - SPA shell present
+        run: test -f dist/index.html || { echo "::error::dist/index.html missing after build - vite build did not run"; exit 1; }
+      # Reads published metros' approved rows from REMOTE D1 and writes static
+      # HTML into dist/ alongside the SPA. No step writes to D1.
+      - run: npm run seo:remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Direct upload via worker/'s pinned wrangler. dist/ lives at the repo
+      # root, hence ../dist from worker/. --branch=main marks it a PRODUCTION
+      # deploy; --commit-dirty=true because dist/ is full of generated files
+      # git doesn't track.
+      - name: Deploy to Pages
+        working-directory: worker
+        run: npx wrangler pages deploy ../dist --project-name=frolicmap --branch=main --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

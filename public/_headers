@@ -1,0 +1,7 @@
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://api.frolicmap.app https://tiles.openfreemap.org https://basemap.nationalmap.gov https://nominatim.openstreetmap.org https://cloudflareinsights.com https://static.cloudflareinsights.com; img-src 'self' data: blob: https://tiles.openfreemap.org https://basemap.nationalmap.gov https://upload.wikimedia.org https://commons.wikimedia.org; style-src 'self' 'unsafe-inline'; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'

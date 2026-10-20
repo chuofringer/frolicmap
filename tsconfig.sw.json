@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.sw.tsbuildinfo",
+    "target": "es2023",
+    // WebWorker, not DOM — `self` in a service worker is a
+    // `ServiceWorkerGlobalScope`, not a `Window`. The two libs declare
+    // conflicting globals, so `src/sw.ts` needs its own TS project rather
+    // than living in tsconfig.app.json's browser-app project (excluded there
+    // for the same reason `shared/__tests__` is excluded from it — see
+    // tsconfig.node.json).
+    "lib": ["ES2023", "WebWorker"],
+    "module": "esnext",
+    "types": [],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/sw.ts"]
+}
