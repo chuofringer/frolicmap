@@ -138,18 +138,22 @@ function devicePixelRatioClamped(): number {
 const installed = new WeakSet<MapLibreMap>()
 
 /**
- * Supplies the `emoji-*` icon images on demand. MapLibre fires
- * `styleimagemissing` the first time a symbol layer asks for an id the style
- * has no image for — on first paint and again after every basemap switch
- * (a style reload drops registered images) — so one listener covers both.
+ * Supplies the `emoji-*` icon images on demand.
+ *
+ * Registered through `setMissingStyleImageResolver`, NOT the `styleimagemissing`
+ * event: MapLibre ≥ 6 awaits the resolver *before* a symbol tile's image lookup,
+ * whereas the event fires only after that lookup has already failed — an image
+ * added from the event is too late for the tile that asked, which then renders
+ * its pins with no glyph. The resolver is kept on the Map (not the Style), so
+ * it survives basemap switches, which reload the style and drop its images.
  */
 export function installEmojiIcons(map: MapLibreMap): void {
   if (installed.has(map)) return
   installed.add(map)
-  map.on('styleimagemissing', (e: { id: string }) => {
-    const emoji = emojiForIconId(e.id)
-    if (emoji === null || map.hasImage(e.id)) return
+  map.setMissingStyleImageResolver((id: string) => {
+    const emoji = emojiForIconId(id)
+    if (emoji === null || map.hasImage(id)) return
     const icon = rasterizeEmoji(emoji, devicePixelRatioClamped())
-    if (icon) map.addImage(e.id, icon, { pixelRatio: icon.pixelRatio })
+    if (icon) map.addImage(id, icon, { pixelRatio: icon.pixelRatio })
   })
 }

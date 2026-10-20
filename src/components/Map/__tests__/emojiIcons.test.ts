@@ -6,8 +6,10 @@ import {
   emojiForIconId,
   emojiIconId,
   inkBounds,
+  installEmojiIcons,
   rasterizeEmoji,
 } from '../emojiIcons'
+import type { Map as MapLibreMap } from 'maplibre-gl'
 
 describe('emoji icon ids', () => {
   it('round-trips every category and the fallback', () => {
@@ -47,10 +49,7 @@ describe('inkBounds', () => {
 // "draws" an off-centre blob and records how the output canvas was composed.
 // The thing under test is the centring arithmetic, not the browser's text
 // engine.
-describe('rasterizeEmoji', () => {
-  afterEach(() => vi.restoreAllMocks())
-
-  function fakeCanvases(blob: { x: number; y: number; w: number; h: number } | null) {
+function fakeCanvases(blob: { x: number; y: number; w: number; h: number } | null) {
     const drawImageCalls: number[][] = []
     const fonts: string[] = []
     let nth = 0
@@ -77,7 +76,10 @@ describe('rasterizeEmoji', () => {
       return canvas
     }) as typeof document.createElement)
     return { drawImageCalls, fonts }
-  }
+}
+
+describe('rasterizeEmoji', () => {
+  afterEach(() => vi.restoreAllMocks())
 
   it('crops to the ink and centres it on a square image at the given pixel ratio', () => {
     // A 20×12 blob drawn well off the scratch centre.
@@ -104,5 +106,48 @@ describe('rasterizeEmoji', () => {
   it('returns null when the font drew nothing (no emoji font on the platform)', () => {
     fakeCanvases(null)
     expect(rasterizeEmoji('🏛️', 1)).toBeNull()
+  })
+})
+
+// MapLibre ≥ 6 awaits `setMissingStyleImageResolver` BEFORE a tile's image
+// lookup; the `styleimagemissing` event fires only after the lookup failed, so
+// an image added from the event misses the tile that asked (pins drew with no
+// glyph on the first deploy). The resolver must be the registration path.
+describe('installEmojiIcons', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  function fakeMap() {
+    const images = new Map<string, { pixelRatio?: number }>()
+    let resolver: ((id: string) => void | Promise<void>) | null = null
+    const map = {
+      setMissingStyleImageResolver: vi.fn((r: typeof resolver) => { resolver = r }),
+      on: vi.fn(),
+      hasImage: (id: string) => images.has(id),
+      addImage: vi.fn((id: string, _img: unknown, opts?: { pixelRatio?: number }) => { images.set(id, opts ?? {}) }),
+    }
+    return { map: map as unknown as MapLibreMap, images, resolve: (id: string) => resolver!(id) }
+  }
+
+  it('registers a resolver (not only the late event) and rasterises our ids on demand', () => {
+    fakeCanvases({ x: 10, y: 10, w: 20, h: 20 })
+    const { map, images, resolve } = fakeMap()
+    installEmojiIcons(map)
+    expect(map.setMissingStyleImageResolver).toHaveBeenCalledTimes(1)
+    resolve(emojiIconId('museum'))
+    expect(images.has('emoji-museum')).toBe(true)
+    expect(images.get('emoji-museum')!.pixelRatio).toBeGreaterThanOrEqual(1)
+  })
+
+  it('ignores foreign ids and never re-adds an existing image; installs once per map', () => {
+    fakeCanvases({ x: 10, y: 10, w: 20, h: 20 })
+    const { map, resolve } = fakeMap()
+    installEmojiIcons(map)
+    installEmojiIcons(map)
+    expect(map.setMissingStyleImageResolver).toHaveBeenCalledTimes(1)
+    resolve('poi_museum')
+    expect(map.addImage).not.toHaveBeenCalled()
+    resolve('emoji-park')
+    resolve('emoji-park')
+    expect(map.addImage).toHaveBeenCalledTimes(1)
   })
 })
