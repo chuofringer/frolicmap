@@ -98,12 +98,43 @@ export function commonsImageInfoUrl(title) {
   return `https://commons.wikimedia.org/w/api.php?${params.toString()}`
 }
 
-/** Strip HTML tags and collapse whitespace — Commons' `Artist` field is a raw HTML fragment. */
+const NAMED_ENTITIES = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+}
+
+/** Resolve one entity match (`&name;`, `&#NNN;`, `&#xHH;`); unknown or invalid ones are left as-is. */
+function decodeEntity(match, body) {
+  if (body[0] === '#') {
+    const hex = body[1] === 'x' || body[1] === 'X'
+    const cp = Number.parseInt(body.slice(hex ? 2 : 1), hex ? 16 : 10)
+    if (!Number.isInteger(cp) || cp <= 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return match
+    return String.fromCodePoint(cp)
+  }
+  return Object.hasOwn(NAMED_ENTITIES, body) ? NAMED_ENTITIES[body] : match
+}
+
+/**
+ * Convert Commons' `Artist` HTML fragment to plain text (stored as text, rendered as text).
+ * Tags are removed until the string stops changing (so `<<b>script>` cannot reassemble a tag),
+ * leftover angle brackets are dropped, and entities are decoded in a single pass so
+ * `&amp;lt;` becomes `&lt;`, never `<`.
+ */
 export function stripHtml(html) {
   if (typeof html !== 'string') return ''
-  return html
-    .replace(/<[^>]*>/g, '')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+  let text = html
+  let prev
+  do {
+    prev = text
+    text = text.replace(/<[^>]*>/g, '')
+  } while (text !== prev)
+  text = text.replace(/[<>]/g, '')
+  return text
+    .replace(/&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, decodeEntity)
     .replace(/\s+/g, ' ')
     .trim()
 }

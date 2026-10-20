@@ -110,6 +110,32 @@ describe('stripHtml', () => {
     expect(stripHtml(null)).toBe('')
     expect(stripHtml(undefined)).toBe('')
   })
+
+  it('leaves nothing behind for nested or unbalanced tags', () => {
+    const out = stripHtml('<<script>script>alert(1)<</script>/script>')
+    expect(out).not.toMatch(/[<>]/)
+    expect(out).toBe('scriptalert(1)/script')
+    expect(stripHtml('<scr<b>ipt>x</scr</b>ipt>')).toBe('iptxipt')
+    expect(stripHtml('<<<b>>b>>x')).toBe('bx')
+    expect(stripHtml('1 > 0 and Jane <b')).toBe('1 0 and Jane b')
+  })
+
+  it('decodes entities in a single pass', () => {
+    expect(stripHtml('&amp;lt;')).toBe('&lt;')
+    expect(stripHtml('&amp;amp;')).toBe('&amp;')
+    expect(stripHtml('&amp;#60;')).toBe('&#60;')
+    expect(stripHtml('&lt;b&gt;')).toBe('<b>')
+    expect(stripHtml('&quot;Q&quot; &apos;x&apos; &#39;y&#039; a&nbsp;b')).toBe('"Q" \'x\' \'y\' a b')
+  })
+
+  it('decodes numeric entities and leaves invalid ones alone', () => {
+    expect(stripHtml('caf&#233; &#xE9; &#x1F600;')).toBe('caf\u00e9 \u00e9 \u{1F600}')
+    expect(stripHtml('&#0; &#x110000; &#xD800; &bogus; &amp')).toBe('&#0; &#x110000; &#xD800; &bogus; &amp')
+  })
+
+  it('leaves a plain artist name unchanged', () => {
+    expect(stripHtml('Jane Q. Doe')).toBe('Jane Q. Doe')
+  })
 })
 
 describe('parseCommonsPage', () => {
