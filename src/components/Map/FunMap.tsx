@@ -60,9 +60,9 @@ export function FunMap() {
   const onRef = useCallback((node: MapRef | null) => {
     mapRef.current = node
     setMapInstance(node)
-    // Pin glyph images (`emoji-*`) are supplied lazily via `styleimagemissing`;
-    // the listener lives on the MapLibre instance, so it survives basemap
-    // switches and is re-installed on the metro-keyed remount.
+    // Pin glyph images (`emoji-*`) are supplied lazily by a missing-image
+    // resolver on the MapLibre instance, so it survives basemap switches and
+    // is re-installed on the metro-keyed remount.
     if (node) installEmojiIcons(node.getMap())
   }, [setMapInstance])
 
