@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Resvg } from '@resvg/resvg-js'
+import * as fontkit from 'fontkit'
 import { METROS } from '../shared/metros.ts'
 import {
   HOME_SOCIAL_IMAGE_PATH,
@@ -15,6 +17,20 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PUBLIC = path.join(ROOT, 'public')
 const OUT = path.join(PUBLIC, 'og')
+const require = createRequire(import.meta.url)
+const FONT_REGULAR_PATH = require.resolve('dejavu-fonts-ttf/ttf/DejaVuSans.ttf')
+const FONT_BOLD_PATH = require.resolve('dejavu-fonts-ttf/ttf/DejaVuSans-Bold.ttf')
+const FONT_REGULAR = fontkit.openSync(FONT_REGULAR_PATH)
+const FONT_BOLD = fontkit.openSync(FONT_BOLD_PATH)
+
+const CANVAS = { x: 0, y: 0, width: SOCIAL_IMAGE_WIDTH, height: SOCIAL_IMAGE_HEIGHT }
+// The centered 630×600 area survives the practical square and 2:1 crops
+// documented in docs/social-share-images.md. Every text element is constrained
+// to it; the outer 285px on each side contains decoration only.
+const SAFE_AREA = { x: 285, y: 15, width: 630, height: 600 }
+const PANEL_COLOR = '#fffaf0'
+const MAX_IMAGE_BYTES = 300_000
+const validationTotals = { cards: 0, textBoxes: 0, pills: 0 }
 
 const esc = (value) => String(value)
   .replaceAll('&', '&amp;')
@@ -31,52 +47,167 @@ function hash(value) {
   return result >>> 0
 }
 
-function cityTitleSize(title) {
-  if (title.length > 25) return 48
-  if (title.length > 20) return 54
-  if (title.length > 15) return 62
-  if (title.length > 11) return 68
-  return 76
+function measureText(text, font, size) {
+  return (font.layout(text).advanceWidth / font.unitsPerEm) * size
 }
 
-function illustration(seed) {
-  const hues = ['#f97316', '#14b8a6', '#3b82f6', '#8b5cf6', '#eab308']
-  const pins = Array.from({ length: 12 }, (_, index) => {
-    const x = 835 + ((seed >>> (index % 16)) + index * 73) % 280
-    const y = 117 + ((seed >>> ((index + 5) % 16)) + index * 91) % 385
+function fitText(text, font, maxSize, maxWidth, minSize = 38) {
+  const natural = measureText(text, font, maxSize)
+  return natural <= maxWidth ? maxSize : Math.max(minSize, maxSize * maxWidth / natural)
+}
+
+function textBounds({ text, font, size, x, baseline, anchor = 'middle' }) {
+  const width = measureText(text, font, size)
+  const left = anchor === 'middle' ? x - width / 2 : x
+  return {
+    x: left,
+    y: baseline - (font.ascent / font.unitsPerEm) * size,
+    width,
+    height: ((font.ascent - font.descent) / font.unitsPerEm) * size,
+  }
+}
+
+function contains(parent, child, epsilon = 0.01) {
+  return child.x >= parent.x - epsilon &&
+    child.y >= parent.y - epsilon &&
+    child.x + child.width <= parent.x + parent.width + epsilon &&
+    child.y + child.height <= parent.y + parent.height + epsilon
+}
+
+function relativeLuminance(hex) {
+  const channels = hex.slice(1).match(/.{2}/g).map((part) => {
+    const value = Number.parseInt(part, 16) / 255
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+}
+
+function contrastRatio(a, b) {
+  const lighter = Math.max(relativeLuminance(a), relativeLuminance(b))
+  const darker = Math.min(relativeLuminance(a), relativeLuminance(b))
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function assertLayout(name, texts, containers) {
+  for (const text of texts) {
+    if (!contains(CANVAS, text.bounds)) {
+      throw new Error(`${name}: text "${text.id}" extends past the 1200×630 canvas`)
+    }
+    const parent = containers[text.parent]
+    if (!parent || !contains(parent, text.bounds)) {
+      throw new Error(`${name}: text "${text.id}" extends past its ${text.parent} container`)
+    }
+    const ratio = contrastRatio(text.fill, text.background)
+    if (ratio < 4.5) {
+      throw new Error(`${name}: text "${text.id}" contrast ${ratio.toFixed(2)}:1 is below 4.5:1`)
+    }
+  }
+  for (const [id, box] of Object.entries(containers)) {
+    if (!contains(CANVAS, box)) throw new Error(`${name}: container "${id}" extends past the canvas`)
+  }
+  validationTotals.cards += 1
+  validationTotals.textBoxes += texts.length
+  validationTotals.pills += Object.keys(containers).filter((id) => id.endsWith('Pill')).length
+}
+
+function decoration(seed) {
+  const hues = ['#ea580c', '#0f766e', '#2563eb', '#7c3aed', '#ca8a04']
+  const pins = Array.from({ length: 18 }, (_, index) => {
+    const side = index % 2 === 0 ? 1 : -1
+    const x = side > 0
+      ? 950 + ((seed >>> (index % 16)) + index * 47) % 210
+      : 40 + ((seed >>> ((index + 3) % 16)) + index * 61) % 210
+    const y = 55 + ((seed >>> ((index + 5) % 16)) + index * 83) % 515
     const color = hues[(seed + index) % hues.length]
-    const size = index % 4 === 0 ? 18 : 13
-    return `<circle cx="${x}" cy="${y}" r="${size}" fill="${color}" stroke="#fffdf8" stroke-width="6"/>`
+    const size = index % 4 === 0 ? 17 : 11
+    return `<circle cx="${x}" cy="${y}" r="${size}" fill="${color}" stroke="#fffaf0" stroke-width="5"/>`
   }).join('')
 
   return `
-    <g opacity=".2" fill="none" stroke="#334155" stroke-width="5" stroke-linecap="round">
-      <path d="M785 174 C875 102 950 231 1140 139"/>
-      <path d="M812 484 C900 397 1014 489 1146 356"/>
-      <path d="M876 82 C909 210 1041 245 1082 537"/>
-      <path d="M774 323 C887 286 997 357 1166 275"/>
+    <g opacity=".17" fill="none" stroke="#334155" stroke-width="5" stroke-linecap="round">
+      <path d="M-30 177 C173 54 290 232 467 126 S856 178 1230 72"/>
+      <path d="M-40 492 C180 360 386 528 583 418 S954 516 1240 326"/>
+      <path d="M105 0 C163 203 67 326 220 650"/>
+      <path d="M1028-20 C945 194 1166 323 1028 650"/>
     </g>
-    <path d="M789 500 C854 411 877 318 959 279 C1036 242 1059 177 1134 113"
-      fill="none" stroke="#fb923c" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 28"/>
+    <path d="M-30 550 C169 439 267 302 441 332 C650 369 804 238 1230 106"
+      fill="none" stroke="#fb923c" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 26"/>
     ${pins}
-    <g transform="translate(979 391)">
-      <path d="M0-56 C-36-56-60-31-60 2 C-60 47 0 96 0 96 S60 47 60 2 C60-31 36-56 0-56Z"
-        fill="#f97316" stroke="#fffdf8" stroke-width="10"/>
-      <circle cy="1" r="20" fill="#fffdf8"/>
-      <path d="M-7 5 L-1 12 L14-7" fill="none" stroke="#14b8a6" stroke-width="8"
-        stroke-linecap="round" stroke-linejoin="round"/>
-    </g>`
+  `
 }
 
-function imageSvg({ city = null }) {
-  const title = city ?? 'family adventures,\nmapped'
-  const titleLines = title.split('\n')
-  const titleSize = city ? cityTitleSize(city) : 72
-  const titleMarkup = titleLines.map((line, index) =>
-    `<tspan x="76" dy="${index === 0 ? 0 : titleSize + 4}">${esc(line)}</tspan>`,
-  ).join('')
+function imageSvg({ city = null, name }) {
+  const texts = []
+  const containers = { canvas: CANVAS, safeArea: SAFE_AREA }
+  const text = ({
+    id, value, font = FONT_BOLD, weight = 700, size, x = 600, baseline,
+    anchor = 'middle', fill = '#24323a', parent = 'safeArea', background = PANEL_COLOR,
+  }) => {
+    const bounds = textBounds({ text: value, font, size, x, baseline, anchor })
+    texts.push({ id, bounds, fill, background, parent })
+    return `<text x="${x}" y="${baseline}" text-anchor="${anchor}" fill="${fill}" ` +
+      `font-size="${size}" font-weight="${weight}">${esc(value)}</text>`
+  }
+
+  const brandSize = 42
+  const frolicWidth = measureText('frolic', FONT_BOLD, brandSize)
+  const mapWidth = measureText('map', FONT_BOLD, brandSize)
+  const brandStart = 600 - (frolicWidth + mapWidth) / 2
+  const brand = text({
+    id: 'brand-frolic', value: 'frolic', size: brandSize, x: brandStart,
+    baseline: 94, anchor: 'start', fill: '#9a3412',
+  }) + text({
+    id: 'brand-map', value: 'map', size: brandSize, x: brandStart + frolicWidth,
+    baseline: 94, anchor: 'start',
+  })
+
+  const descriptor = 'FAMILY WEB APP'
+  const descriptorSize = 18
+  const descriptorPaddingX = 28
+  const descriptorWidth = measureText(descriptor, FONT_BOLD, descriptorSize)
+  const pill = {
+    x: 600 - descriptorWidth / 2 - descriptorPaddingX,
+    y: 119,
+    width: descriptorWidth + descriptorPaddingX * 2,
+    height: 43,
+  }
+  containers.descriptorPill = pill
+  const descriptorMarkup =
+    `<rect x="${pill.x}" y="${pill.y}" width="${pill.width}" height="${pill.height}" ` +
+    `rx="${pill.height / 2}" fill="${PANEL_COLOR}" stroke="#c2410c" stroke-width="2"/>` +
+    text({
+      id: 'web-app-label', value: descriptor, size: descriptorSize, baseline: 147,
+      fill: '#9a3412', parent: 'descriptorPill',
+    })
+
+  const titleLines = city ? [city] : ['Family adventures,', 'mapped']
+  const titleMaxSize = city ? 84 : 82
+  const titleSize = Math.min(...titleLines.map((line) =>
+    fitText(line, FONT_BOLD, titleMaxSize, 560),
+  ))
+  const titleBaselines = city ? [306] : [280, 369]
+  const titleMarkup = titleLines.map((line, index) => text({
+    id: `headline-${index + 1}`, value: line, size: titleSize,
+    baseline: titleBaselines[index],
+  })).join('')
+
+  const subtitle = city ? 'family adventures, mapped' : 'kid-friendly places on one map'
+  const subtitleMarkup = text({
+    id: 'subtitle', value: subtitle, font: FONT_REGULAR, weight: 400,
+    size: 27, baseline: city ? 378 : 429, fill: '#334155',
+  })
+
   const seed = hash(city ?? 'home')
-  const eyebrow = city ? 'EXPLORE WITH KIDS IN' : 'FIND YOUR NEXT OUTING'
+  const markerY = city ? 485 : 515
+  const marker = `<g transform="translate(600 ${markerY})">
+    <path d="M0-45 C-30-45-50-24-50 4 C-50 42 0 82 0 82 S50 42 50 4 C50-24 30-45 0-45Z"
+      fill="#ea580c" stroke="#fffaf0" stroke-width="9"/>
+    <circle cy="2" r="17" fill="#fffaf0"/>
+    <path d="M-7 3 L-1 10 L13-7" fill="none" stroke="#0f766e" stroke-width="7"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  </g>`
+
+  assertLayout(name, texts, containers)
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${SOCIAL_IMAGE_WIDTH}" height="${SOCIAL_IMAGE_HEIGHT}" viewBox="0 0 1200 630">
   <defs>
@@ -85,54 +216,51 @@ function imageSvg({ city = null }) {
       <stop offset=".5" stop-color="#ffedd5"/>
       <stop offset="1" stop-color="#dff7ef"/>
     </linearGradient>
-    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#fffdf8"/>
-      <stop offset="1" stop-color="#ecfdf5"/>
-    </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#9a6c43" flood-opacity=".18"/>
+      <feDropShadow dx="0" dy="14" stdDeviation="20" flood-color="#9a6c43" flood-opacity=".16"/>
     </filter>
   </defs>
-  <rect width="1200" height="630" rx="0" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#bg)"/>
   <circle cx="1115" cy="42" r="172" fill="#fed7aa" opacity=".62"/>
-  <circle cx="700" cy="600" r="164" fill="#bfdbfe" opacity=".45"/>
+  <circle cx="724" cy="626" r="174" fill="#bfdbfe" opacity=".48"/>
   <circle cx="75" cy="585" r="105" fill="#fbcfe8" opacity=".42"/>
+  ${decoration(seed)}
 
-  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
-    <text x="76" y="92" font-size="38" font-weight="800" letter-spacing="-.8">
-      <tspan fill="#f97316">frolic</tspan><tspan fill="#263238">map</tspan>
-    </text>
-    <rect x="76" y="120" width="230" height="36" rx="18" fill="#fffdf8" stroke="#fdba74" stroke-width="2"/>
-    <text x="96" y="144" fill="#9a3412" font-size="17" font-weight="700" letter-spacing=".4">FREE FAMILY WEB APP</text>
-    <text x="76" y="211" fill="#0f766e" font-size="18" font-weight="800" letter-spacing="2.2">${eyebrow}</text>
-    <text x="76" y="${city ? 292 : 286}" fill="#263238" font-size="${titleSize}" font-weight="850" letter-spacing="-2.2">${titleMarkup}</text>
-    <text x="76" y="${city ? 373 : 458}" fill="#475569" font-size="25" font-weight="500">Playgrounds • parks • libraries • museums</text>
-    <text x="76" y="${city ? 411 : 496}" fill="#475569" font-size="25" font-weight="500">beaches • water play • trails • campgrounds</text>
-    <g transform="translate(76 ${city ? 471 : 544})">
-      <rect width="285" height="50" rx="25" fill="#263238"/>
-      <text x="27" y="33" fill="#fffdf8" font-size="21" font-weight="750">open the map →</text>
-    </g>
-
-    <g filter="url(#shadow)">
-      <rect x="755" y="70" width="390" height="500" rx="38" fill="url(#card)" stroke="#fff" stroke-width="5"/>
-      ${illustration(seed)}
-      <rect x="790" y="91" width="154" height="41" rx="20.5" fill="#fffdf8" stroke="#cbd5e1" stroke-width="2"/>
-      <circle cx="816" cy="111.5" r="7" fill="#14b8a6"/>
-      <text x="833" y="118" fill="#334155" font-size="18" font-weight="700">places nearby</text>
-      <rect x="790" y="515" width="320" height="34" rx="17" fill="#fffdf8" opacity=".94"/>
-      <text x="810" y="538" fill="#475569" font-size="16" font-weight="650">one clean map • no account needed</text>
-    </g>
+  <g filter="url(#shadow)">
+    <rect x="265" y="35" width="670" height="560" rx="46" fill="${PANEL_COLOR}" stroke="#fff" stroke-width="5"/>
+  </g>
+  <g font-family="DejaVu Sans">
+    ${brand}
+    ${descriptorMarkup}
+    ${titleMarkup}
+    ${subtitleMarkup}
+    ${marker}
   </g>
 </svg>`
 }
 
 function render(destination, options) {
-  const svg = imageSvg(options)
+  const svg = imageSvg({ ...options, name: path.basename(destination) })
   const png = new Resvg(svg, {
     fitTo: { mode: 'width', value: SOCIAL_IMAGE_WIDTH },
-    font: { loadSystemFonts: true, defaultFontFamily: 'sans-serif' },
+    font: {
+      fontFiles: [FONT_REGULAR_PATH, FONT_BOLD_PATH],
+      loadSystemFonts: false,
+      defaultFontFamily: 'DejaVu Sans',
+    },
   }).render().asPng()
+  const width = png.readUInt32BE(16)
+  const height = png.readUInt32BE(20)
+  if (width !== SOCIAL_IMAGE_WIDTH || height !== SOCIAL_IMAGE_HEIGHT) {
+    throw new Error(`${path.basename(destination)} rendered at ${width}×${height}, expected 1200×630`)
+  }
+  if (png.byteLength >= MAX_IMAGE_BYTES) {
+    throw new Error(
+      `${path.basename(destination)} is ${png.byteLength} bytes; social cards must stay under ${MAX_IMAGE_BYTES}`,
+    )
+  }
   writeFileSync(destination, png)
+  return png.byteLength
 }
 
 mkdirSync(OUT, { recursive: true })
@@ -142,9 +270,17 @@ for (const file of readdirSync(OUT)) {
 rmSync(path.join(PUBLIC, 'og-image.png'), { force: true })
 
 const published = METROS.filter((metro) => metro.published)
-render(path.join(PUBLIC, HOME_SOCIAL_IMAGE_PATH), {})
+const generated = []
+const homePath = path.join(PUBLIC, HOME_SOCIAL_IMAGE_PATH)
+generated.push([path.basename(homePath), render(homePath, {})])
 for (const metro of published) {
-  render(path.join(PUBLIC, metroSocialImagePath(metro)), { city: metro.label })
+  const destination = path.join(PUBLIC, metroSocialImagePath(metro))
+  generated.push([path.basename(destination), render(destination, { city: metro.label })])
 }
 
 console.log(`Generated 1 home image and ${published.length} metro images in public/og/`)
+console.log(
+  `Validated ${validationTotals.textBoxes} text boxes and ${validationTotals.pills} measured pills ` +
+  `across ${validationTotals.cards} cards`,
+)
+for (const [file, bytes] of generated) console.log(`${file}\t${bytes} bytes`)

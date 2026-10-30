@@ -66,8 +66,10 @@ describe('/cities index (the welcome page)', () => {
     const image = 'https://frolicmap.app/og/frolicmap-home.png'
     expect(index.html).toContain(`property="og:image" content="${image}"`)
     expect(index.html).toContain(`name="twitter:image" content="${image}"`)
+    expect(index.html).toContain('property="og:image:type" content="image/png"')
     expect(index.html).toContain('property="og:image:width" content="1200"')
     expect(index.html).toContain('property="og:image:height" content="630"')
+    expect(index.html).toContain('name="twitter:image:alt" content="frolicmap, a family-friendly web app')
   })
 
   it('names every category in the title and description, including unbuilt ones', () => {

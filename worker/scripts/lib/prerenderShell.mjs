@@ -60,6 +60,7 @@ export const REQUIRED_SHELL_TAGS = [
   { label: 'twitter:description', test: (h) => /name="twitter:description"[^>]*content="/.test(h) },
   { label: 'twitter:url', test: (h) => /name="twitter:url"[^>]*content="/.test(h) },
   { label: 'twitter:image', test: (h) => /name="twitter:image"[^>]*content="/.test(h) },
+  { label: 'twitter:image:alt', test: (h) => /name="twitter:image:alt"[^>]*content="/.test(h) },
   { label: 'meta keywords', test: (h) => /<meta\s+name="keywords"[^>]*content="/.test(h) },
   { label: 'json-ld', test: (h) => /<script type="application\/ld\+json">/i.test(h) },
   { label: 'root div', test: (h) => h.includes('<div id="root"></div>') },
@@ -230,6 +231,7 @@ export function renderCityShell({
   html = replaceTagContent(html, 'name="twitter:description"', 'content', description)
   html = replaceTagContent(html, 'name="twitter:url"', 'content', url)
   html = replaceTagContent(html, 'name="twitter:image"', 'content', socialImage)
+  html = replaceTagContent(html, 'name="twitter:image:alt"', 'content', socialImageAlt)
   html = replaceTagContent(
     html, 'name="keywords"', 'content',
     loc

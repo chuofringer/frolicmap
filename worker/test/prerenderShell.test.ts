@@ -117,6 +117,9 @@ describe('renderCityShell', () => {
     expect(page.html).toContain(
       'content="frolicmap, a family-friendly web app for finding kid-friendly places in Seattle"',
     )
+    expect(page.html).toContain(
+      'name="twitter:image:alt" content="frolicmap, a family-friendly web app for finding kid-friendly places in Seattle"',
+    )
     expect(page.html).not.toContain('frolicmap-home.png')
   })
 

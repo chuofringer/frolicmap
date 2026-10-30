@@ -110,6 +110,7 @@ ${enPath ? hreflangLinks(enPath) + '\n' : ''}<meta property="og:type" content="w
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}">
 <meta property="og:image" content="${HOME_SOCIAL_IMAGE_URL}">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="${SOCIAL_IMAGE_WIDTH}">
 <meta property="og:image:height" content="${SOCIAL_IMAGE_HEIGHT}">
 <meta property="og:image:alt" content="${esc(HOME_SOCIAL_IMAGE_ALT)}">
@@ -117,6 +118,7 @@ ${enPath ? hreflangLinks(enPath) + '\n' : ''}<meta property="og:type" content="w
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${HOME_SOCIAL_IMAGE_URL}">
+<meta name="twitter:image:alt" content="${esc(HOME_SOCIAL_IMAGE_ALT)}">
 <link rel="icon" href="/favicon.ico">
 <style>
 :root{--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--accent:#0369a1}
