@@ -13,6 +13,12 @@ import { CATEGORY_COLOR } from '../../../shared/categorySlugs.ts'
 import { escapeHtml as esc } from './htmlEscape.mjs'
 import { hreflangLinks, EN_LEGEND_PROSE } from './localeCopy.mjs'
 import { samplePoints, wrapThumb, THUMBS_SCRIPT_PATH } from './citiesThumbs.mjs'
+import {
+  HOME_SOCIAL_IMAGE_ALT,
+  HOME_SOCIAL_IMAGE_URL,
+  SOCIAL_IMAGE_HEIGHT,
+  SOCIAL_IMAGE_WIDTH,
+} from './socialImages.mjs'
 
 /** Amber fallback for a pin whose category isn't in CATEGORY_COLOR. */
 const DEFAULT_PIN_COLOR = '#f59e0b'
@@ -57,12 +63,6 @@ export function truncateForMeta(s, max = 158) {
 }
 
 /**
- * Social card image. Inherited by every generated page from the SPA's
- * existing asset; the generated pages are hand-rolled rather than the SPA
- * shell, so the tags have to be explicit.
- * Without them a shared link renders as a bare text card.
- */
-/**
  * Data attribution, on every generated page. OpenStreetMap's ODbL requires
  * the credit to be visible and to link to its copyright page; the other two
  * sources are credited by name. Proper nouns, so the same line serves every
@@ -74,9 +74,6 @@ export const DATA_ATTRIBUTION_TEXT =
 export const DATA_ATTRIBUTION_HTML =
   'Place data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (ODbL) · ' +
   'Institute of Museum and Library Services · National Park Service'
-
-const OG_IMAGE = `${SITE}/og/frolicmap-nyc-2026-10.png`
-const OG_IMAGE_ALT = 'Map of kid-friendly places in New York City on frolicmap'
 
 export const CONTACT_EMAIL = 'frolicmap.official@gmail.com'
 
@@ -112,14 +109,14 @@ ${enPath ? hreflangLinks(enPath) + '\n' : ''}<meta property="og:type" content="w
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}">
-<meta property="og:image" content="${OG_IMAGE}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="${esc(OG_IMAGE_ALT)}">
+<meta property="og:image" content="${HOME_SOCIAL_IMAGE_URL}">
+<meta property="og:image:width" content="${SOCIAL_IMAGE_WIDTH}">
+<meta property="og:image:height" content="${SOCIAL_IMAGE_HEIGHT}">
+<meta property="og:image:alt" content="${esc(HOME_SOCIAL_IMAGE_ALT)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
-<meta name="twitter:image" content="${OG_IMAGE}">
+<meta name="twitter:image" content="${HOME_SOCIAL_IMAGE_URL}">
 <link rel="icon" href="/favicon.ico">
 <style>
 :root{--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--accent:#0369a1}

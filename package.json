@@ -19,6 +19,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "social-images": "node --experimental-strip-types --no-warnings scripts/generate-social-images.mjs",
     "//seo": "Run AFTER build — needs dist/index.html as the SPA shell to rewrite for /map/*. Reads published metros from D1; --remote for prod data. The CI deploy chain is: build -> seo:remote -> apply data/seo/slug-assignments.sql -> wrangler pages deploy dist.",
     "seo": "node worker/scripts/build-seo-pages.mjs --out dist",
     "seo:remote": "node worker/scripts/build-seo-pages.mjs --remote --out dist",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
