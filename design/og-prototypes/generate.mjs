@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { simulate } from '@bjornlu/colorblind'
 import * as fontkit from 'fontkit'
 import { chromium } from 'playwright-core'
 import sharp from 'sharp'
@@ -14,7 +15,11 @@ const require = createRequire(import.meta.url)
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const OUT = path.join(HERE, 'renders')
 const THUMBS = path.join(OUT, 'thumbs')
+const PIN_OUT = path.join(OUT, 'pins')
+const PIN_THUMBS = path.join(PIN_OUT, 'thumbs')
 const TMP = path.join(HERE, '.tmp')
+const DATA_DIR = path.join(HERE, '.data')
+const PLACES_CSV = path.join(DATA_DIR, 'frolicmap-og-places.csv')
 const WIDTH = 1200
 const HEIGHT = 630
 const SAFE = { x: 285, y: 15, width: 630, height: 600 }
@@ -33,21 +38,27 @@ let RENDER_PAGE_URL
 const CITIES = [
   {
     id: 'new-york',
+    region: 'new-york',
     name: 'New York City',
     a: { center: [-73.9857, 40.7484], zoom: 10.8 },
     b: { center: [-73.975, 40.735], zoom: 9.7 },
+    c: { center: [-74.015, 40.72], zoom: 10.15 },
   },
   {
     id: 'bay-area',
+    region: 'bay',
     name: 'San Francisco Bay Area',
     a: { center: [-122.33, 37.72], zoom: 9.1 },
     b: { center: [-122.28, 37.72], zoom: 8.4 },
+    c: { center: [-122.42, 37.82], zoom: 9.15 },
   },
   {
     id: 'seattle',
+    region: 'seattle',
     name: 'Seattle',
     a: { center: [-122.335, 47.606], zoom: 10.7 },
     b: { center: [-122.335, 47.61], zoom: 9.7 },
+    c: { center: [-122.37, 47.58], zoom: 10.45 },
   },
 ]
 
@@ -64,6 +75,24 @@ const PALETTE = {
   landB: '#f1d8b8',
   road: '#fff8eb',
   roadCasing: '#bd9a78',
+}
+
+// Paul Tol's color-blind-safe qualitative palette. Every pair remains at
+// least 72 RGB units apart under the generator's protanopia/deuteranopia
+// simulation check; the dark outline also separates pale dots from the map.
+const PIN_COLORS = {
+  park: '#117733',
+  playground: '#DDCC77',
+  library: '#332288',
+  museum: '#CC6677',
+  more: '#88CCEE',
+}
+const PIN_LABELS = {
+  park: 'Park',
+  playground: 'Play',
+  library: 'Library',
+  museum: 'Museum',
+  more: 'More',
 }
 
 function clone(value) {
@@ -172,6 +201,211 @@ function styleB(base) {
     }
   }
   return style
+}
+
+function stylePins(base, pins) {
+  const style = styleA(base)
+  for (const layer of style.layers) {
+    if (layer.type === 'background') setPaint(layer, 'background-color', '#f8dfbf')
+    if (layer.id === 'water') setPaint(layer, 'fill-color', '#86c4c2')
+    if (layer.id === 'park') setPaint(layer, 'fill-color', '#b8d58f')
+    if (layer.id === 'landcover_wood') setPaint(layer, 'fill-color', '#c6d9a1')
+    if (layer.id === 'landuse_residential') setPaint(layer, 'fill-color', '#f1cfad')
+    if (layer.id === 'building') setPaint(layer, 'fill-color', '#dfb791')
+    if (layer.id === 'waterway') setPaint(layer, 'line-color', '#5faaa9')
+    if (layer.type === 'line' && layer.id.includes('casing')) {
+      setPaint(layer, 'line-color', '#bf8964')
+    }
+    if (layer.type === 'line' && (
+      layer.id.includes('inner') || layer.id === 'highway_minor'
+    )) {
+      setPaint(layer, 'line-color', '#fff1d8')
+    }
+  }
+  style.sources['frolicmap-places'] = {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: pins.map((pin) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [pin.lng, pin.lat] },
+        properties: { group: pin.group },
+      })),
+    },
+  }
+  style.layers.push({
+    id: 'frolicmap-place-halo',
+    type: 'circle',
+    source: 'frolicmap-places',
+    paint: {
+      'circle-radius': 6.4,
+      'circle-color': '#fffaf0',
+      'circle-opacity': 0.92,
+    },
+  }, {
+    id: 'frolicmap-place-dot',
+    type: 'circle',
+    source: 'frolicmap-places',
+    paint: {
+      'circle-radius': 4.2,
+      'circle-color': [
+        'match', ['get', 'group'],
+        'park', PIN_COLORS.park,
+        'playground', PIN_COLORS.playground,
+        'library', PIN_COLORS.library,
+        'museum', PIN_COLORS.museum,
+        PIN_COLORS.more,
+      ],
+      'circle-stroke-color': '#24323a',
+      'circle-stroke-width': 0.8,
+    },
+  })
+  return style
+}
+
+function styleHomePins(base, metros) {
+  const style = styleA(base)
+  // No basemap labels: the prototype draws every metro label itself with a
+  // leader line, so no true-position marker can cover a city name.
+  style.layers = style.layers.filter((layer) => layer.type !== 'symbol')
+  style.sources['frolicmap-metros'] = {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: metros.map((metro, index) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [metro.initialView.longitude, metro.initialView.latitude],
+        },
+        properties: { color: Object.values(PIN_COLORS)[index % Object.keys(PIN_COLORS).length] },
+      })),
+    },
+  }
+  style.layers.push({
+    id: 'frolicmap-metro-halo',
+    type: 'circle',
+    source: 'frolicmap-metros',
+    paint: { 'circle-radius': 8, 'circle-color': '#fffaf0', 'circle-opacity': 0.96 },
+  }, {
+    id: 'frolicmap-metro-dot',
+    type: 'circle',
+    source: 'frolicmap-metros',
+    paint: {
+      'circle-radius': 5.5,
+      'circle-color': ['get', 'color'],
+      'circle-stroke-color': '#24323a',
+      'circle-stroke-width': 0.9,
+    },
+  })
+  return style
+}
+
+function parsePlacesCsv(file) {
+  const lines = readFileSync(file, 'utf8').trim().split(/\r?\n/)
+  if (lines.shift() !== 'region,category,lat,lng,source_type') {
+    throw new Error('unexpected place-export CSV header')
+  }
+  return lines.map((line, index) => {
+    const [region, category, latText, lngText, sourceType] = line.split(',')
+    const lat = Number(latText)
+    const lng = Number(lngText)
+    if (!region || !category || !Number.isFinite(lat) || !Number.isFinite(lng) || !sourceType) {
+      throw new Error(`invalid place-export row ${index + 2}`)
+    }
+    return { region, category, lat, lng, sourceType, row: index + 2 }
+  })
+}
+
+function categoryGroup(category) {
+  return ['park', 'playground', 'library', 'museum'].includes(category) ? category : 'more'
+}
+
+function mercator(lng, lat) {
+  const x = (lng + 180) / 360
+  const sin = Math.sin(lat * Math.PI / 180)
+  const y = 0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)
+  return { x, y }
+}
+
+function project(view, lng, lat, width = WIDTH, height = HEIGHT) {
+  const center = mercator(view.center[0], view.center[1])
+  const point = mercator(lng, lat)
+  const scale = 512 * 2 ** view.zoom
+  return {
+    x: (point.x - center.x) * scale + width / 2,
+    y: (point.y - center.y) * scale + height / 2,
+  }
+}
+
+function stableHash(value) {
+  let result = 2166136261
+  for (const char of value) {
+    result ^= char.charCodeAt(0)
+    result = Math.imul(result, 16777619)
+  }
+  return result >>> 0
+}
+
+function thinVisiblePins(rows, view, cellSize = 16) {
+  const visible = rows
+    .map((row) => ({ ...row, group: categoryGroup(row.category), point: project(view, row.lng, row.lat) }))
+    .filter(({ point }) => point.x >= 0 && point.x <= WIDTH && point.y >= 0 && point.y <= HEIGHT)
+  const groups = Object.keys(PIN_COLORS).map((group) =>
+    visible
+      .filter((row) => row.group === group)
+      .sort((a, b) =>
+        stableHash(`${a.region},${a.category},${a.lat},${a.lng},${a.sourceType}`) -
+        stableHash(`${b.region},${b.category},${b.lat},${b.lng},${b.sourceType}`),
+      ),
+  )
+  const selected = []
+  const occupied = new Set()
+  let remaining = true
+  for (let index = 0; remaining; index++) {
+    remaining = false
+    for (const group of groups) {
+      const row = group[index]
+      if (!row) continue
+      remaining = true
+      const cell = `${Math.floor(row.point.x / cellSize)},${Math.floor(row.point.y / cellSize)}`
+      if (occupied.has(cell)) continue
+      occupied.add(cell)
+      selected.push(row)
+    }
+  }
+  return { visible: visible.length, selected }
+}
+
+function hexRgb(hex) {
+  return {
+    r: Number.parseInt(hex.slice(1, 3), 16),
+    g: Number.parseInt(hex.slice(3, 5), 16),
+    b: Number.parseInt(hex.slice(5, 7), 16),
+  }
+}
+
+function assertColorBlindPalette() {
+  const entries = Object.entries(PIN_COLORS)
+  const minima = {}
+  for (const deficiency of ['protanopia', 'deuteranopia']) {
+    const simulated = entries.map(([name, color]) => [name, simulate(hexRgb(color), deficiency)])
+    minima[deficiency] = Number.POSITIVE_INFINITY
+    for (let i = 0; i < simulated.length; i++) {
+      for (let j = i + 1; j < simulated.length; j++) {
+        const a = simulated[i][1]
+        const b = simulated[j][1]
+        const distance = Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b)
+        minima[deficiency] = Math.min(minima[deficiency], distance)
+        if (distance < 70) {
+          throw new Error(
+            `${simulated[i][0]}/${simulated[j][0]} are too similar under ${deficiency}: ${distance.toFixed(1)}`,
+          )
+        }
+      }
+    }
+  }
+  return minima
 }
 
 function browserPath() {
@@ -363,6 +597,172 @@ function overlaySvg({ name, title, subtitle = 'family web app', home = false }) 
   </svg>`
 }
 
+function pinOverlaySvg({ name, title, pinCount }) {
+  const texts = []
+  const panel = { x: 315, y: 392, width: 570, height: 174 }
+  const attributionPanel = { x: 175, y: 588, width: 850, height: 31 }
+  const parents = { safe: SAFE, panel, attributionPanel }
+  const text = ({
+    id, value, size, x = 600, baseline, anchor = 'middle', font = BOLD, weight = 700,
+    fill = PALETTE.ink, parent = 'panel', background = PALETTE.cream,
+  }) => {
+    texts.push({
+      id,
+      box: bounds({ text: value, font, size, x, baseline, anchor }),
+      fill,
+      background,
+      parent,
+    })
+    return `<text x="${x}" y="${baseline}" text-anchor="${anchor}" fill="${fill}" ` +
+      `font-family="DejaVu Sans" font-size="${size}" font-weight="${weight}">${escapeXml(value)}</text>`
+  }
+  const brand = text({ id: 'brand', value: 'frolicmap', size: 24, baseline: 422, fill: PALETTE.orange })
+  const titleSize = fit(title, BOLD, 56, panel.width - 46)
+  const heading = text({ id: 'title', value: title, size: titleSize, baseline: 474 })
+  const descriptor = text({
+    id: 'descriptor', value: `family web app · ${pinCount} real places shown`,
+    size: 15, baseline: 505, font: REGULAR, weight: 400, fill: '#3f4d52',
+  })
+
+  const legendEntries = Object.keys(PIN_COLORS).map((group) => ({
+    group,
+    label: PIN_LABELS[group],
+    width: 12 + 7 + measure(PIN_LABELS[group], REGULAR, 15),
+  }))
+  const gap = 15
+  const legendWidth =
+    legendEntries.reduce((sum, entry) => sum + entry.width, 0) + gap * (legendEntries.length - 1)
+  let cursor = 600 - legendWidth / 2
+  const legend = legendEntries.map((entry) => {
+    const dotX = cursor + 6
+    const labelX = cursor + 19
+    const markup = `<circle cx="${dotX}" cy="542" r="6" fill="${PIN_COLORS[entry.group]}"
+      stroke="#24323a" stroke-width="1"/>` + text({
+      id: `legend-${entry.group}`,
+      value: entry.label,
+      size: 15,
+      x: labelX,
+      baseline: 547,
+      anchor: 'start',
+      font: REGULAR,
+      weight: 400,
+    })
+    cursor += entry.width + gap
+    return markup
+  }).join('')
+  const credit = text({
+    id: 'attribution', value: ATTRIBUTION, size: 14, baseline: 609,
+    font: REGULAR, weight: 400, fill: '#29383d', parent: 'attributionPanel',
+  })
+  assertText(name, texts, parents)
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}">
+    <rect x="${panel.x}" y="${panel.y}" width="${panel.width}" height="${panel.height}"
+      rx="28" fill="${PALETTE.cream}" fill-opacity=".93" stroke="#fff" stroke-opacity=".92" stroke-width="3"/>
+    ${brand}${heading}${descriptor}${legend}
+    <rect x="${attributionPanel.x}" y="${attributionPanel.y}" width="${attributionPanel.width}"
+      height="${attributionPanel.height}" rx="15.5" fill="${PALETTE.cream}" fill-opacity=".97"/>
+    ${credit}
+  </svg>`
+}
+
+const HOME_LABEL_LAYOUT = {
+  bay: { label: 'SF', dx: 13, dy: -9 },
+  'new-york': { label: 'NYC', dx: 14, dy: 8 },
+  'los-angeles': { label: 'LA', dx: 13, dy: 15 },
+  chicago: { label: 'CHI', dx: -20, dy: -12 },
+  dallas: { label: 'DFW', dx: 14, dy: -12 },
+  houston: { label: 'HOU', dx: 14, dy: 16 },
+  washington: { label: 'DC', dx: -22, dy: 19 },
+  atlanta: { label: 'ATL', dx: -21, dy: 15 },
+  philadelphia: { label: 'PHL', dx: -24, dy: -4 },
+  boston: { label: 'BOS', dx: 13, dy: -13 },
+  miami: { label: 'MIA', dx: 13, dy: 15 },
+  phoenix: { label: 'PHX', dx: 13, dy: -10 },
+  seattle: { label: 'SEA', dx: 13, dy: -9 },
+  orlando: { label: 'ORL', dx: 14, dy: -8 },
+  austin: { label: 'AUS', dx: -25, dy: 15 },
+}
+
+function homePinsOverlaySvg({ metros, view, mapBox }) {
+  const texts = []
+  const titlePanel = { x: 325, y: 24, width: 550, height: 137 }
+  const attributionPanel = { x: 175, y: 588, width: 850, height: 31 }
+  const parents = { safe: SAFE, titlePanel, mapBox, attributionPanel }
+  const text = ({
+    id, value, size, x, baseline, anchor = 'middle', font = BOLD, weight = 700,
+    fill = PALETTE.ink, parent, background = PALETTE.cream,
+  }) => {
+    texts.push({
+      id,
+      box: bounds({ text: value, font, size, x, baseline, anchor }),
+      fill,
+      background,
+      parent,
+    })
+    return `<text x="${x}" y="${baseline}" text-anchor="${anchor}" fill="${fill}"
+      font-family="DejaVu Sans" font-size="${size}" font-weight="${weight}">${escapeXml(value)}</text>`
+  }
+  const brand = text({
+    id: 'brand', value: 'frolicmap', size: 28, x: 600, baseline: 62,
+    fill: PALETTE.orange, parent: 'titlePanel',
+  })
+  const heading = text({
+    id: 'title', value: '15 metros, one map', size: 43, x: 600, baseline: 111,
+    parent: 'titlePanel',
+  })
+  const descriptor = text({
+    id: 'descriptor', value: 'family web app', size: 17, x: 600, baseline: 143,
+    font: REGULAR, weight: 400, fill: '#3f4d52', parent: 'titlePanel',
+  })
+
+  const labels = metros.map((metro) => {
+    const layout = HOME_LABEL_LAYOUT[metro.id]
+    if (!layout) throw new Error(`no home label layout for ${metro.id}`)
+    const local = project(
+      view,
+      metro.initialView.longitude,
+      metro.initialView.latitude,
+      mapBox.width,
+      mapBox.height,
+    )
+    const markerX = mapBox.x + local.x
+    const markerY = mapBox.y + local.y
+    const x = markerX + layout.dx
+    const baseline = markerY + layout.dy
+    const fontSize = 13
+    const labelWidth = measure(layout.label, BOLD, fontSize)
+    const labelBox = {
+      x: x - labelWidth / 2 - 4,
+      y: baseline - 14,
+      width: labelWidth + 8,
+      height: 18,
+    }
+    if (!contains(mapBox, labelBox)) throw new Error(`home label ${layout.label} leaves map safe area`)
+    return `<line x1="${markerX}" y1="${markerY}" x2="${x}" y2="${baseline - 5}"
+      stroke="#5d5044" stroke-width="1.2" opacity=".75"/>
+      <rect x="${labelBox.x}" y="${labelBox.y}" width="${labelBox.width}" height="${labelBox.height}"
+        rx="7" fill="${PALETTE.cream}" fill-opacity=".94"/>
+      ${text({
+        id: `metro-${metro.id}`, value: layout.label, size: fontSize, x, baseline,
+        parent: 'mapBox', background: PALETTE.cream,
+      })}`
+  }).join('')
+  const credit = text({
+    id: 'attribution', value: ATTRIBUTION, size: 14, x: 600, baseline: 609,
+    font: REGULAR, weight: 400, fill: '#29383d', parent: 'attributionPanel',
+  })
+  assertText('home-real-map-pins.png', texts, parents)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}">
+    <rect x="${titlePanel.x}" y="${titlePanel.y}" width="${titlePanel.width}" height="${titlePanel.height}"
+      rx="28" fill="${PALETTE.cream}" fill-opacity=".96" stroke="#fff" stroke-width="3"/>
+    ${brand}${heading}${descriptor}${labels}
+    <rect x="${attributionPanel.x}" y="${attributionPanel.y}" width="${attributionPanel.width}"
+      height="${attributionPanel.height}" rx="15.5" fill="${PALETTE.cream}" fill-opacity=".97"/>
+    ${credit}
+  </svg>`
+}
+
 function escapeXml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -371,7 +771,7 @@ function escapeXml(value) {
     .replaceAll('"', '&quot;')
 }
 
-async function finishCard(basePath, outputPath, overlay) {
+async function finishCard(basePath, outputPath, overlay, thumbDir = THUMBS) {
   let png = await sharp(basePath)
     .composite([{ input: Buffer.from(overlay) }])
     .png({ compressionLevel: 9, palette: true, colours: 96, effort: 10 })
@@ -384,7 +784,7 @@ async function finishCard(basePath, outputPath, overlay) {
   }
   assertPng(outputPath, png)
   writeFileSync(outputPath, png)
-  const thumbPath = path.join(THUMBS, path.basename(outputPath))
+  const thumbPath = path.join(thumbDir, path.basename(outputPath))
   const thumb = await sharp(png)
     .resize({ width: 400 })
     .png({ compressionLevel: 9, palette: true, colours: 64, effort: 10 })
@@ -469,6 +869,31 @@ async function homeB(baseMaps, outputPath) {
 
 mkdirSync(OUT, { recursive: true })
 mkdirSync(THUMBS, { recursive: true })
+mkdirSync(PIN_OUT, { recursive: true })
+mkdirSync(PIN_THUMBS, { recursive: true })
+mkdirSync(DATA_DIR, { recursive: true })
+if (process.env.FROLICMAP_OG_PLACES_CSV) {
+  const source = path.resolve(process.env.FROLICMAP_OG_PLACES_CSV)
+  if (!existsSync(source)) throw new Error(`place export not found: ${source}`)
+  if (source !== PLACES_CSV) copyFileSync(source, PLACES_CSV)
+}
+if (!existsSync(PLACES_CSV)) {
+  throw new Error(
+    `missing private place export at ${PLACES_CSV}; ` +
+    'set FROLICMAP_OG_PLACES_CSV once to import a read-only export',
+  )
+}
+const placeRows = parsePlacesCsv(PLACES_CSV)
+if (placeRows.length !== 8410) {
+  throw new Error(`expected 8,410 approved place rows, found ${placeRows.length}`)
+}
+if (placeRows.some((row) =>
+  !['new-york', 'bay', 'seattle'].includes(row.region) ||
+  !['osm', 'imls', 'nps'].includes(row.sourceType)
+)) {
+  throw new Error('place export contains an unexpected region or source type')
+}
+const colorBlindDistances = assertColorBlindPalette()
 rmSync(TMP, { recursive: true, force: true })
 mkdirSync(TMP, { recursive: true })
 
@@ -509,6 +934,24 @@ try {
         overlaySvg({ name: path.basename(bOut), title: city.name }),
       ),
     ])
+
+    const { visible, selected } = thinVisiblePins(
+      placeRows.filter((row) => row.region === city.region),
+      city.c,
+    )
+    const pinBase = path.join(TMP, `${city.id}-pins.png`)
+    const pinOut = path.join(PIN_OUT, `${city.id}-real-map-pins.png`)
+    await renderMap(browser, stylePins(baseStyle, selected), city.c, pinBase)
+    generated.push([
+      path.basename(pinOut),
+      await finishCard(
+        pinBase,
+        pinOut,
+        pinOverlaySvg({ name: path.basename(pinOut), title: city.name, pinCount: selected.length }),
+        PIN_THUMBS,
+      ),
+      `${selected.length} drawn from ${visible} visible rows (16px cell cap)`,
+    ])
   }
 
   const homeABase = path.join(TMP, 'home-a.png')
@@ -539,6 +982,54 @@ try {
 
   const homeBOut = path.join(OUT, 'home-b-silhouettes.png')
   generated.push([path.basename(homeBOut), await homeB(silhouetteBases, homeBOut)])
+
+  const homeMetros = [...publishedMetros()]
+  const homeView = { center: [-98.5, 38.5], zoom: 2.35 }
+  const homeMapBox = { x: 285, y: 190, width: 630, height: 360 }
+  const homePinMap = path.join(TMP, 'home-pins-map.png')
+  await renderMap(
+    browser,
+    styleHomePins(baseStyle, homeMetros),
+    homeView,
+    homePinMap,
+    homeMapBox.width,
+    homeMapBox.height,
+  )
+  const roundedMap = await sharp(homePinMap)
+    .composite([{
+      input: Buffer.from(
+        `<svg width="${homeMapBox.width}" height="${homeMapBox.height}">
+          <rect width="${homeMapBox.width}" height="${homeMapBox.height}" rx="30" fill="white"/>
+        </svg>`,
+      ),
+      blend: 'dest-in',
+    }])
+    .png()
+    .toBuffer()
+  const homeBackground = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}">
+    <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#fff0d7"/><stop offset=".55" stop-color="#f7d5bd"/><stop offset="1" stop-color="#cce9dc"/>
+    </linearGradient></defs>
+    <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#bg)"/>
+    <circle cx="120" cy="100" r="160" fill="#ffc98f" opacity=".5"/>
+    <circle cx="1090" cy="535" r="180" fill="#a9d8c9" opacity=".55"/>
+  </svg>`)
+  const homePinBase = path.join(TMP, 'home-pins-base.png')
+  await sharp(homeBackground)
+    .composite([{ input: roundedMap, left: homeMapBox.x, top: homeMapBox.y }])
+    .png()
+    .toFile(homePinBase)
+  const homePinOut = path.join(PIN_OUT, 'home-real-map-pins.png')
+  generated.push([
+    path.basename(homePinOut),
+    await finishCard(
+      homePinBase,
+      homePinOut,
+      homePinsOverlaySvg({ metros: homeMetros, view: homeView, mapBox: homeMapBox }),
+      PIN_THUMBS,
+    ),
+    '15 true metro-center markers',
+  ])
 } finally {
   await browser.close()
   await new Promise((resolve, reject) => {
@@ -548,6 +1039,13 @@ try {
 }
 
 generated.sort(([a], [b]) => a.localeCompare(b))
-for (const [file, sizes] of generated) {
-  console.log(`${file}\t${sizes.bytes} bytes\tthumbnail ${sizes.thumbBytes} bytes`)
+for (const [file, sizes, detail = ''] of generated) {
+  console.log(
+    `${file}\t${sizes.bytes} bytes\tthumbnail ${sizes.thumbBytes} bytes` +
+    (detail ? `\t${detail}` : ''),
+  )
 }
+console.log(
+  `pin palette check: protanopia minimum ${colorBlindDistances.protanopia.toFixed(1)}, ` +
+  `deuteranopia minimum ${colorBlindDistances.deuteranopia.toFixed(1)} RGB units`,
+)

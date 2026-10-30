@@ -6,11 +6,12 @@ to `public/`, and the site's metadata does not reference these files.
 Run:
 
 ```sh
-npm run social-images:prototypes
+FROLICMAP_OG_PLACES_CSV=/path/to/read-only-export.csv npm run social-images:prototypes
 ```
 
 Chrome is required; set `CHROME_PATH` when it is not in a common install
-location.
+location. The first run copies the export to the gitignored
+`.data/frolicmap-og-places.csv`; later runs can omit the environment variable.
 
 ## Directions
 
@@ -22,17 +23,34 @@ location.
 - **B — recognizable silhouette:** the same OpenFreeMap vector tiles reduced
   to real water, waterways, parks, wooded land and boundaries. The home
   version collages the three rendered city silhouettes.
+- **Pin-map round:** the warmer real-map direction with true approved-place
+  coordinates from a private read-only export. These renders live under
+  `renders/pins/`; the prior A/B files remain available for comparison.
 
 The city views are deliberate cartographic frames; no geographic feature or
 place marker is drawn by hand.
 
-## Place pins
+## Place pins and private input
 
-The city prototypes intentionally have no frolicmap place pins. Production
-place coordinates live in Cloudflare D1 and are not checked into this
-repository. Coordinates in tests are synthetic fixtures and are not valid
-source data for a public design. The generator never queries production
-resources and never invents coordinates.
+The pin-map city cards use only rows from the private export supplied at
+generation time. The CSV and every derived coordinate list stay under the
+gitignored `.data/` directory and are never committed. A production generator
+would need a read-only D1 or API export step before rendering.
+
+Rows are first projected into the card's exact viewport and anything outside
+the visible pixel bounds is discarded. Remaining rows are sorted
+deterministically, interleaved by legend group, and capped at one real row per
+16×16-pixel cell. Coordinates are never moved or synthesized.
+
+The five pin colors use Paul Tol's color-blind-safe qualitative palette:
+park `#117733`, playground `#DDCC77`, library `#332288`, museum `#CC6677`,
+and more `#88CCEE`. The generator simulates protanopia and deuteranopia with
+`@bjornlu/colorblind` and fails if any simulated color pair is less than 70
+RGB-distance units apart. Every dot also has a dark outline and light halo.
+
+The home pin-map uses the 15 published metro centers from `shared/metros.ts`.
+Basemap labels are hidden; short labels are drawn separately with leader lines,
+so markers remain at their true coordinates and never cover a label.
 
 ## Attribution and licences
 
