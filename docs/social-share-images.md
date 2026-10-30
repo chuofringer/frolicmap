@@ -13,11 +13,6 @@ less than 4.5:1 contrast, or produces a PNG of 300,000 bytes or more.
   Graph protocol defines those structured properties and says `og:image:alt`
   should accompany an image.
   Source: [The Open Graph protocol](https://ogp.me/).
-- **Canvas:** generate a 1200×630 PNG. Vercel documents 1200×630 as its
-  recommended OG image size, and Ahrefs recommends the same dimensions and
-  1.91:1 ratio for clarity across devices.
-  Sources: [Vercel OG image generation](https://vercel.com/docs/og-image-generation)
-  and [Ahrefs' Open Graph guide](https://ahrefs.com/blog/open-graph-meta-tags/).
 - **X card constraints:** keep `twitter:card=summary_large_image`; its image
   guidance calls for a roughly 2:1 image, at least 300×157, no more than
   4096×4096, and under 5 MB. PNG is supported. Our stricter generator ceiling
@@ -25,6 +20,11 @@ less than 4.5:1 contrast, or produces a PNG of 300,000 bytes or more.
   Source: [X/Twitter Summary Card with Large Image documentation](https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image).
   Buffer independently documents X's 5 MB static-image limit:
   [Buffer image sizes and formats](https://support.buffer.com/en-us/articles/ideal-image-sizes-and-formats-for-your-buffer-posts-JxHNGZFvf9).
+- **Canvas:** generate a 1200×630 PNG. Vercel documents 1200×630 as its
+  recommended OG image size, and Ahrefs recommends the same dimensions and
+  1.91:1 ratio for clarity across devices.
+  Sources: [Vercel OG image generation](https://vercel.com/docs/og-image-generation)
+  and [Ahrefs' Open Graph guide](https://ahrefs.com/blog/open-graph-meta-tags/).
 - **Crop safety:** keep every text element in the centered 630×600 region
   (`x=285…915`, `y=15…615`). This preserves the key content through the
   common centered square crop and the 2:1 crop (which can remove 15 pixels
