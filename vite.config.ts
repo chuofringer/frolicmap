@@ -44,11 +44,9 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
         globIgnores: [
           '**/maplibre-gl-*.js',
-          // Not part of the app shell — `og-image.png`, `og/*` and `logo.png` are only
-          // fetched by social-media link scrapers and design assets, never
-          // by the running app. `logo.png` is a design asset, kept out
-          // of the app shell precache.
-          'og-image.png',
+          // Not part of the app shell — `og/*` and `logo.png` are only fetched
+          // by social-media link scrapers and as design assets, never by the
+          // running app.
           'og/**',
           'logo.png',
         ],

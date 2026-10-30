@@ -28,21 +28,9 @@
 import { renderMapCard, CATEGORY_MIN_PLACES, DATA_ATTRIBUTION_HTML, legalLinksHtml } from './seoPages.mjs'
 import { escapeHtml as esc } from './htmlEscape.mjs'
 import { hreflangLinks, EN_LEGEND_PROSE } from './localeCopy.mjs'
+import { metroSocialImageAlt, metroSocialImageUrl } from './socialImages.mjs'
 
 const SITE = 'https://frolicmap.app'
-
-/**
- * The category list for title and og:image:alt — hardcoded to the SPA legend
- * (`src/config/categories.ts`), verbatim and in legend order, identical for
- * every metro. Deliberately NOT derived from per-metro data: the user wants
- * one list everywhere.
- */
-const LEGEND_CATEGORIES = [
-  'Playground', 'Park', 'Library', 'Museum', 'Aquarium/Zoo', 'Beach',
-  'Water Play', 'Hiking', 'Campground',
-]
-const LEGEND_LIST =
-  `${LEGEND_CATEGORIES.slice(0, -1).join(', ')} & ${LEGEND_CATEGORIES[LEGEND_CATEGORIES.length - 1]}`
 
 /**
  * Replace the CONTENT of a meta/link tag that already exists in the shell.
@@ -66,10 +54,13 @@ export const REQUIRED_SHELL_TAGS = [
   { label: 'og:title', test: (h) => /property="og:title"[^>]*content="/.test(h) },
   { label: 'og:description', test: (h) => /property="og:description"[^>]*content="/.test(h) },
   { label: 'og:url', test: (h) => /property="og:url"[^>]*content="/.test(h) },
+  { label: 'og:image', test: (h) => /property="og:image"[^>]*content="/.test(h) },
   { label: 'og:image:alt', test: (h) => /property="og:image:alt"[^>]*content="/.test(h) },
   { label: 'twitter:title', test: (h) => /name="twitter:title"[^>]*content="/.test(h) },
   { label: 'twitter:description', test: (h) => /name="twitter:description"[^>]*content="/.test(h) },
   { label: 'twitter:url', test: (h) => /name="twitter:url"[^>]*content="/.test(h) },
+  { label: 'twitter:image', test: (h) => /name="twitter:image"[^>]*content="/.test(h) },
+  { label: 'twitter:image:alt', test: (h) => /name="twitter:image:alt"[^>]*content="/.test(h) },
   { label: 'meta keywords', test: (h) => /<meta\s+name="keywords"[^>]*content="/.test(h) },
   { label: 'json-ld', test: (h) => /<script type="application\/ld\+json">/i.test(h) },
   { label: 'root div', test: (h) => h.includes('<div id="root"></div>') },
@@ -217,7 +208,6 @@ export function renderCityShell({
   // Short title (<= 60 Latin / ~30 CJK characters, what Google displays); the
   // full category legend lives in the meta description and an on-page H2
   // instead, never as "& More". The blurb still renders in the page body.
-  const legendList = loc ? loc.legendList : LEGEND_LIST
   const title = loc ? loc.t('cityTitle', { city: name }) : enCityTitle(name)
   const description = loc
     ? loc.t('cityDescription', { city: name, categories: loc.legend })
@@ -231,19 +221,17 @@ export function renderCityShell({
   html = replaceTagContent(html, 'property="og:title"', 'content', title)
   html = replaceTagContent(html, 'property="og:description"', 'content', description)
   html = replaceTagContent(html, 'property="og:url"', 'content', url)
-  // The og:image itself stays the shared site card (a map screenshot) —
-  // deliberate, see #385. But its alt must not claim "SF Bay Area" on another
-  // metro's page: word it as the product per-city, carrying the same full
-  // legend list as the title rather than trailing off with "and more".
+  const socialImage = metroSocialImageUrl(metro)
+  const socialImageAlt = metroSocialImageAlt(metro)
+  html = replaceTagContent(html, 'property="og:image"', 'content', socialImage)
   html = replaceTagContent(
-    html, 'property="og:image:alt"', 'content',
-    loc
-      ? loc.t('cityImageAlt', { city: name, categories: legendList })
-      : `${metro.label} kids activities map on frolicmap.app — ${LEGEND_LIST}.`,
+    html, 'property="og:image:alt"', 'content', socialImageAlt,
   )
   html = replaceTagContent(html, 'name="twitter:title"', 'content', title)
   html = replaceTagContent(html, 'name="twitter:description"', 'content', description)
   html = replaceTagContent(html, 'name="twitter:url"', 'content', url)
+  html = replaceTagContent(html, 'name="twitter:image"', 'content', socialImage)
+  html = replaceTagContent(html, 'name="twitter:image:alt"', 'content', socialImageAlt)
   html = replaceTagContent(
     html, 'name="keywords"', 'content',
     loc

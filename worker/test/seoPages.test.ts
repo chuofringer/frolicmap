@@ -62,6 +62,16 @@ describe('/cities index (the welcome page)', () => {
     expect(index.html).toContain('<link rel="canonical" href="https://frolicmap.app/cities">')
   })
 
+  it('uses the general 1200×630 home share image', () => {
+    const image = 'https://frolicmap.app/og/frolicmap-home.png'
+    expect(index.html).toContain(`property="og:image" content="${image}"`)
+    expect(index.html).toContain(`name="twitter:image" content="${image}"`)
+    expect(index.html).toContain('property="og:image:type" content="image/png"')
+    expect(index.html).toContain('property="og:image:width" content="1200"')
+    expect(index.html).toContain('property="og:image:height" content="630"')
+    expect(index.html).toContain('name="twitter:image:alt" content="frolicmap, a family-friendly web app')
+  })
+
   it('names every category in the title and description, including unbuilt ones', () => {
     // The vocabulary is the point: "splash pads in Denver" is a real query
     // whether or not we have the data yet.

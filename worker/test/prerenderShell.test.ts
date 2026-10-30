@@ -50,9 +50,6 @@ describe('renderCityShell', () => {
     expect(page.path).toBe('/cities/seattle')
   })
 
-  const LEGEND_LIST =
-    'Playground, Park, Library, Museum, Aquarium/Zoo, Beach, Water Play, Hiking &amp; Campground'
-
   const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)![1]
   const descOf = (html: string) => /<meta name="description" content="([^"]*)"/.exec(html)![1]
   const LEGEND_PROSE =
@@ -113,14 +110,33 @@ describe('renderCityShell', () => {
     expect(page.html).not.toContain('<link rel="canonical" href="https://frolicmap.app/" />')
   })
 
-  it('rewrites og:image:alt per metro, carrying the same full legend list as the title', () => {
-    // The image itself stays the shared site card (user decision on #385), so
-    // the alt describes the product per-city rather than the Bay pixels — and
-    // lists all categories rather than trailing off with "and more".
+  it('rewrites both social image tags and alt text to the metro’s own card', () => {
+    const image = 'https://frolicmap.app/og/frolicmap-seattle.png'
+    expect(page.html).toContain(`property="og:image" content="${image}"`)
+    expect(page.html).toContain(`name="twitter:image" content="${image}"`)
     expect(page.html).toContain(
-      `content="Seattle kids activities map on frolicmap.app — ${LEGEND_LIST}."`,
+      'content="frolicmap, a family-friendly web app for finding kid-friendly places in Seattle"',
     )
-    expect(page.html).not.toContain('Map of the SF Bay Area')
+    expect(page.html).toContain(
+      'name="twitter:image:alt" content="frolicmap, a family-friendly web app for finding kid-friendly places in Seattle"',
+    )
+    expect(page.html).not.toContain('frolicmap-home.png')
+  })
+
+  it('gives every published metro a distinct absolute 1200×630 social card', () => {
+    const published = METROS.filter((metro) => metro.published)
+    expect(published).toHaveLength(15)
+    const urls = new Set<string>()
+    for (const metro of published) {
+      const html = renderCityShell({ shell: REAL_SHELL, metro }).html
+      const expected = `https://frolicmap.app/og/frolicmap-${metro.slug}.png`
+      expect(html, metro.label).toContain(`property="og:image" content="${expected}"`)
+      expect(html, metro.label).toContain(`name="twitter:image" content="${expected}"`)
+      expect(html, metro.label).toContain('property="og:image:width" content="1200"')
+      expect(html, metro.label).toContain('property="og:image:height" content="630"')
+      urls.add(expected)
+    }
+    expect(urls.size).toBe(published.length)
   })
 
   it('still renders the hand-written blurb in the page body', () => {
