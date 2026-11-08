@@ -23,9 +23,8 @@
 //   all pins (matches the current `ItemSource.tsx` structure).
 
 // @types/geojson-vt + @types/vt-pbf don't match the real runtime API:
-// - geojson-vt's default export is a factory function, not a constructor
-//   class (types declare `new GeoJSONVT(...)` but upstream does
-//   `module.exports = function(data, options) { ... }`).
+// - geojson-vt 5 exports a class (`new GeoJSONVT(data, options)`); the cast
+//   below keeps the call site independent of the shipped typings.
 // - vt-pbf exposes `.fromGeojsonVt(layers)` and `.fromVectorTileJs(tile)`
 //   on the default export; types only declare a narrower shape.
 // We cast both to `any` here (with pinned package versions so the shim
@@ -35,7 +34,7 @@
 //      https://github.com/mapbox/geojson-vt#usage
 import geojsonvtImport from 'geojson-vt'
 import vtpbfImport from 'vt-pbf'
-const geojsonvt = geojsonvtImport as unknown as (data: unknown, opts: unknown) => { getTile: (z: number, x: number, y: number) => unknown }
+const GeoJSONVT = geojsonvtImport as unknown as new (data: unknown, opts: unknown) => { getTile: (z: number, x: number, y: number) => unknown }
 const vtpbf = vtpbfImport as unknown as {
   (tile: unknown): Uint8Array
   fromGeojsonVt: (layers: Record<string, unknown>, options?: { version?: number }) => Uint8Array
@@ -192,7 +191,7 @@ export function buildTile(
   // We index the one specific (z, x, y) we're asked for; no prefetch.
   // `extent: 4096` is the MVT standard tile resolution — MapLibre expects
   // this and it's the default, but stating it for clarity.
-  const index = geojsonvt(
+  const index = new GeoJSONVT(
     { type: 'FeatureCollection', features },
     { maxZoom: z, indexMaxZoom: z, buffer: 0, tolerance: 0, extent: 4096 },
   )
