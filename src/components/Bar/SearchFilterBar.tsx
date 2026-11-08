@@ -96,7 +96,12 @@ function SearchField({ desktop, autoFocus, dropUp, onCollapse }: { desktop: bool
   // Primitive deps only — itemsData/geo are new object references on every
   // fetch (even unchanged data), which would reset the active option on
   // every render and fight the arrow-key handler.
-  useEffect(() => { setActiveIndex(-1) }, [q, activityMatches.length, itemMatches.length, geoMatches.length])
+  const activeKey = `${q}|${activityMatches.length}|${itemMatches.length}|${geoMatches.length}`
+  const [prevActiveKey, setPrevActiveKey] = useState(activeKey)
+  if (prevActiveKey !== activeKey) {
+    setPrevActiveKey(activeKey)
+    setActiveIndex(-1)
+  }
 
   const selectItem = (i: (typeof itemMatches)[number]) => {
     setFlyTo({ longitude: i.lng, latitude: i.lat, zoom: 15 })

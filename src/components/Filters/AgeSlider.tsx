@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFiltersStore } from '@/stores/useFiltersStore'
 
@@ -11,8 +11,15 @@ export function AgeSlider() {
   const [maxStr, setMaxStr] = useState(String(ageMax))
 
   // Keep local strings in sync when the store changes externally (e.g. Reset).
-  useEffect(() => { setMinStr(String(ageMin)) }, [ageMin])
-  useEffect(() => { setMaxStr(String(ageMax)) }, [ageMax])
+  const [prevAge, setPrevAge] = useState({ ageMin, ageMax })
+  if (prevAge.ageMin !== ageMin) {
+    setPrevAge((p) => ({ ...p, ageMin }))
+    setMinStr(String(ageMin))
+  }
+  if (prevAge.ageMax !== ageMax) {
+    setPrevAge((p) => ({ ...p, ageMax }))
+    setMaxStr(String(ageMax))
+  }
 
   const onMinChange = (raw: string) => {
     setMinStr(raw)
